@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier - {{ typepersonnel.libelle }}{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('typepersonnel.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier - <strong>{{ typepersonnel.libelle }}</strong></h1>
+    </div>
+</div>
+{% include 'typepersonnel/_form.html.twig' with {button: 'Modifier'} %}
+{% endblock %}

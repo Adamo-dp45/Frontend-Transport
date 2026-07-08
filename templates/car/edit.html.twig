@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le véhicule - {{ car.matricule }}{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('car.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier le véhicule - <strong>{{ car.matricule }}</strong></h1>
+    </div>
+</div>
+{#
+    {% if car.sieges_gauche is not null or car.sieges_droite is not null %}
+    <twig:Alert class="mb-3 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50">
+        <twig:ux:icon name="lucide:triangle-alert" />
+        <twig:Alert:Title>Modifier la disposition des sièges <strong>(gauche/droite)</strong> régénérera automatiquement tous les sièges du véhicule.</twig:Alert:Title>
+        <twig:Alert:Description>
+            Cette action est <strong>impossible si des tickets actifs existent</strong> sur ce véhicule.
+        </twig:Alert:Description>
+    </twig:Alert>
+    {% endif %}
+#}
+{% include 'car/_form.html.twig' with {button: 'Modifier'} %}
+{% endblock %}

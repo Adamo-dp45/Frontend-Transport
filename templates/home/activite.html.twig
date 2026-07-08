@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Activité{% endblock %}
+
+{% block body %}
+<div class="max-w-[900px] mx-auto">
+    <div class="mb-6">
+        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Espace propriétaire
+        </a>
+        <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Activité</h1>
+        <p class="text-sm text-muted-foreground mt-1">Qui a fait quoi dans l'application — {{ total }} événement(s).</p>
+    </div>
+
+    {% set tones = {
+        VOYAGE_CAR: 'bg-blue-500', VOYAGE_COMMERCIAL: 'bg-violet-500', VOYAGE_POSITION: 'bg-emerald-500',
+        VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500',
+        TICKET_ANNULE: 'bg-red-500', TICKET_REPORTE: 'bg-amber-500', TICKET_SUPPRIME: 'bg-rose-600',
+        COURRIER_ANNULE: 'bg-red-500', COURRIER_LIVRE: 'bg-green-500', COURRIER_PERDU: 'bg-orange-500',
+        COLIS_PERDU: 'bg-orange-500', BAGAGE_PERDU: 'bg-orange-500'
+    } %}
+
+    <div class="card overflow-hidden">
+        {% if activites is empty %}
+        <div class="px-6 py-12 text-center text-sm text-muted-foreground">Aucune activité enregistrée</div>
+        {% else %}
+        <ul class="divide-y divide-border">
+            {% for a in activites %}
+            <li class="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors">
+                <span class="mt-1.5 size-2.5 shrink-0 rounded-full {{ tones[a.type] ?? 'bg-zinc-400' }}"></span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium break-words">{{ a.libelle }}</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">
+                        {{ a.auteur ? (a.auteur.prenom ~ ' ' ~ a.auteur.nom) : 'Système' }}
+                        {% if a.cibletype == 'Voyage' and a.cibleid %}
+                        · <a href="{{ path('voyage.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Voyage #{{ a.cibleid }}</a>
+                        {% elseif a.cibletype %}· {{ a.cibletype }} #{{ a.cibleid }}{% endif %}
+                    </p>
+                </div>
+                <span class="shrink-0 text-xs text-muted-foreground tabular-nums">{{ a.createdAt ? a.createdAt|date('d/m/Y H:i') : '—' }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+    {% if totalPages > 1 %}
+    <div class="flex items-center justify-between mt-4 text-sm">
+        <span class="text-muted-foreground">Page {{ page }} / {{ totalPages }}</span>
+        <div class="flex gap-2">
+            {% if page > 1 %}<a href="{{ path('owner.activite', { page: page - 1 }) }}" class="btn btn-secondary btn-sm">Précédent</a>{% endif %}
+            {% if page < totalPages %}<a href="{{ path('owner.activite', { page: page + 1 }) }}" class="btn btn-secondary btn-sm">Suivant</a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

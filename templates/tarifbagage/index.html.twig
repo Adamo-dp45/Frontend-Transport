@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Grille tarifaire bagages{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Grille tarifaire bagages</h1>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('TARIFBAGAGE_CREER') %}
+        <a href="{{ path('tarifbagage.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+            Nouveau tarif
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Exploitation/TarifbagageTable', {
+    items: tarifbagages,
+    canEdit: is_granted('TARIFBAGAGE_MODIFIER'),
+    canDelete: is_granted('TARIFBAGAGE_SUPPRIMER'),
+    csrfDelete: csrf_token('delete_tarifbagage')
+}) }} class="mb-3">
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

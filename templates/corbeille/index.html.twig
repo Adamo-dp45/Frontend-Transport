@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Corbeille{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Corbeille</h1>
+        <p class="text-sm text-muted-foreground mt-1">
+            {{ elements|length }} élément{{ elements|length > 1 ? 's' : '' }} en corbeille
+        </p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap shrink-0 max-sm:w-full">
+        {% if elements is not empty %}
+            <form method="POST" action="{{ path('corbeille.restaurer_tout') }}">
+                <input type="hidden" name="type" value="{{ type }}">
+                <button type="submit" class="btn btn-secondary" onclick="return confirm('Restaurer tous les éléments affichés ?')">
+                    <svg class="h-4 w-4" aria-hidden="true">
+                        <use href="{{ asset('sprite.svg') }}#restore"></use>
+                    </svg>
+                    Tout restaurer
+                </button>
+            </form>
+            <form method="POST" action="{{ path('corbeille.vider') }}">
+                <input type="hidden" name="type" value="{{ type }}">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Supprimer définitivement tous les éléments affichés ? Cette action est irréversible.')">
+                    <svg class="h-4 w-4" aria-hidden="true">
+                        <use href="{{ asset('sprite.svg') }}#trash"></use>
+                    </svg>
+                    Tout supprimer
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card p-4 mb-5">
+    <div class="flex items-center gap-2 flex-wrap">
+        <a href="{{ path('corbeille.index') }}" class="btn btn-sm {{ type == '' ? 'btn-primary' : 'btn-secondary' }}">
+            Tous
+        </a>
+        {% for key, label in types %}
+            <a href="{{ path('corbeille.index', { type: key }) }}" class="btn btn-sm {{ type == key ? 'btn-primary' : 'btn-secondary' }}">
+                {{ label }}
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    {% if elements is empty %}
+        <div class="px-6 py-16 text-center">
+            <svg class="h-12 w-12 mx-auto text-muted-foreground mb-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#trash"></use>
+            </svg>
+            <p class="text-muted-foreground">La corbeille est vide</p>
+        </div>
+    {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b">
+                        <th class="text-left px-4 py-3 font-semibold">Type</th>
+                        <th class="text-left px-4 py-3 font-semibold">Élément</th>
+                        <th class="text-left px-4 py-3 font-semibold">Supprimé le</th>
+                        <th class="px-4 py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    {% for element in elements %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
+                                {{ types[element.type] ?? element.type }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 font-medium">
+                            {{ element.label }}
+                        </td>
+                        <td class="px-4 py-3 tabular-nums text-muted-foreground">
+                            {{ element.deletedAt }}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <form method="POST" action="{{ path('corbeille.restaurer', { type: element.type, id: element.id }) }}">
+                                    <input type="hidden" name="type" value="{{ type }}">
+                                    <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Restaurer cet élément ?')">
+                                        Restaurer
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ path('corbeille.supprimer', { type: element.type, id: element.id }) }}">
+                                    <input type="hidden" name="type" value="{{ type }}">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer définitivement ? Cette action est irréversible.')">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

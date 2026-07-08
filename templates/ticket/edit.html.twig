@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le ticket ({{ ticket.codeticket }}){% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('ticket.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier le ticket ({{ ticket.codeticket }})</h1>
+        <p class="text-muted-foreground text-sm font-light">
+            {{ ticket.codeticket }} - Place {{ ticket.siege.numero }}
+        </p>
+    </div>
+</div>
+
+<div class="rounded-xl border bg-card shadow-sm p-6 mb-5">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            {{ form_row(form.nomclient) }}
+            {{ form_row(form.contactclient) }}
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('ticket.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                Modifier
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+<div class="rounded-xl border bg-card shadow-sm p-4 mb-5">
+    <h1 class="text-2xl font-light mb-3">Données non modifiables</h1>
+    <div class="space-y-2 mb-2">
+        <div class="flex justify-between">
+            <span>Tronçon</span>
+            <span class="font-medium text-right text-xs">
+                {{ ticket.gare.libelle ?? ticket.voyage.provenance ?? '?' }} → {{ ticket.garedescente.libelle ?? ticket.voyage.destination ?? '?' }}
+            </span>
+        </div>
+        <div class="flex justify-between">
+            <span>Place N°</span>
+            <span class="font-black text-lg">{{ ticket.siege.numero }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Prix</span>
+            <span class="font-semibold tabular-nums">{{ ticket.prix|number_format(0, ',', ' ') }} FCFA</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Code</span>
+            <span class="font-mono font-bold ">{{ ticket.codeticket }}</span>
+        </div>
+    </div>
+    <p class="text-xs text-muted-foreground pt-2 border-t border-border">
+        Seuls le nom et le contact du passager peuvent être modifiés après émission.
+    </p>
+</div>
+{% endblock %}

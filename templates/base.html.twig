@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Welcome!{% endblock %} | Transport</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <!-- Google -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap" rel="stylesheet">
+        <!-- ! -->
+        <script>
+            document.documentElement.classList.toggle(
+                'dark',
+                localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            ) /*
+                - Pour éviter le flash au chargement 'FOUC' ce qui applique le thème instantanément et ne doit pas être dans 'turbo:load' car il doit s'exécuter avant le rendu
+            */
+            if(localStorage.getItem('sidebar-collapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-pre-collapsed');
+            }
+        </script>
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+
+        {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
+        {% endblock %}
+    </head>
+    <style>
+        .sidebar-pre-collapsed .sidebar {
+            width: var(--sidebar-collapsed-w) !important;
+            min-width: var(--sidebar-collapsed-w) !important;
+        }
+    </style>
+    <body>
+        <div class="shell">
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <!-- ═══ SIDEBAR (from Dashboard 1) ═══ -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <svg width="16" height="16"><use href="{{ asset('sprite.svg') }}#logo"></use></svg>
+                    </div>
+                    <span class="sidebar-logo-text sb-text">iTransport</span>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section">
+                        {% if is_granted('ROLE_ADMIN') %}
+                        <div class="sb-section-title">Principal</div>
+                        <a href="{{ path('home') }}" class="nav-link {{ app.current_route starts with 'home' ? 'active' : '' }}" data-nav data-tooltip="Dashboard">
+                            <svg class="nav-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#dashbord"></use></svg>
+                            <span class="sb-text">Tableau de bord</span>
+                        </a>
+                        {% endif %}
+
+                        {% if app.user and app.user.gare %}
+                        <a href="{{ path('gare.me') }}" class="nav-link {{ app.current_route == 'gare.me' ? 'active' : '' }}" data-nav data-tooltip="Ma gare" title="Ma gare">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>
+                            <span class="sb-text">Ma gare</span>
+                        </a>
+                        {% endif %}
+
+                        {% if is_granted('TYPEPIECE_VOIR') or is_granted('MARQUEPIECE_VOIR') or is_granted('MODEL_VOIR') or is_granted('FOURNISSEUR_VOIR') or is_granted('PIECE_VOIR') or is_granted('APPROVISIONNEMENT_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-stock" title="Stock & Approvisionnement"> {# On peut mettre un lien 'a' #}
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#stock"></use>
+                            </svg>
+                            <span class="sb-text">Stock & Approvisionnement</span>
+                            {# <span class="nav-badge">12</span> #}
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-stock">
+                            <div class="submenu-inner">
+                                {% if is_granted('TYPEPIECE_VOIR') %}
+                                <a href="{{ path('typepiece.index') }}" class="sub-link {{ app.current_route starts with 'typepiece.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Type de pièce
+                                </a>
+                                {% endif %}
+                                {% if is_granted('MARQUEPIECE_VOIR') %}
+                                <a href="{{ path('marquepiece.index') }}" class="sub-link {{ app.current_route starts with 'marquepiece.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Marque de pièce {# <span class="sub-badge-warn">8</span> #}
+                                </a>
+                                {% endif %}
+                                {% if is_granted('MODEL_VOIR') %}
+                                <a href="{{ path('model.index') }}" class="sub-link {{ app.current_route starts with 'model.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Modèle de pièce
+                                </a>
+                                {% endif %}
+                                {% if is_granted('FOURNISSEUR_VOIR') %}
+                                <a href="{{ path('fournisseur.index') }}" class="sub-link {{ app.current_route starts with 'fournisseur.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Fournisseur
+                                </a>
+                                {% endif %}
+                                {% if is_granted('PIECE_VOIR') %}
+                                <a href="{{ path('piece.index') }}" class="sub-link {{ app.current_route starts with 'piece.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Pièce
+                                </a>
+                                {% endif %}
+                                {% if is_granted('APPROVISIONNEMENT_VOIR') %}
+                                <a href="{{ path('approvisionnement.index') }}" class="sub-link {{ app.current_route starts with 'approvisionnement.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Approvisionnement
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('MARQUE_VOIR') or is_granted('MODELVEHICULE_VOIR') or is_granted('TYPEVEHICULE_VOIR') or is_granted('CAR_VOIR') or is_granted('TYPEPANNE_VOIR') or is_granted('DEPANNAGE_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-flotte" title="Flotte & Maintenance">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#flotte"></use>
+                            </svg>
+                            <span class="sb-text">Flotte & Maintenance</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-flotte">
+                            <div class="submenu-inner">
+                                {% if is_granted('MARQUE_VOIR') %}
+                                <a href="{{ path('marque.index') }}" class="sub-link {{ app.current_route starts with 'marque.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Marque
+                                </a>
+                                {% endif %}
+                                {% if is_granted('MODELVEHICULE_VOIR') %}
+                                <a href="{{ path('modelvehicule.index') }}" class="sub-link {{ app.current_route starts with 'modelvehicule.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Modèle de véhicule
+                                </a>
+                                {% endif %}
+                                {% if is_granted('TYPEVEHICULE_VOIR') %}
+                                <a href="{{ path('typevehicule.index') }}" class="sub-link {{ app.current_route starts with 'typevehicule.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Type de véhicule
+                                </a>
+                                {% endif %}
+                                {% if is_granted('CAR_VOIR') %}
+                                <a href="{{ path('car.index') }}" class="sub-link {{ app.current_route starts with 'car.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Véhicule
+                                </a>
+                                {% endif %}
+                                {% if is_granted('TYPEPANNE_VOIR') %}
+                                <a href="{{ path('typepanne.index') }}" class="sub-link {{ app.current_route starts with 'typepanne.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Type de panne
+                                </a>
+                                {% endif %}
+                                {% if is_granted('DEPANNAGE_VOIR') %}
+                                <a href="{{ path('depannage.index') }}" class="sub-link {{ app.current_route starts with 'depannage.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Dépannage
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('GARE_VOIR') or is_granted('VILLE_VOIR') or is_granted('TARIFBAGAGE_VOIR') or is_granted('LIGNE_VOIR') or is_granted('TARIF_VOIR') or is_granted('VOYAGE_VOIR') or is_granted('BAGAGE_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-exploitation" title="Exploitation">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#exploitation"></use>
+                            </svg>
+                            <span class="sb-text">Exploitation</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-exploitation">
+                            <div class="submenu-inner">
+                                {% if is_granted('VILLE_VOIR') %}
+                                <a href="{{ path('ville.index') }}" class="sub-link {{ app.current_route starts with 'ville.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Villes
+                                </a>
+                                {% endif %}
+                                {% if is_granted('GARE_VOIR') %}
+                                <a href="{{ path('gare.index') }}" class="sub-link {{ app.current_route starts with 'gare.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Gares
+                                </a>
+                                {% endif %}
+                                {% if is_granted('LIGNE_VOIR') %}
+                                <a href="{{ path('ligne.index') }}" class="sub-link {{ app.current_route starts with 'ligne.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Lignes
+                                </a>
+                                {% endif %}
+                                {% if is_granted('TARIF_VOIR') %}
+                                <a href="{{ path('tarif.index') }}" class="sub-link {{ app.current_route starts with 'tarif.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Grille tarifaire
+                                </a>
+                                {% endif %}
+                                {% if is_granted('VOYAGE_VOIR') %}
+                                <a href="{{ path('voyage.index') }}" class="sub-link {{ app.current_route starts with 'voyage.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Voyages
+                                </a>
+                                {% endif %}
+                                {% if is_granted('VOYAGE_VOIR') %}
+                                <a href="{{ path('bordereau.index') }}" class="sub-link {{ app.current_route starts with 'bordereau.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Bordereau
+                                </a>
+                                {% endif %}
+                                {% if is_granted('TARIFBAGAGE_VOIR') %}
+                                <a href="{{ path('tarifbagage.index') }}" class="sub-link {{ app.current_route starts with 'tarifbagage.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Trarif de bagage
+                                </a>
+                                {% endif %}
+                                {% if is_granted('BAGAGE_VOIR') %}
+                                <a href="{{ path('bagage.index') }}" class="sub-link {{ app.current_route starts with 'bagage.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Bagage
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('TICKET_VOIR') or is_granted('BENEFICIAIRE_VOIR') or is_granted('CLIENT_VOIR') or is_granted('RESERVATION_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-billetterie" title="Billetterie">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#billetterie"></use>
+                            </svg>
+                            <span class="sb-text">Billetterie</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-billetterie">
+                            <div class="submenu-inner">
+                                {% if is_granted('TICKET_VOIR') %}
+                                <a href="{{ path('ticket.index') }}" class="sub-link {{ app.current_route starts with 'ticket.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Tickets
+                                </a>
+                                {% endif %}
+                                {% if is_granted('RESERVATION_VOIR') %}
+                                <a href="{{ path('reservation.index') }}" class="sub-link {{ app.current_route starts with 'reservation.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Réservations
+                                </a>
+                                {% endif %}
+                                {% if is_granted('CLIENT_VOIR') %}
+                                <a href="{{ path('client.index') }}" class="sub-link {{ app.current_route starts with 'client.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Clients
+                                </a>
+                                {% endif %}
+                                {% if is_granted('BENEFICIAIRE_VOIR') %}
+                                <a href="{{ path('beneficiaire.index') }}" class="sub-link {{ app.current_route starts with 'beneficiaire.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Bénéficiaires
+                                </a>
+                                {% endif %}
+                                {% if is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('admin.fidelite.config') }}" class="sub-link {{ app.current_route starts with 'admin.fidelite.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Programme fidélité
+                                </a>
+                                <a href="{{ path('reser.config') }}" class="sub-link {{ app.current_route == 'reser.config' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Paramètres réservation
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('TARIFCOURRIER_VOIR') or is_granted('COURRIER_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-courrier" title="Courrier">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#courrier"></use>
+                            </svg>
+                            <span class="sb-text">Courrier</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-courrier">
+                            <div class="submenu-inner">
+                                {% if is_granted('TARIFCOURRIER_VOIR') %}
+                                <a href="{{ path('tarifcourrier.index') }}" class="sub-link {{ app.current_route starts with 'tarifcourrier.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Tarif courrier
+                                </a>
+                                {% endif %}
+                                {% if is_granted('COURRIER_VOIR') %}
+                                <a href="{{ path('courrier.index') }}" class="sub-link {{ app.current_route starts with 'courrier.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Courrier
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('INVENTAIRE_VOIR') %}
+                        <a href="{{ path('inventaire.index') }}" class="nav-link {{ app.current_route starts with 'inventaire.' ? 'active' : '' }}" data-nav title="Historique des mouvements">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#inventaire"></use>
+                            </svg>
+                            <span class="sb-text">Historique des mouvements</span>
+                        </a>
+                        {% endif %}
+
+                        {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('owner') }}" class="nav-link {{ app.current_route starts with 'owner' ? 'active' : '' }}" data-nav title="Propriétaire">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#owner"></use>
+                            </svg>
+                            <span class="sb-text">Propriétaire - Tableau de bord</span>
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="sidebar-section">
+                        <div class="sb-section-title">Ressources humaines</div>
+                        {% if is_granted('TYPEPERSONNEL_VOIR') or is_granted('PERSONNEL_VOIR') %}
+                        <button class="nav-link" data-submenu="sub-personnel" title="Personnel">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#personnel"></use>
+                            </svg>
+                            <span class="sb-text">Personnel</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-personnel">
+                            <div class="submenu-inner">
+                                {% if is_granted('TYPEPERSONNEL_VOIR') %}
+                                <a href="{{ path('typepersonnel.index') }}" class="sub-link {{ app.current_route starts with 'typepersonnel.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Type de personnel
+                                </a>
+                                {% endif %}
+                                {% if is_granted('PERSONNEL_VOIR') %}
+                                <a href="{{ path('personnel.index') }}" class="sub-link {{ app.current_route starts with 'personnel.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Personnel
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('ROLE_VOIR') or is_granted('USER_VOIR') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN') %}
+                        <button class="nav-link" data-submenu="sub-admin" title="Administration">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#admin"></use>
+                            </svg>
+                            <span class="sb-text">Administration</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-admin">
+                            <div class="submenu-inner">
+                                {% if is_granted('ROLE_VOIR') %}
+                                <a href="{{ path('admin.role.index') }}" class="sub-link {{ app.current_route starts with 'admin.role.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Roles & Permissions
+                                </a>
+                                {% endif %}
+                                {% if is_granted('USER_VOIR') or is_granted('ROLE_SUPER_ADMIN') %}
+                                <a href="{{ path('admin.user.index') }}" class="sub-link {{ app.current_route starts with 'admin.user.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Utilisateurs
+                                </a>
+                                {% endif %}
+                                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                                <a href="{{ path('admin.entreprise.index') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Entreprises
+                                </a>
+                                {% elseif is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('admin.entreprise.me') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Entreprise
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="dropdown-anchor">
+                        <button class="sb-footer-user" id="sidebarUserBtn">
+                        <div class="user-avatar">
+                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                            {% else %}
+                                {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">{{ app.user.nom }}</span>
+                            <span class="user-email">{{ app.user.email }}</span>
+                        </div>
+                            <svg class="user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+                        </button>
+                        <div class="dropdown" id="sidebarUserDrop" style="bottom:calc(100% + .375rem);top:auto;right:0;left:0;min-width:220px;">
+                            <div class="dropdown-header">
+                                <div class="dropdown-title">{{ app.user.nom }}</div>
+                                <div class="dropdown-subtitle">{{ app.user.email }}</div>
+                            </div>
+                            <div class="dropdown-section">
+                                <a href="{{ path('profile.index') }}" class="dropdown-item" data-close-dropdown>
+                                    <svg width="14" height="14" aria-hidden="true">
+                                        <use href="{{ asset('sprite.svg') }}#profil"></use>
+                                    </svg>
+                                    Profile
+                                </a>
+                            </div>
+                            <div class="sep"></div>
+                            <div class="dropdown-section">
+                                <form action="{{ path('app_logout') }}" method="post">
+                                    <button class="dropdown-item destructive" data-close-dropdown>
+                                        <svg width="14" height="14" aria-hidden="true">
+                                            <use href="{{ asset('sprite.svg') }}#logout"></use>
+                                        </svg>
+                                        Se déconnecté
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="main">
+                <header class="topbar">
+                    <div class="topbar-left">
+                        <button class="icon-btn" id="sidebarToggle">
+                            <svg width="18" height="18" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#panel-left"></use>
+                            </svg>
+                        </button>
+                        <div class="topbar-search">
+                            <svg class="search-icon-top" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" placeholder="Search..." id="searchInput"/>
+                            <div class="search-kbd-top"><kbd>⌘</kbd><kbd>K</kbd></div>
+                        </div>
+                        {% if app.user and app.user.gare %}
+                        <a href="{{ path('gare.me') }}" class="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+                            {{ app.user.gare.libelle }}
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="topbar-right">
+                        {#
+                            <div class="dropdown-anchor">
+                                <button class="icon-btn" id="notifBtn" data-tooltip="Notifications" data-tooltip-dir="bottom">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                    <span class="notif-count" id="notifCount">3</span>
+                                </button>
+                                <div class="dropdown" id="notifDrop" style="min-width:340px;right:0;top:calc(100% + .375rem);">
+                                    <div class="dropdown-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                        <div>
+                                            <div class="dropdown-title">Notifications</div>
+                                            <div class="dropdown-subtitle" id="notifSubtitle">3 unread messages</div>
+                                        </div>
+                                        <button class="btn btn-ghost btn-sm" id="markAllReadBtn" style="font-size:.75rem;color:var(--muted-fg)">Mark all read</button>
+                                    </div>
+                                    <div id="notifList">
+                                        <div class="notif-item unread">
+                                            <div class="notif-dot-item unread"></div>
+                                            <div class="notif-body">
+                                                <div class="notif-text">
+                                                    <strong>Olivia Martin</strong> placed a new order for <strong>Pro Plan</strong>
+                                                </div>
+                                                <div class="notif-time-label">2 minutes ago</div>
+                                            </div>
+                                        </div>
+                                        <div class="notif-item">
+                                            <div class="notif-dot-item read"></div>
+                                            <div class="notif-body">
+                                                <div class="notif-text">
+                                                    Invoice <strong>#INV-0089</strong> marked as overdue
+                                                </div>
+                                                <div class="notif-time-label">3 hours ago</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="notif-footer">
+                                        <button class="notif-footer-btn" id="viewAllNotifBtn">View all notifications</button>
+                                    </div>
+                                </div>
+                            </div>
+                        #}
+                        <a href="{{ path('aide') }}" title="Aide" class="icon-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        </a>
+
+                        <button class="theme-btn" id="themeBtn">
+                            <svg id="sun-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"/>
+                                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                            </svg>
+                            <svg id="moon-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                            </svg>
+                            <span id="theme-lbl" class="theme-lbl-text">Dark</span>
+                        </button>
+                        <div class="topbar-divider"></div>
+
+                        <div class="dropdown-anchor">
+                            <button class="topbar-avatar" id="profileBtn">
+                                {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                    <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                                {% else %}
+                                    {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                {% endif %}
+                            </button>
+                            <div class="dropdown" id="profileDrop" style="min-width:220px;right:0;top:calc(100% + .375rem);">
+                                <div class="dropdown-header">
+                                    <div style="display:flex;align-items:center;gap:.625rem;">
+                                        <div style="width:2.25rem;height:2.25rem;border-radius:9999px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary-fg);flex-shrink:0;">
+                                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                                <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                                            {% else %}
+                                                {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="dropdown-title">{{ app.user.nom }} {{ app.user.prenom }}</div>
+                                            <div class="dropdown-subtitle">{{ app.user.email }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-section">
+                                    <div class="dropdown-label">Compte</div>
+                                    <a href="{{ path('profile.index') }}" class="dropdown-item" data-close-dropdown>
+                                        <svg width="14" height="14" aria-hidden="true">
+                                            <use href="{{ asset('sprite.svg') }}#profil"></use>
+                                        </svg>
+                                        Profil
+                                    </a>
+                                </div>
+                                <div class="sep"></div>
+                                <div class="dropdown-section">
+                                    <form action="{{ path('app_logout') }}" method="post">
+                                        <button class="dropdown-item destructive" data-close-dropdown>
+                                            <svg width="14" height="14" aria-hidden="true">
+                                                <use href="{{ asset('sprite.svg') }}#logout"></use>
+                                            </svg>
+                                            Se déconnecté
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="content">
+                    <div class="content-inner">
+                        {% include 'partials/flash.html.twig' %}
+                        {% block body %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

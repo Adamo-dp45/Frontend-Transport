@@ -1,0 +1,150 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Le rôle - {{ role.name }}{% endblock %}
+
+{% block body %}
+{% set permissionsParEntite = {} %}
+{% for perm in role.permissions %}
+    {% if permissionsParEntite[perm.entity] is not defined %}
+        {% set permissionsParEntite = permissionsParEntite|merge({ (perm.entity): [] }) %}
+    {% endif %}
+    {% set actions = permissionsParEntite[perm.entity]|merge([perm.action]) %}
+    {% set permissionsParEntite = permissionsParEntite|merge({ (perm.entity): actions }) %}
+{% endfor %}
+{% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
+
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('admin.role.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux rôles
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Rôle</p>
+                {% if role.typerole %}{{ ui.badge(role.typerole, 'purple') }}{% endif %}
+                {% if role.gare %}{{ ui.badge(role.gare.libelle, 'blue') }}{% else %}{{ ui.badge('Entreprise', 'zinc') }}{% endif %}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ role.name }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">Créé le {{ role.createdAt ? role.createdAt|date('d/m/Y') : '—' }}</p>
+        </div>
+        {% if is_granted('ROLE_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('admin.role.edit', { id: role.id }) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+        {{ ui.stat('Permissions', role.permissions|length) }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Entités concernées</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ permissionsParEntite|length }}</p>
+        </div>
+        {{ ui.stat('Type de rôle', role.typerole ?? '—') }}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            {% if role.description %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Description</h2>
+                <p class="text-sm">{{ role.description }}</p>
+            </div>
+            {% endif %}
+
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Permissions accordées</h2>
+                    <span class="text-xs text-muted-foreground">{{ role.permissions|length }}</span>
+                </div>
+                {% if permissionsParEntite is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucune permission accordée</div>
+                {% else %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                                <th class="text-left px-6 py-3 font-medium">Entité</th>
+                                {% for action in actionsOrdre %}<th class="text-center px-4 py-3 font-medium text-xs">{{ action }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            {% for entite, actions in permissionsParEntite %}
+                            <tr class="hover:bg-muted/20 transition-colors">
+                                <td class="px-6 py-3 font-medium">{{ entite }}</td>
+                                {% for action in actionsOrdre %}
+                                <td class="px-4 py-3 text-center">
+                                    {% if action in actions %}
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-300" title="{{ action }}">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground/30" title="Non accordé">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-4">
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Détails</h2>
+                <div class="grid grid-cols-1 gap-y-3">
+                    {{ ui.field('Nom', role.name) }}
+                    {{ ui.field('Type', role.typerole) }}
+                    {{ ui.field('Gare', role.gare ? (role.gare.libelle ~ (role.gare.ville ? ' - ' ~ role.gare.ville : '')) : 'Entreprise (toutes les gares)') }}
+                    {{ ui.field('Créé le', role.createdAt ? role.createdAt|date('d/m/Y') : null) }}
+                </div>
+            </div>
+
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Répartition par action</h2>
+                {% set actionTones = { VOIR: 'blue', CREER: 'green', MODIFIER: 'orange', SUPPRIMER: 'red' } %}
+                <div class="space-y-2">
+                    {% for action in actionsOrdre %}
+                    <div class="flex items-center justify-between text-xs">
+                        {{ ui.badge(action, actionTones[action] ?? 'zinc') }}
+                        <span class="font-semibold tabular-nums">{{ role.permissions|filter(p => p.action == action)|length }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if is_granted('ROLE_MODIFIER') or is_granted('ROLE_SUPPRIMER') %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <div class="flex flex-col gap-2">
+                    {% if is_granted('ROLE_MODIFIER') %}
+                    <a href="{{ path('admin.role.edit', { id: role.id }) }}" class="btn btn-secondary w-full justify-center">Modifier le rôle</a>
+                    {% endif %}
+                    {% if is_granted('ROLE_SUPPRIMER') %}
+                    <form method="POST" action="{{ path('admin.role.delete', { id: role.id }) }}"
+                          onsubmit="return confirm('Supprimer le rôle {{ role.name }} ? Cette action est irréversible.')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_role') }}">
+                        <button type="submit" class="btn btn-danger w-full justify-center">Supprimer</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

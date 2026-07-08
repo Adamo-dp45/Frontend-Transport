@@ -1,0 +1,17 @@
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.libelle) }}</div>
+            <div>{{ form_row(form.contact) }}</div>
+            <div>{{ form_row(form.email) }}</div>
+            <div>{{ form_row(form.adresse) }}</div>
+            <div>{{ form_row(form.pays) }}</div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('fournisseur.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

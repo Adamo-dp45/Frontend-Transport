@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bordereau Gare — {{ bordereau.voyage.codevoyage }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 9pt;
+            color: #1a1a1a;
+            background: #fff;
+            width: 190mm;
+            margin: 0 auto;
+            padding: 10mm 0;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            border: 2px solid #1a5c3a;
+            border-radius: 4px;
+            margin-bottom: 5mm;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .header-top {
+            background: #1a5c3a;
+            color: #fff;
+        }
+
+        /* Padding porté par les cellules (et non le conteneur) : évite le débordement Dompdf
+           d'un tableau width:100% à l'intérieur d'une boîte paddée. */
+        .header-top table { width: 100%; border-collapse: collapse; }
+        .header-top td { vertical-align: middle; padding: 4mm 5mm; border: none; }
+        .header-top .td-right { text-align: right; }
+
+        .doc-title { font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-subtitle { font-size: 7.5pt; opacity: 0.8; margin-top: 1mm; }
+        .doc-code { font-size: 11pt; font-weight: bold; }
+        .doc-gare { font-size: 9pt; opacity: 0.9; margin-top: 0.5mm; }
+        .doc-date { font-size: 7.5pt; opacity: 0.8; margin-top: 1mm; }
+
+        .header-body { padding: 3mm 5mm; }
+        .header-body > table { width: 100%; border-collapse: collapse; }
+        .header-body > table > tr > td {
+            vertical-align: top;
+            border: none;
+            padding: 0 5mm;
+            border-right: 1px solid #c5ddd0;
+        }
+        .header-body > table > tr > td:first-child { padding-left: 0; }
+        .header-body > table > tr > td:last-child { padding-right: 0; border-right: none; }
+
+        .info-label { font-size: 7pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5mm; }
+        .info-value { font-size: 9.5pt; font-weight: bold; color: #1a5c3a; }
+
+        /* ── RECETTE BANNER ── */
+        .recette-banner {
+            background: #1a5c3a;
+            color: #fff;
+            border-radius: 4px;
+            padding: 4mm 6mm;
+            margin-bottom: 5mm;
+        }
+        .recette-banner table { width: 100%; border-collapse: collapse; }
+        .recette-banner td { border: none; padding: 0; vertical-align: middle; }
+        .recette-banner .td-right { text-align: right; }
+        .recette-left-text { font-size: 9pt; opacity: 0.9; }
+        .recette-amount { font-size: 18pt; font-weight: bold; }
+        .recette-currency { font-size: 9pt; opacity: 0.85; margin-left: 1mm; }
+
+        /* ── SUMMARY ── */
+        .summary-wrap { margin-bottom: 5mm; }
+        .summary-wrap table { width: 100%; border-collapse: separate; border-spacing: 3mm 0; }
+        .summary-wrap td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 3mm 2mm;
+            border-radius: 4px;
+            border: 1.5px solid #1a5c3a;
+        }
+        .summary-wrap td.fill { background: #1a5c3a; color: #fff; }
+        .summary-wrap td.accent { background: #e8f5ee; }
+        .summary-number { font-size: 18pt; font-weight: bold; line-height: 1; }
+        .summary-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1mm; opacity: 0.75; }
+        .fill .summary-label { opacity: 0.85; }
+
+        /* ── SECTION TITLE ── */
+        .section-title {
+            background: #1a5c3a;
+            color: #fff;
+            font-size: 8.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 2mm 4mm;
+            border-radius: 3px 3px 0 0;
+        }
+        .section-title .right-info {
+            float: right;
+            font-size: 7.5pt;
+            font-weight: normal;
+            opacity: 0.85;
+        }
+
+        /* ── TABLE WRAPPER ── */
+        .table-wrapper {
+            border: 1px solid #b5d9c5;
+            border-top: none;
+            border-radius: 0 0 3px 3px;
+            margin-bottom: 5mm;
+            overflow: hidden;
+        }
+
+        /* ── DATA TABLE ── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+        .data-table thead tr { background: #e8f5ee; }
+        .data-table thead th {
+            padding: 2mm 3mm;
+            text-align: left;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #1a5c3a;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: none;
+            border-bottom: 1.5px solid #1a5c3a;
+        }
+        .data-table thead th.right { text-align: right; }
+        .data-table thead th.center { text-align: center; }
+        .data-table tbody td { padding: 2mm 3mm; vertical-align: middle; border: none; border-bottom: 0.5px solid #ddeae3; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr.even { background: #f4fbf7; }
+        .data-table tbody td.right { text-align: right; }
+        .data-table tbody td.center { text-align: center; }
+        .data-table tfoot td {
+            padding: 2mm 3mm;
+            font-weight: bold;
+            font-size: 8.5pt;
+            border-top: 1.5px solid #1a5c3a;
+            border-bottom: none;
+            background: #e8f5ee;
+        }
+        .data-table tfoot td.right { text-align: right; }
+
+        /* ── BADGE ── */
+        .badge { display: inline-block; padding: 0.5mm 2mm; border-radius: 3px; font-size: 7.5pt; font-weight: bold; }
+        .badge-seat { background: #1a5c3a; color: #fff; }
+
+        .mono { font-family: "Courier New", Courier, monospace; font-size: 8pt; color: #444; }
+        .num { color: #aaa; font-size: 7.5pt; }
+        .bold { font-weight: bold; }
+        .muted { color: #888; font-size: 7.5pt; }
+        .empty-msg { padding: 4mm 3mm; color: #aaa; font-style: italic; font-size: 8pt; }
+
+        /* ── SIGNATURE ── */
+        .sig-wrap { margin-top: 5mm; }
+        .sig-wrap table { width: 100%; border-collapse: separate; border-spacing: 5mm 0; }
+        .sig-wrap td {
+            border: 1px solid #b5d9c5;
+            border-radius: 3px;
+            padding: 2mm 3mm;
+            vertical-align: top;
+            width: 50%;
+        }
+        .sig-label { font-size: 7.5pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-space { height: 14mm; }
+        .sig-line { border-top: 1px solid #b5d9c5; font-size: 7pt; color: #aaa; text-align: center; padding-top: 1mm; }
+
+        /* ── FOOTER ── */
+        .footer {
+            border-top: 1px solid #b5d9c5;
+            padding-top: 3mm;
+            margin-top: 5mm;
+            font-size: 7pt;
+            color: #888;
+        }
+        .footer table { width: 100%; border-collapse: collapse; }
+        .footer td { border: none; padding: 0; vertical-align: bottom; }
+        .footer .td-right { text-align: right; }
+    </style>
+</head>
+<body>
+
+    {# ── EN-TÊTE ── #}
+    <div class="header">
+        <div class="header-top">
+            <table>
+                <tr>
+                    <td style="width:55%;">
+                        <div class="doc-title">Bordereau de Gare</div>
+                        <div class="doc-subtitle">Récapitulatif de voyage — Exemplaire gare</div>
+                    </td>
+                    <td class="td-right" style="width:45%;">
+                        <div class="doc-code">{{ bordereau.voyage.codevoyage }}</div>
+                        <div class="doc-gare">Gare : {{ bordereau.gare.libelle }} — {{ bordereau.gare.ville }}</div>
+                        <div class="doc-date">Généré le {{ bordereau.generele }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="header-body">
+            <table>
+                <tr>
+                    <td style="width:30%;">
+                        <div class="info-label">Trajet</div>
+                        <div class="info-value">{{ bordereau.voyage.provenance }}</div>
+                        <div class="muted">&#8595;</div>
+                        <div class="info-value">{{ bordereau.voyage.destination }}</div>
+                    </td>
+                    <td style="width:25%;">
+                        <div class="info-label">Date de départ</div>
+                        <div class="info-value">{{ bordereau.voyage.datedepartprevue }}</div>
+                    </td>
+                    <td style="width:22%;">
+                        <div class="info-label">Capacité totale</div>
+                        <div class="info-value">{{ bordereau.voyage.placestotal }} places</div>
+                        <div style="margin-top:1.5mm;">
+                            <div class="info-label">Tickets voyage</div>
+                            <div class="info-value">{{ bordereau.voyage.placesoccupees }}</div>
+                        </div>
+                    </td>
+                    <td style="width:23%;">
+                        <div class="info-label">Tickets cette gare</div>
+                        <div class="info-value" style="color:#c0392b;">{{ bordereau.nbtickets }}</div>
+                        <div style="margin-top:1.5mm;">
+                            <div class="info-label">Gare émettrice</div>
+                            <div class="info-value" style="font-size:8pt;">{{ bordereau.gare.libelle }}</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    {# ── BANDEAU PLACES AU DÉPART (le car sort de cette gare) ── #}
+    <div class="recette-banner">
+        <table>
+            <tr>
+                <td style="width:65%;">
+                    <div class="recette-left-text">
+                        Le car quitte la gare <strong>{{ bordereau.gare.libelle }}</strong> avec
+                        <strong>{{ bordereau.placesoccupeesdepart }}</strong> place(s) occupée(s) à bord
+                    </div>
+                </td>
+                <td class="td-right" style="width:35%;">
+                    <span class="recette-amount">{{ bordereau.placeslibresdepart }}</span>
+                    <span class="recette-currency">place(s) libre(s)</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ── BANDEAU RECETTE — masqué à la demande (décommenter pour le réafficher) ──
+    <div class="recette-banner">
+        <table>
+            <tr>
+                <td style="width:65%;">
+                    <div class="recette-left-text">
+                        Recette totale collectée par la gare <strong>{{ bordereau.gare.libelle }}</strong>
+                        sur {{ bordereau.nbtickets }} ticket(s) vendu(s)
+                    </div>
+                </td>
+                <td class="td-right" style="width:35%;">
+                    <span class="recette-amount">{{ bordereau.recette|number_format(0, ',', ' ') }}</span>
+                    <span class="recette-currency">FCFA</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    #}
+
+    {# ── RÉSUMÉ ── #}
+    <div class="summary-wrap">
+        <table>
+            <tr>
+                <td class="fill">
+                    <div class="summary-number">{{ bordereau.placesoccupeesdepart }}</div>
+                    <div class="summary-label">Occupées au départ</div>
+                </td>
+                <td class="accent">
+                    <div class="summary-number">{{ bordereau.placeslibresdepart }}</div>
+                    <div class="summary-label">Libres au départ</div>
+                </td>
+                <td>
+                    <div class="summary-number">{{ bordereau.voyage.placestotal }}</div>
+                    <div class="summary-label">Capacité totale</div>
+                </td>
+                <td class="fill">
+                    <div class="summary-number">{{ bordereau.nbtickets }}</div>
+                    <div class="summary-label">Tickets cette gare</div>
+                </td>
+                {# ── Recette gare — masquée (décommenter pour réafficher) ──
+                <td class="fill">
+                    <div class="summary-number" style="font-size:13pt;">{{ bordereau.recette|number_format(0, ',', ' ') }}</div>
+                    <div class="summary-label">Recette gare (FCFA)</div>
+                </td>
+                #}
+            </tr>
+        </table>
+    </div>
+
+    {# ── LISTE DES PASSAGERS — masquée à la demande (décommenter le bloc ci-dessous pour réafficher) ── #}
+    {#
+    <div class="section-title">
+        Liste des passagers
+        <span class="right-info">{{ bordereau.nbtickets }} passager(s) — {{ bordereau.recette|number_format(0, ',', ' ') }} FCFA</span>
+    </div>
+    <div class="table-wrapper">
+        {% if bordereau.passagers is empty %}
+            <div class="empty-msg">Aucun passager enregistré depuis cette gare.</div>
+        {% else %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:5%;">#</th>
+                        <th>Code ticket</th>
+                        <th class="center" style="width:12%;">Siège</th>
+                        <th class="right" style="width:18%;">Prix (FCFA)</th>
+                        <th class="right" style="width:22%;">Émis le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for passager in bordereau.passagers %}
+                    <tr{% if loop.index is even %} class="even"{% endif %}>
+                        <td class="num">{{ loop.index }}</td>
+                        <td class="mono">{{ passager.codeticket }}</td>
+                        <td class="center"><span class="badge badge-seat">{{ passager.siegenumero }}</span></td>
+                        <td class="right bold">{{ passager.prix|number_format(0, ',', ' ') }}</td>
+                        <td class="right muted">{{ passager.createdat }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Recette totale</td>
+                        <td class="right">{{ bordereau.recette|number_format(0, ',', ' ') }} FCFA</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endif %}
+    </div>
+    #}
+
+    {# ── SIGNATURES ── #}
+    <div class="sig-wrap">
+        <table>
+            <tr>
+                <td>
+                    <div class="sig-label">Signature du responsable de gare</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line">Nom &amp; Cachet</div>
+                </td>
+                <td>
+                    <div class="sig-label">Visa du directeur / superviseur</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line">Nom &amp; Signature</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ── FOOTER ── #}
+    <div class="footer">
+        <table>
+            <tr>
+                <td>
+                    Voyage <strong>{{ bordereau.voyage.codevoyage }}</strong> —
+                    Gare <strong>{{ bordereau.gare.libelle }}</strong> ({{ bordereau.gare.ville }}) —
+                    Départ {{ bordereau.voyage.datedepartprevue }}
+                </td>
+                <td class="td-right">
+                    Document généré le {{ bordereau.generele }}
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

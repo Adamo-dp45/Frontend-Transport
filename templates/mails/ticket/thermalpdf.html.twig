@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #000;
+            background: #fff;
+        }
+
+        /* ── Un billet par page ── */
+        .ticket { width: 100%; padding: 7px; }
+        .ticket-break { page-break-after: always; }
+
+        /* ── Cadre du billet ── */
+        .frame { border: 1px solid #000; width: 100%; }
+        .sec { padding: 5px 8px; border-bottom: 1px solid #000; text-align: center; }
+        .sec.banner { background: #000; color: #fff; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; }
+
+        /* ── En-tête entreprise ── */
+        .brand { margin-bottom: 3px; }
+        .brand img { max-width: 40px; max-height: 38px; }
+        .monogram {
+            display: inline-block;
+            padding: 3px 8px;
+            border: 1px solid #000;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .company { font-size: 13px; font-weight: bold; text-transform: uppercase; line-height: 1.2; }
+        .phone { font-size: 8.5px; margin-top: 2px; }
+
+        /* ── Trajet (héros) ── */
+        .cities { font-size: 14px; font-weight: bold; letter-spacing: 0.3px; }
+        .when { font-size: 9px; margin-top: 3px; }
+
+        /* ── Numéro de billet ── */
+        .code-lbl { font-size: 7.5px; text-transform: uppercase; letter-spacing: 2px; }
+        .code-val { font-size: 18px; font-weight: bold; letter-spacing: 1.5px; margin-top: 1px; }
+
+        /* ── Siège / Prix ── */
+        .grid { display: table; width: 100%; table-layout: fixed; border-bottom: 1px solid #000; }
+        .grid .cell { display: table-cell; width: 50%; text-align: center; padding: 6px 4px; vertical-align: middle; }
+        .grid .cell + .cell { border-left: 1px solid #000; }
+        .cell-lbl { font-size: 7.5px; text-transform: uppercase; letter-spacing: 1px; display: block; }
+        .seat { font-size: 21px; font-weight: bold; display: block; margin-top: 1px; }
+        .price { font-size: 15px; font-weight: bold; display: block; margin-top: 3px; }
+        .price .cur { font-size: 8px; font-weight: normal; }
+
+        /* ── Détails ── */
+        .meta { padding: 5px 12px; border-bottom: 1px solid #000; }
+        .row { display: table; width: 100%; font-size: 9px; line-height: 1.55; }
+        .row .k { display: table-cell; text-align: left; color: #333; }
+        .row .v { display: table-cell; text-align: right; font-weight: bold; }
+
+        /* ── Zone QR (centrée) ── */
+        .qrzone { padding: 7px; text-align: center; border-bottom: 1px solid #000; }
+        .qrzone img { width: 72px; height: 72px; }
+        .qr-cap { font-size: 8.5px; font-weight: bold; margin-top: 4px; }
+        .qr-code { font-size: 10px; font-weight: bold; letter-spacing: 1px; margin-top: 1px; }
+        .qr-emis { font-size: 8px; color: #333; margin-top: 2px; }
+        .qr-index { font-size: 8px; margin-top: 1px; }
+
+        /* ── Mot de la compagnie ── */
+        .wish { padding: 5px 8px; text-align: center; font-size: 8.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; }
+    </style>
+</head>
+<body>
+
+    {% set items = tickets is defined ? tickets : [ticket] %}
+    {% set ent = entreprise|default(null) %}
+    {% set company = ent.libelle|default('Compagnie de transport') %}
+    {% set monogram = (ent.sigle is defined and ent.sigle) ? ent.sigle|slice(0, 3)|upper : company|slice(0, 2)|upper %}
+    {% set phones = [ent.contact1 ?? null, ent.contact2 ?? null]|filter(p => p)|join(' / ') %}
+
+    {% for ticket in items %}
+    <div class="ticket {{ loop.last ? '' : 'ticket-break' }}">
+        <div class="frame">
+
+            {# ── En-tête entreprise (centré) ── #}
+            <div class="sec">
+                <div class="brand">
+                    {% if ent.logo is defined and ent.logo %}
+                        <img src="{{ ent.logo }}" alt="">
+                    {% else %}
+                        <span class="monogram">{{ monogram }}</span>
+                    {% endif %}
+                </div>
+                <div class="company">{{ company }}</div>
+                {% if phones %}<div class="phone">Tél : {{ phones }}</div>{% endif %}
+            </div>
+
+            {# ── Bandeau statut (billet annulé / reporté) ── #}
+            {% if ticket.statut is defined and ticket.statut in ['ANNULE', 'REPORTE'] %}
+            <div class="sec banner">{{ ticket.statut == 'ANNULE' ? 'Billet annulé' : 'Billet reporté' }}</div>
+            {% endif %}
+
+            {# ── Trajet ── #}
+            <div class="sec">
+                <div class="cities">
+                    {{ ticket.gare.libelle ?? ticket.voyage.provenance }}
+                    &#8594;
+                    {{ ticket.garedescente.libelle ?? ticket.voyage.destination }}
+                </div>
+                <div class="when">
+                    {{ ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('d/m/Y') : '—' }}
+                    &nbsp;à&nbsp;
+                    {{ ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('H\\hi') : '—' }}
+                </div>
+            </div>
+
+            {# ── Numéro de billet ── #}
+            <div class="sec">
+                <div class="code-lbl">Billet n&deg;</div>
+                <div class="code-val">{{ ticket.codeticket }}</div>
+            </div>
+
+            {# ── Siège / Prix ── #}
+            <div class="grid">
+                <div class="cell">
+                    <span class="cell-lbl">Siège</span>
+                    <span class="seat">{{ ticket.siege.numero ?? '—' }}</span>
+                </div>
+                <div class="cell">
+                    <span class="cell-lbl">Prix</span>
+                    {# On imprime le VRAI tarif (avant remise) = prix net + remise, pour ne pas exposer
+                       une remise/bénéficiaire au contrôle. La remise reste visible en back-office. #}
+                    <span class="price">{{ (ticket.prix + (ticket.remise ?? 0))|number_format(0, ',', ' ') }}<span class="cur"> FCFA</span></span>
+                </div>
+            </div>
+
+            {# ── Détails ── #}
+            <div class="meta">
+                <div class="row"><span class="k">Voyage</span><span class="v">{{ ticket.voyage.codevoyage ?? '—' }}</span></div>
+                <div class="row"><span class="k">Ligne</span><span class="v">{{ ticket.voyage.ligne.codeligne ?? '—' }}</span></div>
+                {% if ticket.nomclient is defined and ticket.nomclient %}
+                <div class="row"><span class="k">Passager</span><span class="v">{{ ticket.nomclient }}</span></div>
+                {% endif %}
+                {% if ticket.contactclient is defined and ticket.contactclient %}
+                <div class="row"><span class="k">Contact</span><span class="v">{{ ticket.contactclient }}</span></div>
+                {% endif %}
+                {# Remise/bénéficiaire NON imprimés sur le billet (le billet affiche le tarif plein ci-dessus).
+                   Décommenter si on veut les faire figurer sur le billet papier :
+                {% if ticket.remise is defined and ticket.remise > 0 %}
+                <div class="row"><span class="k">Remise</span><span class="v">- {{ ticket.remise|number_format(0, ',', ' ') }} F</span></div>
+                <div class="row"><span class="k">Bénéficiaire</span><span class="v">{{ ticket.beneficiaire.nom ?? '—' }}</span></div>
+                {% endif %}
+                #}
+            </div>
+
+            {# ── Zone QR (centrée) ── #}
+            <div class="qrzone">
+                {% if ticket.qrcode is defined and ticket.qrcode %}
+                    <img src="{{ ticket.qrcode }}" alt="">
+                {% endif %}
+                <div class="qr-cap">Présentez ce billet à l'embarquement</div>
+                <div class="qr-code">{{ ticket.codeticket }}</div>
+                <div class="qr-emis">Émis le {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y à H:i') : '—' }}</div>
+                {% if items|length > 1 %}<div class="qr-index">Billet {{ loop.index }} / {{ items|length }}</div>{% endif %}
+            </div>
+
+            {# ── Mot de la compagnie ── #}
+            <div class="wish">{{ company }} vous souhaite un bon voyage</div>
+
+        </div>
+    </div>
+    {% endfor %}
+
+</body>
+</html>

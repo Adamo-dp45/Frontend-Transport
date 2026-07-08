@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Clients{% endblock %}
+
+{% macro topTable(titre, sousTitre, lignes, colonne) %}
+{% import 'home/_stats.html.twig' as s %}
+<div class="card p-5">
+    {{ s.sectionTitle(titre, sousTitre) }}
+    {% if lignes is not empty %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-muted-foreground border-b">
+                    <th class="pb-2 font-medium w-8">#</th>
+                    <th class="pb-2 font-medium">Client</th>
+                    <th class="pb-2 font-medium text-right">Voyages</th>
+                    <th class="pb-2 font-medium text-right">Dépense</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in lignes %}
+                <tr class="border-b last:border-0">
+                    <td class="py-2 text-muted-foreground tabular-nums">{{ loop.index }}</td>
+                    <td class="py-2">
+                        <a href="{{ path('client.show', {id: c.id}) }}" class="font-medium hover:underline">{{ c.nom }}</a>
+                        {% if c.membre %}<span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary align-middle">Membre</span>{% endif %}
+                        <span class="block text-xs text-muted-foreground">{{ c.contact ?? '—' }}</span>
+                    </td>
+                    <td class="py-2 text-right tabular-nums {{ colonne == 'nb' ? 'font-semibold' : '' }}">{{ c.nbBillets }}</td>
+                    <td class="py-2 text-right tabular-nums {{ colonne == 'depense' ? 'font-semibold' : '' }}">{{ c.depense | number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="py-6 text-center text-sm text-muted-foreground">Aucun client n'a voyagé sur la période.</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block body %}
+{{ s.pageHeader('Clients', 'Base clients', 'owner.stats.clients', debut, fin, 'stats.export.clients') }}
+
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
+        {{ s.kpi('Total clients', clients.totalClients ?? 0, '', 'blue', 'users', 'base de l\'entreprise') }}
+        {{ s.kpi('Nouveaux', clients.nouveauxClients ?? 0, '', 'emerald', 'check', 'sur la période') }}
+        {{ s.kpi('Actifs', clients.clientsActifs ?? 0, '', 'violet', 'route', 'ont voyagé (période)') }}
+        {{ s.kpi('Panier moyen', (clients.panierMoyen ?? 0) | number_format(0, ',', ' '), 'FCFA', 'amber', 'money', 'par client actif') }}
+        {{ s.kpi('Membres fidélité', clients.membres ?? 0, '', 'rose', 'chart', 'adhérents au programme') }}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {{ _self.topTable('Clients les plus fidèles', 'Par nombre de voyages (période)', clients.topParBillets ?? [], 'nb') }}
+        {{ _self.topTable('Plus gros acheteurs', 'Par dépense (période)', clients.topParDepense ?? [], 'depense') }}
+    </div>
+</section>
+{% endblock %}

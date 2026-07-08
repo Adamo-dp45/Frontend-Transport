@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Performance commerciale{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Performance commerciale', 'Statistiques · Vendeur à bord', 'owner.stats.commercial', debut, fin) }}
+
+{# ── KPIs ─────────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Recette commerciale', (commercial.recetteCommerciale ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Ventes réalisées à bord') }}
+        {{ s.kpi('Ventes à bord', commercial.ventes ?? 0, 'billet(s)', 'blue', 'ticket', 'Panier moyen ' ~ (commercial.panierMoyen ?? 0)|number_format(0, ',', ' ') ~ ' FCFA') }}
+        {{ s.kpi('Commerciaux actifs', commercial.nbCommerciaux ?? 0, '', 'teal', 'users', 'Sur la période') }}
+        {{ s.kpi('Part de la recette billets', commercial.partCommerciale ?? 0, '%', 'emerald', 'chart', 'Reste : guichet + réservation') }}
+    </div>
+
+    {# ── Répartition par canal (guichet / commercial / réservation) ──────── #}
+    {% set recBillets = commercial.recetteBillets ?? 0 %}
+    {% set recCom = commercial.recetteCommerciale ?? 0 %}
+    {% set recGuichet = commercial.recetteGuichet ?? 0 %}
+    {% set recResa = commercial.recetteReservation ?? 0 %}
+    <div class="card p-5">
+        <p class="text-sm font-medium text-muted-foreground mb-4">Répartition de la recette billets</p>
+        {% if recBillets > 0 %}
+        <div class="flex h-4 w-full overflow-hidden rounded-full bg-muted">
+            <div class="h-full bg-emerald-500" style="width: {{ (recGuichet / recBillets * 100)|round(1) }}%" title="Guichet"></div>
+            <div class="h-full bg-violet-500" style="width: {{ (recCom / recBillets * 100)|round(1) }}%" title="Commercial"></div>
+            <div class="h-full bg-sky-500" style="width: {{ (recResa / recBillets * 100)|round(1) }}%" title="Réservation"></div>
+        </div>
+        <div class="flex flex-wrap gap-6 mt-4">
+            <div class="flex items-center gap-2">
+                <span class="size-3 rounded-sm bg-emerald-500"></span>
+                <div>
+                    <p class="text-sm font-semibold tabular-nums">{{ recGuichet|number_format(0, ',', ' ') }} FCFA</p>
+                    <p class="text-xs text-muted-foreground">Guichet ({{ recBillets > 0 ? (recGuichet / recBillets * 100)|round : 0 }} %)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="size-3 rounded-sm bg-violet-500"></span>
+                <div>
+                    <p class="text-sm font-semibold tabular-nums">{{ recCom|number_format(0, ',', ' ') }} FCFA</p>
+                    <p class="text-xs text-muted-foreground">Commercial ({{ commercial.partCommerciale ?? 0 }} %)</p>
+                </div>
+            </div>
+            {% if recResa > 0 %}
+            <div class="flex items-center gap-2">
+                <span class="size-3 rounded-sm bg-sky-500"></span>
+                <div>
+                    <p class="text-sm font-semibold tabular-nums">{{ recResa|number_format(0, ',', ' ') }} FCFA</p>
+                    <p class="text-xs text-muted-foreground">Réservation ({{ recBillets > 0 ? (recResa / recBillets * 100)|round : 0 }} %)</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted-foreground">Aucune recette billets sur la période.</p>
+        {% endif %}
+    </div>
+</section>
+
+{# ── Classement des commerciaux ───────────────────────────────────── #}
+<section class="mb-8">
+    {{ s.sectionTitle('Classement des commerciaux', 'Par recette générée') }}
+    <div class="card p-5">
+        {% set classement = commercial.classement ?? [] %}
+        {% if classement|length > 0 %}
+        {% set maxRec = classement|first.recette %}
+        <div class="space-y-4">
+            {% for c in classement %}
+            <div>
+                <div class="flex items-center justify-between gap-3 text-sm mb-1">
+                    <span class="font-medium truncate">
+                        <span class="text-muted-foreground tabular-nums mr-1.5">{{ loop.index }}.</span>{{ c.nom }}
+                    </span>
+                    <span class="tabular-nums font-semibold shrink-0">{{ c.recette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></span>
+                </div>
+                <div class="h-2 rounded-full bg-muted overflow-hidden">
+                    <div class="h-full rounded-full bg-violet-500" style="width: {{ maxRec > 0 ? (c.recette / maxRec * 100)|round : 0 }}%"></div>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">{{ c.nbtickets }} vente(s) à bord</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted-foreground py-4 text-center">Aucune vente commerciale sur la période.</p>
+        {% endif %}
+    </div>
+</section>
+
+{# ── Meilleurs trajets du canal commercial ────────────────────────── #}
+<section class="mb-4">
+    {{ s.sectionTitle('Meilleurs trajets à bord', 'Recette commerciale par trajet') }}
+    <div class="card overflow-hidden">
+        {% set trajets = commercial.parTrajet ?? [] %}
+        {% if trajets|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Trajet</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Ventes</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Recette</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for t in trajets %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3 font-medium">{{ t.trajet }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums">{{ t.nbtickets }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ t.recette|number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun trajet commercial sur la période.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

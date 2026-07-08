@@ -1,0 +1,24 @@
+{% import 'form/_macros.html.twig' as ui %}
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            {{ form_row(form.chefgare) }}
+            {{ ui.fieldWithCreate(form.ville, 'ville', 'Nouvelle ville', 'VILLE_CREER') }}
+            {{ form_row(form.libelle) }}
+            {{ form_row(form.contact1) }}
+            {{ form_row(form.contact2) }}
+            {{ form_row(form.datecreation) }}
+            <div class="col-span-2">
+                {{ form_row(form.description) }}
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('gare.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+{% include 'form/_quick_create_modal.html.twig' %}

@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La liste des voyages{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des voyages</h1>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('VOYAGE_CREER') %}
+        <a href="{{ path('voyage.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouveau voyage
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Exploitation/VoyageTable', {
+        voyages: items,
+        meta: meta,
+        queryParams: queryParams,
+        canEdit: is_granted('VOYAGE_MODIFIER'),
+        canDelete: is_granted('VOYAGE_SUPPRIMER'),
+        csrfDelete: csrf_token('delete_voyage'),
+        currentGareId: app.user.gare.id ?? null,
+        isAdmin: is_granted('ROLE_ADMIN'),
+        csrfReceptionner: csrf_token('receptionner_voyage'),
+        csrfDemarrer: csrf_token('demarrer_voyage'),
+        canSellTicket: is_granted('TICKET_CREER'),
+        canAddCourrier: is_granted('COURRIER_CREER'),
+        canAddBagage: is_granted('BAGAGE_CREER')
+    }) }}
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

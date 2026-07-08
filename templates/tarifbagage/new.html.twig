@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau tarif de bagage{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('tarifbagage.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau tarif bagage</h1>
+</div>
+{% include 'tarifbagage/_form.html.twig' with { button: 'Créer' } %}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% import 'form/_macros.html.twig' as ui %}
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.matricule) }}</div>
+            <div>{{ form_row(form.nbrsiege) }}</div>
+            <div>{{ form_row(form.etat) }}</div>
+            <div>{{ ui.fieldWithCreate(form.marque, 'marque', 'Nouvelle marque', 'MARQUE_CREER') }}</div>
+            <div>{{ ui.fieldWithCreate(form.modelvehicule, 'modelvehicule', 'Nouveau modèle', 'MODELVEHICULE_CREER') }}</div>
+            <div>{{ ui.fieldWithCreate(form.typevehicule, 'typevehicule', 'Nouveau type', 'TYPEVEHICULE_CREER') }}</div>
+            <div>{{ form_row(form.datearrivee) }}</div>
+            <div>{{ form_row(form.siegesGauche) }}</div>
+            <div>{{ form_row(form.siegesDroite) }}</div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('car.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+{% include 'form/_quick_create_modal.html.twig' %}

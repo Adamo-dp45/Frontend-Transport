@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Lignes{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Performance par ligne', 'Exploitation', 'owner.trajets', debut, fin, 'stats.export.trajet') }}
+
+{% set plusActive = lignes.performances|length > 0 ? (lignes.performances[0].libelle ?? lignes.performances[0].codeligne) : '—' %}
+{% set derniere = lignes.performances|last %}
+{% set moinsActive = (derniere is defined and derniere.nbvoyages == 0) ? (derniere.libelle ?? derniere.codeligne) : '—' %}
+
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {{ s.kpi('Total lignes', lignes.totalLignes, '', 'blue', 'route') }}
+        {{ s.kpi('Ligne la plus active', plusActive, '', 'emerald', 'check') }}
+        {{ s.kpi('Ligne la moins active', moinsActive, '', 'amber', 'alert') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Recettes par ligne — barres horizontales #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par ligne</p>
+            <canvas id="chartTrajetsRecette" height="160"
+                data-values="{{ lignes.performances | map(l => {
+                    label: l.libelle ?? l.codeligne,
+                    recette: l.recette,
+                    nbvoyages: l.nbvoyages,
+                    nbtickets: l.nbtickets
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau détail #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail par ligne</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Ligne</th>
+                        <th class="pb-2 font-medium text-right">Voyages</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in lignes.performances %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">
+                            <span class="font-medium">{{ l.libelle ?? l.codeligne }}</span>
+                            <br>
+                            <span class="text-xs text-muted-foreground">{{ l.codeligne }}</span>
+                        </td>
+                        <td class="py-2 text-right tabular-nums">{{ l.nbvoyages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ l.nbtickets }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ l.recette | number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

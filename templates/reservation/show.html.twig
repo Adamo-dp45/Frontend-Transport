@@ -1,0 +1,178 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% set statutTones = { EN_ATTENTE: 'amber', CONFIRMEE: 'green', A_REGULARISER: 'amber', EXPIREE: 'slate', ANNULEE: 'rose' } %}
+{% set statutLabels = { EN_ATTENTE: 'En attente', CONFIRMEE: 'Confirmée', A_REGULARISER: 'À régulariser', EXPIREE: 'Expirée', ANNULEE: 'Annulée' } %}
+
+{% block title %}Réservation {{ reservation.code }}{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('reservation.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux réservations
+            </a>
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Réservation</p>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] flex items-center gap-3 flex-wrap">
+                {{ reservation.code }}
+                {{ ui.badge(statutLabels[reservation.statut] ?? reservation.statut, statutTones[reservation.statut] ?? 'slate') }}
+            </h1>
+        </div>
+        {% if is_granted('RESERVATION_MODIFIER') and peutAgir %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            {% if reservation.statut == 'EN_ATTENTE' %}
+            <form method="POST" action="{{ path('reservation.confirmer', {id: reservation.id}) }}"
+                  onsubmit="return confirm('Encaisser le paiement ? La place sera payée ; le siège/billet s\'émet ensuite.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('confirmer_reservation') }}">
+                <button type="submit" class="btn btn-primary">Encaisser (payer)</button>
+            </form>
+            <form method="POST" action="{{ path('reservation.annuler', {id: reservation.id}) }}"
+                  onsubmit="return confirm('Annuler cette réservation ?')">
+                <input type="hidden" name="_token" value="{{ csrf_token('annuler_reservation') }}">
+                <button type="submit" class="btn btn-danger">Annuler</button>
+            </form>
+            {% elseif reservation.statut == 'CONFIRMEE' and not reservation.ticket %}
+            <form method="POST" action="{{ path('reservation.emettre_billet', {id: reservation.id}) }}"
+                  onsubmit="return confirm('Émettre le billet ? Un siège libre sera attribué au client (car requis).')">
+                <input type="hidden" name="_token" value="{{ csrf_token('emettre_billet_reservation') }}">
+                <button type="submit" class="btn btn-primary">Émettre le billet</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Détails</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Client', reservation.nomclient ?? '—') }}
+                    {{ ui.field('Téléphone', reservation.contactclient ?? '—') }}
+                    {{ ui.field('Trajet', (reservation.gare.libelle ?? '—') ~ ' → ' ~ (reservation.garedescente.libelle ?? '—')) }}
+                    {{ ui.field('Voyage', reservation.voyage.codevoyage ?? '—') }}
+                    {{ ui.field('Prix', (reservation.prix|number_format(0, ',', ' ')) ~ ' FCFA') }}
+                    {{ ui.field('Source', reservation.source) }}
+                    {% if reservation.statut == 'EN_ATTENTE' %}
+                        {{ ui.field('Expire le', reservation.dateexpiration ? reservation.dateexpiration|date('d/m/Y H:i') : '—') }}
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if reservation.statut == 'A_REGULARISER' and is_granted('RESERVATION_MODIFIER') and peutAgir %}
+            <div class="card p-6 border-amber-300 dark:border-amber-800">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-2">Régularisation (client absent au départ)</h2>
+                <p class="text-sm text-muted-foreground mb-4">
+                    Cette réservation payée n'a pas été utilisée à temps. Elle n'est <strong>pas perdue</strong> :
+                    reportez-la sur un départ ultérieur. Une <strong>pénalité</strong> (et un <strong>complément</strong> si le tarif a augmenté)
+                    seront encaissés avant l'émission du billet.
+                </p>
+
+                {% if reportVoyages is empty %}
+                    <p class="text-sm text-amber-700 dark:text-amber-400">Aucun départ futur disponible sur cette ligne pour le report. Créez un nouveau départ, puis revenez ici.</p>
+                {% else %}
+                    <label for="report-voyage" class="block text-sm font-medium mb-1">Reporter sur le départ</label>
+                    <select id="report-voyage" class="w-full rounded-lg border bg-background px-3 py-2 text-sm mb-3">
+                        <option value="">— Choisir un départ —</option>
+                        {% for v in reportVoyages %}
+                            <option value="{{ v.id }}" data-car="{{ v.car ? '1' : '0' }}">
+                                {{ v.codevoyage }} · {{ v.datedepartprevue }}{{ v.car ? ' · car ' ~ v.car : ' · (pas de car)' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <div id="report-apercu" class="hidden rounded-lg bg-muted/50 border px-4 py-3 text-sm space-y-1 mb-3"></div>
+
+                    <form method="POST" action="{{ path('reservation.regulariser', {id: reservation.id}) }}" id="report-form"
+                          onsubmit="return confirm('Confirmer la régularisation ? Le billet sera émis sur le nouveau départ.')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('regulariser_reservation') }}">
+                        <input type="hidden" name="voyage" id="report-voyage-hidden" value="">
+                        <button type="submit" id="report-submit" class="btn btn-primary" disabled>Encaisser &amp; émettre le billet</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if reservation.ticket %}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Billet émis</h2>
+                <a href="{{ path('ticket.show', {id: reservation.ticket.id}) }}" class="text-primary hover:underline font-medium">{{ reservation.ticket.codeticket }}</a>
+            </div>
+            {% elseif reservation.statut == 'CONFIRMEE' %}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Bon de réservation</h2>
+                <p class="text-sm text-muted-foreground">Réservation <strong>payée</strong> : la place est garantie. Le <strong>billet avec siège</strong> reste à émettre (à la gare, ou dès qu'un car est affecté au voyage).</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="space-y-4">
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Paiement</h2>
+                <div class="space-y-2 text-sm">
+                    {{ ui.field('État', reservation.etatpaiement) }}
+                    {% if reservation.referencepaiement %}{{ ui.field('Référence', reservation.referencepaiement) }}{% endif %}
+                    {% if reservation.datepaiement %}{{ ui.field('Payé le', reservation.datepaiement|date('d/m/Y H:i')) }}{% endif %}
+                    {% if reservation.penalitemontant is defined and reservation.penalitemontant > 0 %}
+                        {{ ui.field('Pénalité encaissée', (reservation.penalitemontant|number_format(0, ',', ' ')) ~ ' FCFA') }}
+                    {% endif %}
+                    {% if reservation.montantcomplement is defined and reservation.montantcomplement > 0 %}
+                        {{ ui.field('Complément encaissé', (reservation.montantcomplement|number_format(0, ',', ' ')) ~ ' FCFA') }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if reservation.statut == 'A_REGULARISER' and reportVoyages is not empty and is_granted('RESERVATION_MODIFIER') and peutAgir %}
+<script>
+(function () {
+    var sel = document.getElementById('report-voyage');
+    if (!sel) return;
+    var apercu = document.getElementById('report-apercu');
+    var hidden = document.getElementById('report-voyage-hidden');
+    var submit = document.getElementById('report-submit');
+    var resaId = {{ reservation.id }};
+    var fmt = function (n) { return Number(n || 0).toLocaleString('fr-FR'); };
+
+    sel.addEventListener('change', function () {
+        var vid = sel.value;
+        var opt = sel.options[sel.selectedIndex];
+        var hasCar = opt && opt.getAttribute('data-car') === '1';
+        hidden.value = vid;
+        submit.disabled = true;
+
+        if (!vid) { apercu.classList.add('hidden'); apercu.innerHTML = ''; return; }
+        apercu.classList.remove('hidden');
+        apercu.innerHTML = 'Calcul…';
+
+        fetch('/reservation/' + resaId + '/regularisation-apercu?voyage=' + encodeURIComponent(vid))
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d.possible) {
+                    apercu.innerHTML = '<span class="text-rose-600">' + (d.message || 'Report impossible.') + '</span>';
+                    return;
+                }
+                var html = ''
+                    + '<div class="flex justify-between"><span class="text-muted-foreground">Pénalité</span><strong>' + fmt(d.penalite) + ' FCFA</strong></div>'
+                    + '<div class="flex justify-between"><span class="text-muted-foreground">Complément tarifaire</span><strong>' + fmt(d.complement) + ' FCFA</strong></div>'
+                    + '<div class="flex justify-between border-t border-border pt-1 mt-1"><span>À encaisser</span><strong class="text-base">' + fmt(d.total) + ' FCFA</strong></div>';
+                if (!hasCar) {
+                    html += '<div class="text-amber-700 dark:text-amber-400 text-xs mt-2">Affectez d\'abord un car à ce départ pour pouvoir émettre le billet.</div>';
+                } else if (d.message) {
+                    html += '<div class="text-amber-700 dark:text-amber-400 text-xs mt-2">' + d.message + '</div>';
+                }
+                apercu.innerHTML = html;
+                submit.disabled = !hasCar;
+            })
+            .catch(function () {
+                apercu.innerHTML = '<span class="text-rose-600">Erreur de calcul.</span>';
+            });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Flotte activité{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Flotte', 'Activité', 'owner.flotte', debut, fin, 'stats.export.flotte') }}
+
+<section class="mb-10">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+        {{ s.kpi('Total véhicules', flotteActivite.totalVehicules, '', 'blue', 'truck') }}
+        {{ s.kpi('En mission', flotteActivite.vehiculesEnVoyage, '', 'emerald', 'route') }}
+        {{ s.kpi('Taux de disponibilité', details.disponibilite.tauxDispo, '%', 'teal', 'check', details.disponibilite.disponibles ~ '/' ~ details.disponibilite.total ~ ' véhicule(s)') }}
+        {{ s.kpi('Coût moyen / panne', details.pannes.coutMoyen|number_format(0, ',', ' '), 'FCFA', 'amber', 'money', details.pannes.nb ~ ' panne(s) sur la période') }}
+        {{ s.kpi('Type de panne fréquent', details.pannes.typeFrequent ?? '—', '', 'rose', 'alert') }}
+        {{ s.kpi('Dépannages (période)', details.pannes.nb, '', 'rose', 'alert', '', details.pannes.nb > 0 ? 'text-rose-500' : '') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Activité par véhicule — barres groupées #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Voyages et dépannages par véhicule</p>
+            <canvas id="chartFlotteActivite" height="160"
+                data-values="{{ flotteActivite.activiteParVehicule | map(v => {
+                    matricule: v.matricule,
+                    nbvoyages: v.nbvoyages,
+                    nbdepannages: v.nbdepannages,
+                    etat: v.etat
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau détail #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail par véhicule</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Matricule</th>
+                        <th class="pb-2 font-medium">État</th>
+                        <th class="pb-2 font-medium text-right">Voyages</th>
+                        <th class="pb-2 font-medium text-right">Dépannages</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in flotteActivite.activiteParVehicule %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2 font-medium">{{ v.matricule }}</td>
+                        <td class="py-2">
+                            <span class="text-xs px-2 py-0.5 rounded-full
+                                {% if v.etat == 'DISPONIBLE' %}bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300
+                                {% elseif v.etat == 'EN_VOYAGE' %}bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300
+                                {% elseif v.etat == 'EN_PANNE' %}bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300
+                                {% else %}bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400{% endif %}">
+                                {{ v.etat }}
+                            </span>
+                        </td>
+                        <td class="py-2 text-right tabular-nums">{{ v.nbvoyages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ v.nbdepannages }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# Disponibilité + pannes par type #}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Disponibilité de la flotte <span class="text-xs font-normal">(état actuel)</span></p>
+            {% if details.disponibilite.parEtat|length > 0 %}
+            <canvas id="chartFlotteDispo" height="160"
+                data-values="{{ details.disponibilite.parEtat | map(e => {etat: e.etat, nb: e.nb}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucun véhicule</p>{% endif %}
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Pannes par type <span class="text-xs font-normal">(fréquence & coût)</span></p>
+            {% if details.pannes.parType|length > 0 %}
+            <canvas id="chartFlottePannes" height="160"
+                data-values="{{ details.pannes.parType | map(t => {type: t.type, nb: t.nb, cout: t.cout}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucune panne sur la période</p>{% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,132 @@
+<form method="POST" class="space-y-6">
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold mb-4">Client (via son billet)</h2>
+        {# Autocomplete distant (tom-select-remote → /search?resource=tickets, par nom OU code). OBLIGATOIRE :
+           le bagage hérite du billet (voyage, gares, identité, canal de vente). #}
+        <div class="field">
+            <label class="label" for="ticket">Billet du client <span class="text-red-500">*</span></label>
+            <select
+                id="ticket"
+                name="ticket"
+                required
+                data-remote-select="tickets"
+                data-value="{{ bagage.ticket.id ?? '' }}"
+                data-label="{% if bagage.ticket is defined and bagage.ticket %}{{ bagage.ticket.codeticket }} · {{ bagage.ticket.nomclient ?? 'Client anonyme' }}{% endif %}"
+                placeholder="-- Rechercher un billet (nom du client ou code) --"
+            ></select>
+            <p class="text-xs text-muted-foreground mt-1">
+                Le bagage hérite de la provenance, la destination et l'identité du client du billet ;
+                l'annulation du billet annule le bagage.
+            </p>
+        </div>
+    </div>
+
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold mb-4">Détail du bagage</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="field">
+                <label class="label" for="nature">Nature <span class="text-red-500">*</span></label>
+                <input type="text" id="nature" name="nature" class="input" value="{{ bagage.nature ?? '' }}" placeholder="ex: valise, sac, carton.." required>
+            </div>
+            <div class="field">
+                <label class="label" for="type">Type <span class="text-red-500">*</span></label>
+                <select id="type" name="type" class="input" required>
+                    {% for val, label in { LEGER: 'Léger', LOURD: 'Lourd', VOLUMINEUX: 'Volumineux', FRAGILE: 'Fragile' } %}
+                        <option value="{{ val }}" {{ (bagage.type ?? 'LEGER') == val ? 'selected' : '' }}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="poids">
+                    Poids (kg) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" id="poids" name="poids" class="input" min="1" value="{{ bagage.poids ?? '' }}" required>
+            </div>
+
+            {# Tarif calculé automatiquement #}
+            <div class="field">
+                <label class="label">Tarif applicable</label>
+                <div id="tarif-info" class="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                    Saisissez le poids pour voir le tarif applicable
+                </div>
+            </div>
+
+            {# Montant forcé #}
+            <div class="sm:col-span-2">
+                <label class="flex items-center gap-2 cursor-pointer mb-3">
+                    <input type="checkbox" id="montant_force_check" name="montant_force" value="1" class="checkbox rounded" {{ (bagage.montantforce ?? false) ? 'checked' : '' }}>
+                    <span class="text-sm font-medium">Forcer le montant manuellement</span>
+                </label>
+                <div id="montant_force_wrapper" class="{{ (bagage.montantforce ?? false) ? '' : 'hidden' }}">
+                    <label class="label" for="montant">Montant forcé (FCFA)</label>
+                    <input type="number" id="montant" name="montant" class="input max-w-xs" min="0" value="{{ (bagage.montantforce ?? false) ? bagage.montant : '' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button type="submit" class="btn btn-primary">{{ button }}</button>
+        <a href="{{ path('bagage.index') }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<script>
+document.addEventListener('turbo:load', function () {
+    const poidsInput = document.getElementById('poids');
+    const tarifInfo = document.getElementById('tarif-info');
+    const forceCheck = document.getElementById('montant_force_check');
+    const forceWrapper = document.getElementById('montant_force_wrapper');
+    const montantInput = document.getElementById('montant');
+    if (!poidsInput || !tarifInfo) return;
+
+    const tarifs = {{ tarifbagages|json_encode|raw }}
+
+    // Toggle montant forcé
+    forceCheck.addEventListener('change', function () {
+        forceWrapper.classList.toggle('hidden', !this.checked);
+        if (!this.checked) montantInput.value = '';
+    });
+
+    // Calcul automatique du tarif selon le poids
+    poidsInput.addEventListener('input', function () {
+        const poids = parseFloat(this.value);
+        if (isNaN(poids) || poids <= 0) {
+            tarifInfo.textContent = 'Saisissez le poids pour voir le tarif applicable';
+            tarifInfo.className = 'rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground';
+            return;
+        }
+
+        const tarif = tarifs.find(t =>
+            poids >= parseFloat(t.poidsmin) &&
+            (t.poidsmax === null || poids <= parseFloat(t.poidsmax))
+        );
+
+        if (tarif) {
+            tarifInfo.innerHTML = `
+                <span class="font-medium text-foreground">${tarif.libelle}</span>
+                <span class="ml-2 font-bold text-foreground">${parseInt(tarif.montant).toLocaleString('fr-FR')} FCFA</span>
+            `;
+            tarifInfo.className = 'rounded-md border bg-green-50 px-3 py-2 text-sm text-green-700';
+
+            // Pré-remplir montant forcé si déjà coché
+            if (forceCheck.checked && !montantInput.value) {
+                montantInput.value = tarif.montant;
+            }
+        } else {
+            tarifInfo.textContent = 'Aucun tarif trouvé pour ce poids — cochez « Forcer le montant manuellement » pour le saisir';
+            tarifInfo.className = 'rounded-md border bg-orange-50 px-3 py-2 text-sm text-orange-700';
+            // On NE coche PLUS automatiquement la case : la case « Forcer le montant » n'est jamais
+            // cochée par défaut, c'est l'agent qui l'active. (Le backend rejette proprement un poids
+            // sans tarif et sans montant saisi → pas de bagage à montant nul.)
+        }
+    });
+
+    // Trigger au chargement si poids déjà rempli (cas edit)
+    if (poidsInput.value) {
+        poidsInput.dispatchEvent(new Event('input'));
+    }
+});
+</script>

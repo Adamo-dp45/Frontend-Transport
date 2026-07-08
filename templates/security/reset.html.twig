@@ -1,0 +1,65 @@
+{% extends 'app-base.html.twig' %}
+
+{% block title %}Réinitialiser le mot de passe{% endblock %}
+
+{% block body %}
+<div class="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <div class="w-full max-w-md">
+        <div class="flex flex-col items-center text-center mb-6">
+            <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 ring-1 ring-primary/20">
+                <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
+                    <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Nouveau mot de passe</h1>
+            <p class="text-sm text-muted-foreground mt-1.5 max-w-sm">
+                Choisissez un mot de passe sécurisé. Il doit être différent de vos anciens mots de passe.
+            </p>
+        </div>
+
+        <twig:Card class="shadow-sm">
+            <twig:Card:Content class="pt-6">
+                {{ form_start(form) }}
+                    <div class="grid gap-2 mb-4">
+                        <twig:Label for="{{ form.password.first.vars.id }}">Nouveau mot de passe</twig:Label>
+                        <twig:Input
+                            type="password"
+                            id="{{ form.password.first.vars.id }}"
+                            name="{{ form.password.first.vars.full_name }}"
+                            autocomplete="new-password"
+                            required
+                            autofocus
+                        />
+                        {{ form_errors(form.password.first) }}
+                    </div>
+                    <div class="grid gap-2 mb-4">
+                        <twig:Label for="{{ form.password.second.vars.id }}">Confirmer le mot de passe</twig:Label>
+                        <twig:Input
+                            type="password"
+                            id="{{ form.password.second.vars.id }}"
+                            name="{{ form.password.second.vars.full_name }}"
+                            autocomplete="new-password"
+                            required
+                        />
+                        {{ form_errors(form.password.second) }}
+                    </div>
+                    {{ form_rest(form) }}
+                    <twig:Button type="submit" class="w-full">
+                        Réinitialiser le mot de passe
+                    </twig:Button>
+                {{ form_end(form) }}
+            </twig:Card:Content>
+        </twig:Card>
+
+        <div class="mt-6 text-center text-sm text-muted-foreground">
+            <a href="{{ path('app_login') }}" class="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+                </svg>
+                Retour à la connexion
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

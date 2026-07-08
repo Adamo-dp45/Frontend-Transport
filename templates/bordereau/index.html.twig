@@ -1,0 +1,134 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bordereaux{% endblock %}
+
+{% block body %}
+
+{# ── En-tête ─────────────────────────────────────────────────────── #}
+<div class="mb-8">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Exploitation</p>
+    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Bordereaux</h1>
+    <p class="text-muted-foreground mt-2 text-sm">Choisissez une ligne et une période, puis imprimez le bordereau de gare ou le bordereau chauffeur d'un voyage.</p>
+</div>
+
+{# ── Filtres ─────────────────────────────────────────────────────── #}
+<form method="get" action="{{ path('bordereau.index') }}" class="card p-5 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-muted-foreground">Ligne</label>
+            {# Autocomplete distant (tom-select → /search?resource=lignes) au lieu de charger toutes les lignes.
+               NB : pas de classe .input ici — tom-select stylise son propre wrapper (.ts-wrapper), sinon superposition. #}
+            <select name="ligne"
+                    data-remote-select="lignes"
+                    placeholder="Choisir une ligne…"
+                    {% if ligneId %}data-value="{{ ligneId }}" data-label="{{ selectedLigneLabel }}"{% endif %}></select>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-muted-foreground">Gare</label>
+            {% if userGareId %}
+                {# Agent rattaché à une gare : gare forcée à la sienne #}
+                <div class="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground cursor-not-allowed">
+                    {{ userGareLibelle }}
+                    <span class="ml-1.5 text-xs">· votre gare</span>
+                </div>
+                <input type="hidden" name="gare" value="{{ userGareId }}" />
+            {% else %}
+                <select name="gare" class="input input-sm w-full">
+                    <option value="">Choisir une gare…</option>
+                    {% for g in gares %}
+                    <option value="{{ g.id }}" {{ gareId == g.id ? 'selected' : '' }}>
+                        {{ g.libelle }} — {{ g.ville }}
+                    </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col gap-1.5 md:col-span-2">
+            <label class="text-xs font-medium text-muted-foreground">Période</label>
+            <div class="flex items-center gap-2">
+                <input type="date" name="debut" value="{{ debut }}" class="input input-sm w-full" />
+                <span class="text-muted-foreground text-sm shrink-0">→</span>
+                <input type="date" name="fin" value="{{ fin }}" class="input input-sm w-full" />
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">
+        <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+        </svg>
+        Rechercher
+    </button>
+</form>
+
+{# ── Résultats ───────────────────────────────────────────────────── #}
+{% if not ligneId %}
+    <div class="card p-10 text-center">
+        <p class="text-sm text-muted-foreground">Sélectionnez une ligne pour afficher les voyages disponibles.</p>
+    </div>
+
+{% elseif voyages is empty %}
+    <div class="card p-10 text-center">
+        <p class="text-sm text-muted-foreground">Aucun voyage trouvé pour cette ligne sur la période sélectionnée.</p>
+    </div>
+
+{% else %}
+    {% if not gareId %}
+    <div class="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+        <svg class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Sélectionnez une gare pour pouvoir imprimer le bordereau de gare.
+    </div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-muted-foreground border-b bg-muted/30">
+                    <th class="px-4 py-3 font-medium">Voyage</th>
+                    <th class="px-4 py-3 font-medium">Itinéraire</th>
+                    <th class="px-4 py-3 font-medium">Départ</th>
+                    <th class="px-4 py-3 font-medium text-right">Places</th>
+                    <th class="px-4 py-3 font-medium text-right">Vendus</th>
+                    <th class="px-4 py-3 font-medium text-center">Statut</th>
+                    <th class="px-4 py-3 font-medium text-right">Bordereaux</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in voyages %}
+                {% set termine = v.datearriveereelle is defined and v.datearriveereelle is not null %}
+                <tr class="border-b last:border-0 hover:bg-muted/40 transition-colors">
+                    <td class="px-4 py-3 font-mono text-xs">{{ v.codevoyage }}</td>
+                    <td class="px-4 py-3">{{ v.provenance }} → {{ v.destination }}</td>
+                    <td class="px-4 py-3 text-muted-foreground tabular-nums">{{ v.datedepartprevue | date('d/m/Y H:i') }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ v.placestotal }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ v.ticketsCount }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {{ termine ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' }}">
+                            {{ termine ? 'Terminé' : 'En cours' }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center justify-end gap-2">
+                            {% if gareId %}
+                            <a href="{{ path('bordereau.print', {voyageId: v.id, gareId: gareId}) }}" target="_blank"
+                               class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>
+                                Gare
+                            </a>
+                            {% endif %}
+                            <a href="{{ path('bordereau.chauffeur', {voyageId: v.id}) }}" target="_blank"
+                               class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+                                Chauffeur
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau voyage{% endblock %}
+
+{% block body %}
+{% import 'form/_macros.html.twig' as ui %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('voyage.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau voyage</h1>
+    </div>
+</div>
+
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3 space-y-2">
+            <div>{{ ui.fieldWithLink(form.ligne, 'ligne.new', 'Nouvelle ligne', 'LIGNE_CREER') }}</div>
+            <div>{{ form_row(form.datedepartprevue) }}</div>
+            <div>{{ form_row(form.datearriveeprevue) }}</div>
+            <div>{{ form_row(form.car) }}</div>
+            <div>{{ form_row(form.placesprevues) }}</div>
+        </div>
+        <p class="text-xs text-muted-foreground mb-3">Le véhicule peut être affecté ultérieurement. Sans car, renseignez les « places prévues » pour ouvrir les réservations.</p>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('voyage.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">Créer</button>
+        </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Agents{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Agents', 'Performance', 'owner.agent', debut, fin, 'stats.export.agent') }}
+
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total agents', agents.totalAgents, '', 'blue', 'users') }}
+        {{ s.kpi('Actifs sur la période', agents.agentsActifs, '', 'emerald', 'check') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Classement par recette — barres horizontales #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground">Classement par recette <span class="font-normal text-xs">· guichet</span></p>
+            <p class="text-xs text-muted-foreground mb-4">Ventes au comptoir uniquement — les ventes à bord (commercial) et les billets de réservation sont comptés ailleurs.</p>
+            <canvas id="chartAgentsRecette" height="160"
+                data-values="{{ agents.performances | map(a => {
+                    label: a.prenom ~ ' ' ~ a.nom,
+                    recette: a.recette,
+                    nbtickets: a.nbtickets,
+                    actif: a.actif
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau performances #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail performances</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Agent</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                        <th class="pb-2 font-medium text-right">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in agents.performances %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">{{ a.prenom }} {{ a.nom }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ a.nbtickets }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ a.recette | number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="py-2 text-right">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ a.actif ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
+                                {{ a.actif ? 'Actif' : 'Inactif' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

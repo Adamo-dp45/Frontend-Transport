@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Commercial à bord - Voyage #{{ voyage.id }}{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('voyage.show', { id: voyage.id }) }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Commercial à bord — <strong>{{ voyage.codevoyage }}</strong></h1>
+        <p class="text-muted-foreground text-sm">{{ voyage.provenance }} → {{ voyage.destination }}</p>
+    </div>
+</div>
+
+<div class="max-w-xl">
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        {# État actuel #}
+        <div class="flex items-center justify-between gap-3 mb-5 pb-5 border-b border-border">
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Commercial actuel</p>
+                {% if voyage.commercial %}
+                <p class="font-medium">{{ voyage.commercial.prenom }} {{ voyage.commercial.nom }}</p>
+                <p class="text-xs text-muted-foreground">Vend depuis {{ voyage.garecourante.libelle ?? voyage.provenance }}</p>
+                {% else %}
+                <p class="text-sm text-muted-foreground">Aucun commercial affecté</p>
+                {% endif %}
+            </div>
+            {% if voyage.commercial %}{{ ui.badge('Affecté', 'green') }}{% else %}{{ ui.badge('Vacant', 'zinc') }}{% endif %}
+        </div>
+
+        <p class="text-sm text-muted-foreground mb-4">
+            Le commercial accompagne le car de la provenance au terminus et vend les tickets <strong>en route</strong>,
+            depuis la position courante du car (qui avance à chaque réception ou quand il déclare sa progression).
+        </p>
+
+        {% if users is empty %}
+        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Vous n'avez pas accès à la liste des utilisateurs pour choisir un commercial (permission requise).
+        </div>
+        {% else %}
+        <form method="post" action="{{ path('voyage.commercial', { id: voyage.id }) }}" class="space-y-4">
+            <input type="hidden" name="_token" value="{{ csrf_token('voyage_commercial') }}">
+            <div class="field">
+                <label class="label" for="commercial">Commercial</label>
+                {# Autocomplete distant (tom-select → /search?resource=users) au lieu de charger tous les users.
+                   NB : pas de classe .input — tom-select stylise son propre wrapper, sinon superposition. #}
+                <select id="commercial" name="commercial"
+                        data-remote-select="users"
+                        placeholder="-- Rechercher un commercial --"
+                        {% if voyage.commercial %}data-value="{{ voyage.commercial.id }}" data-label="{{ voyage.commercial.prenom }} {{ voyage.commercial.nom }}"{% endif %}></select>
+                <p class="text-xs text-muted-foreground mt-1">Videz le champ (croix) pour retirer le commercial du voyage.</p>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
+                <a href="{{ path('voyage.show', { id: voyage.id }) }}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

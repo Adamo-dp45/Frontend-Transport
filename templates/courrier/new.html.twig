@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau courrier{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+    <div class="flex items-center gap-3 mb-4">
+        <a href="{{ path('courrier.index') }}" class="btn-icon">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+                <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+            </svg>
+        </a>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau courrier</h1>
+    </div>
+
+    <div {{ react_component('Courrier/CourrierForm', {
+        voyages: voyages,
+        tarifcourriers: tarifcourriers,
+        gares: gares,
+        userGareId: userGareId,
+        userGareLibelle: userGareLibelle,
+        preselectVoyageId: preselectVoyageId
+    }) }}>
+        <div class="flex items-center justify-center gap-6">
+            <twig:Spinner class="size-8" />
+        </div>
+    </div>
+</div>
+{% endblock %}

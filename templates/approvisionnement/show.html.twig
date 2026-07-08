@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Approvisionnement #{{ approvisionnement.id }}{% endblock %}
+
+{% block body %}
+{% set total = 0 %}
+{% for d in approvisionnement.detailapprovisionnements %}{% set total = total + (d.quantite * d.prixunitaire) %}{% endfor %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('approvisionnement.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux approvisionnements
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Approvisionnement</p>
+                {% if approvisionnement.statut is defined and approvisionnement.statut == 'ANNULE' %}{{ ui.badge('Annulé', 'red') }}{% endif %}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Approvisionnement #{{ approvisionnement.id }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">Créé le {{ approvisionnement.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
+        {% if is_granted('APPROVISIONNEMENT_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('approvisionnement.edit', {id: approvisionnement.id }) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+        {{ ui.stat('Références', approvisionnement.detailapprovisionnements|length) }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Montant total</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ total|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+        </div>
+    </div>
+
+    {# Fournisseur #}
+    <div class="card p-6 mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Fournisseur</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+            {{ ui.field('Libellé', approvisionnement.fournisseur.libelle) }}
+            {{ ui.field('Contact', approvisionnement.fournisseur.contact) }}
+            {{ ui.field('Email', approvisionnement.fournisseur.email) }}
+            {{ ui.field('Adresse', approvisionnement.fournisseur.adresse) }}
+        </div>
+    </div>
+
+    {# Détail des pièces #}
+    <div class="card overflow-hidden">
+        <div class="border-b border-border p-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Détail des pièces</h2>
+        </div>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-border bg-muted/40 text-muted-foreground">
+                    <th class="text-left px-4 py-2.5 font-medium">Pièce</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Quantité</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Prix unitaire</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for detail in approvisionnement.detailapprovisionnements %}
+                <tr class="hover:bg-muted/20 transition-colors">
+                    <td class="px-4 py-3 font-medium">{{ detail.piece.libelle ?? '—' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ detail.quantite }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ detail.prixunitaire|number_format(0, ',', ' ') }} FCFA</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ (detail.quantite * detail.prixunitaire)|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucun détail disponible</td></tr>
+                {% endfor %}
+            </tbody>
+            {% if approvisionnement.detailapprovisionnements|length > 0 %}
+            <tfoot>
+                <tr class="border-t border-border bg-muted/20">
+                    <td colspan="3" class="px-4 py-3 text-right font-semibold">Total</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold">{{ total|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+{% endblock %}

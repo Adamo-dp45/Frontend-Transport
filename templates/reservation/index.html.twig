@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Les réservations{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Réservations</h1>
+        <p class="text-sm text-muted-foreground mt-1">Places réservées à l'avance ; le siège est attribué à la confirmation (paiement).</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('RESERVATION_CREER') %}
+        <a href="{{ path('reservation.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+            Nouvelle réservation
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Billetterie/ReservationTable', {
+        reservations: items,
+        meta: meta,
+        queryParams: queryParams,
+        voyages: voyages,
+        canEdit: is_granted('RESERVATION_MODIFIER'),
+        csrfConfirmer: csrf_token('confirmer_reservation'),
+        csrfEmettre: csrf_token('emettre_billet_reservation'),
+        csrfAnnuler: csrf_token('annuler_reservation'),
+        userGareId: app.user.gare ? app.user.gare.id : null,
+        isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN')
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

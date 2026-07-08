@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l'entreprise - {{ entreprise.libelle }}{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('admin.entreprise.me') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier mon entreprise</h1>
+    </div>
+</div>
+
+{{ form_start(form, { attr: { enctype: 'multipart/form-data'} }) }}
+    <div class="rounded-xl border bg-card shadow-sm p-6 mb-3">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.libelle) }}</div>
+            <div>{{ form_row(form.sigle) }}</div>
+            <div>{{ form_row(form.type) }}</div>
+            <div>{{ form_row(form.anneecreation) }}</div>
+            <div>{{ form_row(form.email) }}</div>
+            <div>{{ form_row(form.contact1) }}</div>
+            <div>{{ form_row(form.contact2) }}</div>
+            <div>{{ form_row(form.adresse) }}</div>
+            <div>{{ form_row(form.siteweb) }}</div>
+            <div>{{ form_row(form.rccm) }}</div>
+            <div>{{ form_row(form.banque) }}</div>
+            <div>{{ form_row(form.centreimpot) }}</div>
+            <div>{{ form_row(form.tauxtva) }}</div>
+        </div>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div>{{ form_row(form.file) }}</div>
+    </div>
+    <div class="flex items-center justify-end gap-3">
+        <a href="{{ path('admin.entreprise.me') }}" class="btn btn-secondary">Annuler</a>
+        <button class="btn btn-primary">
+            Modifier
+        </button>
+    </div>
+{{ form_end(form) }}
+{% endblock %}

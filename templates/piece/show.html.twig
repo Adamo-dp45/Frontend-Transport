@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}La pièce - {{ piece.libelle }}{% endblock %}
+
+{% block body %}
+{% set SEUIL = 5 %}
+{% set stock = piece.stockinitial %}
+<div class="max-w-[1100px] mx-auto">
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('piece.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux pièces
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Pièce</p>
+                {% if stock <= 0 %}{{ ui.badge('Rupture de stock', 'red') }}
+                {% elseif stock <= SEUIL %}{{ ui.badge('Stock critique', 'amber') }}
+                {% else %}{{ ui.badge('En stock', 'green') }}{% endif %}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ piece.libelle }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">#{{ piece.id }} · Créé le {{ piece.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
+        {% if is_granted('PIECE_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('piece.edit', {id: piece.id}) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Stock actuel</p>
+            <p class="text-2xl font-semibold tabular-nums mt-0.5 {{ stock <= 0 ? 'text-red-600 dark:text-red-400' : (stock <= SEUIL ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">
+                {{ stock }} <span class="text-xs font-normal text-muted-foreground">unité(s)</span>
+            </p>
+        </div>
+        {{ ui.stat('Prix unitaire', piece.prixunitaire is not null ? piece.prixunitaire|number_format(0, ',', ' ') : '—', 'FCFA') }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Valeur du stock</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ (stock * (piece.prixunitaire ?? 0))|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Fiche pièce</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Désignation', piece.libelle) }}
+                    {{ ui.field('Type de pièce', piece.typepiece.libelle ?? null) }}
+                    {{ ui.field('Marque', piece.marquepiece.libelle ?? null) }}
+                    {{ ui.field('Modèle compatible', piece.model.libelle ?? null) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            {% if piece.image is defined and piece.image %}
+            <div class="card p-3">
+                <img src="{{ api_url ~ '/media' ~ piece.image.contentUrl ~ '?w=320&h=240&fm=jpg&fit=crop' }}" alt="{{ piece.libelle }}" class="w-full h-auto object-cover rounded-md" />
+            </div>
+            {% endif %}
+            {% if is_granted('PIECE_MODIFIER') or is_granted('INVENTAIRE_VOIR') %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <div class="flex flex-col gap-2">
+                    {% if is_granted('PIECE_MODIFIER') %}
+                    <a href="{{ path('piece.ajustement', { id: piece.id }) }}" class="btn btn-primary w-full justify-center">Ajuster le stock</a>
+                    {% endif %}
+                    {% if is_granted('INVENTAIRE_VOIR') %}
+                    <a href="{{ path('inventaire.index') }}" class="btn btn-secondary w-full justify-center">Voir les mouvements</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

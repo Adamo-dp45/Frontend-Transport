@@ -1,0 +1,112 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérification du billet {{ code }}{% endblock %}
+
+{% block body %}
+<div class="max-w-[640px] mx-auto">
+
+    {% if valid %}
+    {# ── Billet valide ── #}
+    <div class="rounded-xl border border-emerald-200 bg-card shadow-sm overflow-hidden">
+        <div class="bg-emerald-600 px-6 py-6 text-white">
+            <div class="flex items-center gap-4">
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-emerald-100 text-xs font-medium uppercase tracking-widest mb-1">Billet valide</p>
+                    <p class="text-2xl font-bold font-mono tracking-wide">{{ ticket.codeticket }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+                <span class="font-semibold text-lg">{{ ticket.gare.libelle ?? ticket.voyage.provenance }}</span>
+                <svg class="size-5 text-emerald-200 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/>
+                </svg>
+                <span class="font-semibold text-lg">{{ ticket.garedescente.libelle ?? ticket.voyage.destination }}</span>
+            </div>
+        </div>
+
+        <div class="divide-y">
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Code voyage</p>
+                        <p class="font-mono font-medium">{{ ticket.voyage.codevoyage ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Date de départ</p>
+                        <p class="font-medium">
+                            {{ ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('d/m/Y à H:i') : '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Siège</p>
+                        <p class="font-medium">{{ ticket.siege.numero ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Prix</p>
+                        <p class="font-semibold text-emerald-600">
+                            {{ ticket.prix|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Passager</p>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Nom</p>
+                        <p class="font-medium">{{ ticket.nomclient is defined and ticket.nomclient ? ticket.nomclient : '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Contact</p>
+                        <p class="font-medium">{{ ticket.contactclient is defined and ticket.contactclient ? ticket.contactclient : '—' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center gap-2 mt-5">
+        {% if is_granted('TICKET_VOIR') %}
+        <a href="{{ path('ticket.show', { id: ticket.id }) }}" class="btn btn-primary">
+            Voir le détail complet
+        </a>
+        {% endif %}
+        <a href="{{ path('ticket.index') }}" class="btn btn-secondary">Liste des tickets</a>
+    </div>
+
+    {% else %}
+    {# ── Billet introuvable / non valide ── #}
+    <div class="rounded-xl border border-red-200 bg-card shadow-sm overflow-hidden">
+        <div class="bg-red-600 px-6 py-6 text-white">
+            <div class="flex items-center gap-4">
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-red-100 text-xs font-medium uppercase tracking-widest mb-1">Billet non valide</p>
+                    <p class="text-xl font-bold font-mono tracking-wide break-all">{{ code }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-5 text-sm text-muted-foreground">
+            <p>Aucun billet actif ne correspond à ce code dans votre périmètre. Il peut s'agir d'un billet
+            annulé, d'un code erroné, ou d'un ticket émis hors de votre ressort (autre entreprise ou autre gare).</p>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center mt-5">
+        <a href="{{ path('ticket.index') }}" class="btn btn-secondary">Retour à la liste des tickets</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

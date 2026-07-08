@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paramètres de réservation{% endblock %}
+
+{% block body %}
+<div class="max-w-[700px] mx-auto">
+    <div class="flex items-center gap-3 mb-1">
+        <a href="{{ path('reservation.index') }}" class="btn-icon">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+        </a>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Paramètres de réservation</h1>
+    </div>
+    <p class="text-sm text-muted-foreground mb-5 ml-11">
+        Une place réservée est tenue jusqu'à <strong>{{ parametre.delaiExpirationMinutes }} min</strong> avant le départ, puis libérée si non confirmée.
+    </p>
+
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        {{ form_start(form) }}
+            <div class="mb-5">{{ form_row(form.delaiExpirationMinutes) }}</div>
+
+            <div class="pt-4 border-t border-border">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">Régularisation (no-show)</h2>
+                <p class="text-xs text-muted-foreground mb-4">
+                    Un client payé mais absent au départ n'est plus perdu : sa réservation devient
+                    <strong>à régulariser</strong> et peut être reportée sur un autre départ moyennant une pénalité
+                    (et un complément si le tarif a augmenté), tant que la fenêtre ci-dessous n'est pas dépassée.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>{{ form_row(form.penaliteType) }}</div>
+                    <div>{{ form_row(form.penaliteValeur) }}</div>
+                </div>
+                <div class="mt-4">{{ form_row(form.fenetreRegularisationJours) }}</div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+                <button class="btn btn-primary">Enregistrer</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

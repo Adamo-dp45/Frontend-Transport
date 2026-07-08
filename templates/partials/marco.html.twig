@@ -1,0 +1,10 @@
+{% macro input(name, label, value = null, class, type, options = []) %}
+    <div class="form-group">
+        <label class="{{ class }}" for="{{ name }}">{{ label }}</label> {# options.class #}
+        <input type="{{ type ?: 'text' }}" name="{{ name }}" value="{{ value }}"> {# options.type #}
+    </div>
+{% endmacro %}
+{#
+    {% import "partials/macro.html.twig" as form %} -- On importe le macro dans une variable
+#}
+{# {{ form.input('name', 'Nom', 'col') }} - {class: 'col'} #}

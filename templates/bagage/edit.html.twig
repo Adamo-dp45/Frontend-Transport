@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le bagage{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('bagage.show', { id: bagage.id }) }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+    </a>
+    <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier le bagage</h1>
+</div>
+{% include 'bagage/_form.html.twig' with { button: 'Enregistrer', bagage: bagage, tarifbagages: tarifbagages } %}
+{% endblock %}

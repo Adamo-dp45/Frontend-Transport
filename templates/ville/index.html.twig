@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La liste des villes{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des villes</h1>
+        <p class="text-sm text-muted-foreground mt-1">Référentiel des villes desservies. Chaque gare est rattachée à une ville.</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('VILLE_CREER') %}
+        <a href="{{ path('ville.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvelle ville
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Exploitation/VilleTable', {
+        villes: items,
+        meta: meta,
+        queryParams: queryParams,
+        canEdit: is_granted('VILLE_MODIFIER'),
+        canDelete: is_granted('VILLE_SUPPRIMER'),
+        csrfDelete: csrf_token('delete_ville')
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ticket {{ ticket.codeticket }}{% endblock %}
+
+{% block body %}
+<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between sm:mb-5">
+    <div>
+        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">Détail du ticket #{{ ticket.id }}</h1>
+        <p class="text-sm font-light text-muted-foreground">
+            Créé le {{ ticket.createdAt|date("m/d/Y à H:i") }}
+        </p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
+        <a href="{{ path('ticket.index') }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+            Retour
+        </a>
+        {# Impression : réservée à la gare créatrice (émettrice) #}
+        {% if is_granted('TICKET_VOIR') and peutAgir %}
+        <a href="{{ path('ticket.pdf', { id: ticket.id }) }}" class="btn btn-primary flex-1 justify-center sm:flex-none" target="_blank">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17H17.01M17 14H17.01M7 7H7.01M3 7C3 5.895 3.895 5 5 5H19C20.105 5 21 5.895 21 7V17C21 18.105 20.105 19 19 19H5C3.895 19 3 18.105 3 17V7Z"/>
+            </svg>
+            Imprimer
+        </a>
+        {% endif %}
+        {# Modifier : gare créatrice + voyage NON clôturé #}
+        {% if is_granted('TICKET_MODIFIER') and peutAgir and ticket.voyage.datearriveereelle is null %}
+        <a href="{{ path('ticket.edit', {id: ticket.id}) }}" class="btn btn-primary flex-1 justify-center sm:flex-none">
+            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+            Modifier
+        </a>
+        {% endif %}
+        {# Désister : billet VALIDE + gare créatrice + voyage NON clôturé #}
+        {% if is_granted('TICKET_MODIFIER') and (ticket.statut ?? 'VALIDE') == 'VALIDE' and peutAgir and ticket.voyage.datearriveereelle is null %}
+        <a href="{{ path('ticket.desister', {id: ticket.id}) }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 15v-1a4 4 0 00-4-4H4m0 0l4-4m-4 4l4 4"/>
+            </svg>
+            Désister
+        </a>
+        {% endif %}
+        {% if is_granted('TICKET_VOIR') %}
+        <a href="{{ path('voyage.show', { id: ticket.voyage.id }) }}" class="btn btn-secondary flex-1 justify-center sm:flex-none"
+        >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/>
+            </svg>
+            Voir le voyage
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="max-w-[640px] mx-auto">
+    <div class="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div class="bg-blue-600 px-6 py-5 text-white">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">Ticket de transport</p>
+                    <p class="text-2xl font-bold font-mono tracking-wide">{{ ticket.codeticket }}</p>
+                    {% set statut = ticket.statut ?? 'VALIDE' %}
+                    {% if statut != 'VALIDE' %}
+                    <span class="mt-2 inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide">
+                        {{ statut == 'REPORTE' ? 'Reporté' : 'Annulé' }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="text-right shrink-0">
+                    <p class="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">Siège</p>
+                    <div class="flex items-center justify-end gap-2">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white font-bold text-lg">
+                            {{ ticket.siege.numero }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+                <span class="font-semibold text-lg">{{ ticket.gare.libelle ?? ticket.voyage.provenance }}</span>
+                <svg class="size-5 text-blue-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/>
+                </svg>
+                <span class="font-semibold text-lg">{{ ticket.garedescente.libelle ?? ticket.voyage.destination }}</span>
+            </div>
+        </div>
+
+        <div class="divide-y">
+            {% if (ticket.statut ?? 'VALIDE') != 'VALIDE' %}
+            <div class="px-6 py-4 bg-amber-50/60">
+                <div class="flex items-start gap-2 text-sm text-amber-800">
+                    <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium">{{ statut == 'REPORTE' ? 'Billet reporté sur un autre voyage' : 'Billet annulé (remboursé)' }}</p>
+                        {% if ticket.datedesistement is defined and ticket.datedesistement %}
+                        <p class="text-xs text-amber-700">Le {{ ticket.datedesistement|date('d/m/Y à H:i') }}</p>
+                        {% endif %}
+                        {% if ticket.motifdesistement is defined and ticket.motifdesistement %}
+                        <p class="text-xs text-amber-700">Motif : {{ ticket.motifdesistement }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if ticket.ticketOrigine is defined and ticket.ticketOrigine %}
+            <div class="px-6 py-3">
+                <p class="text-xs text-muted-foreground">
+                    Issu du report du billet
+                    <a href="{{ path('ticket.show', { id: ticket.ticketOrigine.id }) }}" class="font-mono font-medium text-blue-600 hover:underline">
+                        {{ ticket.ticketOrigine.codeticket }}
+                    </a>
+                </p>
+            </div>
+            {% endif %}
+            <div class="px-6 py-4">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Voyage</p>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Code voyage</p>
+                        <p class="font-mono font-medium">{{ ticket.voyage.codevoyage }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Date de départ</p>
+                        <p class="font-medium">
+                            {{ ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('d/m/Y à H:i') : '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Passager</p>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Nom</p>
+                        <p class="font-medium">{{ ticket.nomclient is defined ? ticket.nomclient : '' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Contact</p>
+                        <p class="font-medium">{{ ticket.contactclient is defined ? ticket.contactclient : '' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Paiement</p>
+                <div class="flex items-center justify-between">
+                    <div class="text-sm">
+                        <p class="text-muted-foreground text-xs mb-0.5">Montant</p>
+                        <p class="text-2xl font-bold text-emerald-600">
+                            {{ ticket.prix|number_format(0, ',', ' ') }}
+                            <span class="text-sm font-normal text-muted-foreground">FCFA</span>
+                        </p>
+                    </div>
+                    <div class="text-right text-sm">
+                        <p class="text-muted-foreground text-xs mb-0.5">Émis le</p>
+                        <p class="font-medium">{{ ticket.createdAt|date('d/m/Y à H:i') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if ticket.remise is defined and ticket.remise > 0 %}
+            <div class="px-6 py-4">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Remise</p>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Remise accordée</p>
+                        <p class="font-semibold text-amber-600">− {{ ticket.remise|number_format(0, ',', ' ') }} FCFA</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">Bénéficiaire</p>
+                        <p class="font-medium">
+                            {{ ticket.beneficiaire.nom ?? '—' }}
+                            {% if ticket.beneficiaire.categorie is defined and ticket.beneficiaire.categorie %}
+                                <span class="text-xs text-muted-foreground">({{ ticket.beneficiaire.categorie }})</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if ticket.qrcode is defined and ticket.qrcode %}
+            <div class="px-6 py-5">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">Vérification</p>
+                <div class="flex items-center gap-4">
+                    <img src="{{ ticket.qrcode }}" alt="QR code de vérification du billet {{ ticket.codeticket }}"
+                         class="h-32 w-32 shrink-0 rounded-lg border bg-white p-1.5" />
+                    <div class="text-sm text-muted-foreground">
+                        <p class="font-medium text-foreground mb-1">Scannez pour lire le code du billet</p>
+                        <p>Le QR code encode le numéro du ticket <span class="font-mono font-medium text-foreground">{{ ticket.codeticket }}</span> pour un contrôle rapide à l'embarquement.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

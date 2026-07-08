@@ -1,0 +1,405 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Statistiques par gare{% endblock %}
+
+{% block body %}
+{% set parGare = stats.parGare ?? [] %}
+{% set commerciaux = stats.commerciaux ?? [] %}
+{% set totalRecette = parGare|reduce((c, g) => c + g.recetteTotale, 0) %}
+{% set totalCommercial = commerciaux|reduce((c, x) => c + x.recetteBillets, 0) %}
+{% set recetteReservation = stats.recetteReservation ?? 0 %}
+{% set maxRecette = parGare|length > 0 ? parGare|first.recetteTotale : 0 %}
+{% set totalAnnules = parGare|reduce((c, g) => c + (g.ticketsAnnules ?? 0), 0) %}
+
+{# ── En-tête ─────────────────────────────────────────────────────── #}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
+    <div>
+        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Espace propriétaire
+        </a>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Tableau de bord</p>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Statistiques par gare</h1>
+        <p class="text-sm text-muted-foreground mt-2">Recettes par gare · du {{ debut|date('d/m/Y') }} au {{ fin|date('d/m/Y') }}</p>
+    </div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {{ s.periodeFilter('owner.stats.gares', debut, fin) }}
+        {{ s.exportButtons('stats.export.gares', debut, fin) }}
+    </div>
+</div>
+
+{# ── KPI ─────────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground">Recette des gares</p>
+        <p class="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">{{ totalRecette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
+        {% if totalCommercial > 0 %}<p class="text-[11px] text-muted-foreground mt-1">+ {{ totalCommercial|number_format(0, ',', ' ') }} F à bord (commerciaux)</p>{% endif %}
+        {% if recetteReservation > 0 %}<p class="text-[11px] text-muted-foreground mt-0.5">+ {{ recetteReservation|number_format(0, ',', ' ') }} F réservations (compte admin)</p>{% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground">Gares actives</p>
+        <p class="text-2xl font-semibold tabular-nums mt-0.5">{{ parGare|length }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground">Gare en tête</p>
+        <p class="text-lg font-semibold mt-0.5 truncate">{{ parGare|length > 0 ? parGare|first.libelle : '—' }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground">Opérations</p>
+        <p class="text-2xl font-semibold tabular-nums mt-0.5">{{ parGare|reduce((c, g) => c + g.nbOperations, 0) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground">Billets annulés</p>
+        <p class="text-2xl font-semibold tabular-nums mt-0.5 {{ totalAnnules > 0 ? 'text-red-600 dark:text-red-400' : '' }}">{{ totalAnnules }}</p>
+    </div>
+</div>
+
+{% if parGare|length == 0 %}
+<div class="card p-10 text-center text-muted-foreground">Aucune recette sur cette période.</div>
+{% else %}
+
+{# ── Classement / détail par gare ────────────────────────────────── #}
+<div class="space-y-3">
+    {% for g in parGare %}
+    {% set share = totalRecette > 0 ? (g.recetteTotale / totalRecette * 100) : 0 %}
+    {% set barW = maxRecette > 0 ? (g.recetteTotale / maxRecette * 100) : 0 %}
+    <div class="card p-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {# Colonne 1 : classement + recette + sparkline #}
+            <div class="lg:col-span-2">
+                <div class="flex items-baseline justify-between gap-3 mb-2">
+                    <div class="flex items-baseline gap-2.5 min-w-0">
+                        <span class="text-sm font-mono text-muted-foreground shrink-0">#{{ loop.index }}</span>
+                        <h2 class="text-lg font-medium truncate">{{ g.libelle }}</h2>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xl font-semibold tabular-nums">{{ g.recetteTotale|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
+                        <p class="text-xs text-muted-foreground">{{ share|round }} % du total</p>
+                    </div>
+                </div>
+
+                {# Barre de classement #}
+                <div class="h-2 w-full rounded-full bg-muted overflow-hidden mb-3">
+                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ barW }}%"></div>
+                </div>
+
+                {# Indicateurs #}
+                <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground mb-3">
+                    <span>Panier moyen <strong class="text-foreground tabular-nums">{{ g.panierMoyen|number_format(0, ',', ' ') }} F</strong></span>
+                    <span><strong class="text-foreground tabular-nums">{{ g.nbOperations }}</strong> opérations</span>
+                    <span>Billets <strong class="text-foreground tabular-nums">{{ g.recetteBillets|number_format(0, ',', ' ') }}</strong></span>
+                    <span>Courriers <strong class="text-foreground tabular-nums">{{ g.recetteCourriers|number_format(0, ',', ' ') }}</strong></span>
+                    <span>Bagages <strong class="text-foreground tabular-nums">{{ g.recetteBagages|number_format(0, ',', ' ') }}</strong></span>
+                    <span>Annulés <strong class="tabular-nums {{ (g.ticketsAnnules ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground' }}">{{ g.ticketsAnnules ?? 0 }}</strong></span>
+                    <span>Reportés <strong class="tabular-nums {{ (g.ticketsReportes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground' }}">{{ g.ticketsReportes ?? 0 }}</strong></span>
+                </div>
+
+                {# Sparkline évolution (× jour) #}
+                {% set sj = g.serieJour ?? [] %}
+                {% set mx = (sj|length > 0 and max(sj) > 0) ? max(sj) : 1 %}
+                {% set n = sj|length %}
+                <div class="text-emerald-500">
+                    <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="w-full h-7" aria-hidden="true">
+                        {% if n > 1 %}
+                        <polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"
+                            points="{% for v in sj %}{{ (loop.index0 / (n - 1) * 100)|round(2) }},{{ (27 - (v / mx * 24))|round(2) }} {% endfor %}" />
+                        {% endif %}
+                    </svg>
+                    <p class="text-[11px] text-muted-foreground mt-0.5">Évolution sur la période</p>
+                </div>
+            </div>
+
+            {# Colonne 2 : recette par agent #}
+            <div class="lg:border-l lg:border-border lg:pl-5">
+                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2.5">Par agent</p>
+                {% if g.agents|length == 0 %}
+                <p class="text-xs text-muted-foreground">Aucun agent</p>
+                {% else %}
+                {% set maxAgent = g.agents|first.recette %}
+                <div class="space-y-2">
+                    {% for a in g.agents %}
+                    <div>
+                        <div class="flex items-baseline justify-between gap-2 text-xs mb-0.5">
+                            <span class="truncate">{{ a.nom }}</span>
+                            <span class="tabular-nums font-medium shrink-0">{{ a.recette|number_format(0, ',', ' ') }} F</span>
+                        </div>
+                        <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div class="h-1.5 rounded-full bg-blue-500" style="width: {{ maxAgent > 0 ? (a.recette / maxAgent * 100) : 0 }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ── Recette par commercial (ventes à bord) ──────────────────────── #}
+{% if commerciaux|length > 0 %}
+{% set maxComm = commerciaux|first.recetteBillets %}
+<div class="mt-8 mb-3">
+    <h2 class="text-lg font-medium">Recette par commercial</h2>
+    <p class="text-sm text-muted-foreground">Ventes réalisées à bord (vendeur en route) — complément de la recette des gares</p>
+</div>
+<div class="card p-5">
+    <div class="space-y-2.5">
+        {% for c in commerciaux %}
+        <div>
+            <div class="flex items-baseline justify-between gap-2 mb-1 text-sm">
+                <span class="truncate min-w-0 font-medium">{{ c.nom }}</span>
+                <span class="text-xs text-muted-foreground shrink-0 tabular-nums">{{ c.nbtickets }} billets · {{ c.recetteBillets|number_format(0, ',', ' ') }} F</span>
+            </div>
+            <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ maxComm > 0 ? (c.recetteBillets / maxComm * 100) : 0 }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ── Trafic & flux passagers ─────────────────────────────────────── #}
+{% set trafGares = trafic.parGare ?? [] %}
+{% if trafGares|length > 0 %}
+{% set maxTrafic = trafGares|first.trafic %}
+<div class="mt-8 mb-3">
+    <h2 class="text-lg font-medium">Trafic &amp; flux passagers</h2>
+    <p class="text-sm text-muted-foreground">Montées (embarquements) vs descentes par gare — qui « charge » et qui « décharge ». Triées par trafic total.</p>
+</div>
+<div class="card p-5 mb-3">
+    <div class="space-y-3">
+        {% for g in trafGares %}
+        {% set w = maxTrafic > 0 ? (g.trafic / maxTrafic * 100) : 0 %}
+        {% set partM = g.trafic > 0 ? (g.montees / g.trafic * 100) : 0 %}
+        <div>
+            <div class="flex items-baseline justify-between gap-2 mb-1 text-sm">
+                <span class="font-medium truncate">{{ g.libelle }}</span>
+                <span class="text-xs shrink-0 tabular-nums">
+                    <span class="text-emerald-600 dark:text-emerald-400">↑ {{ g.montees }}</span>
+                    <span class="text-muted-foreground mx-0.5">·</span>
+                    <span class="text-rose-600 dark:text-rose-400">↓ {{ g.descentes }}</span>
+                    <span class="text-muted-foreground ml-1">({{ g.trafic }})</span>
+                </span>
+            </div>
+            <div class="flex h-2.5 rounded-full bg-muted overflow-hidden" style="width: {{ w }}%; min-width: 3%">
+                <div class="bg-emerald-500" style="width: {{ partM }}%"></div>
+                <div class="bg-rose-400 flex-1"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <p class="text-[11px] text-muted-foreground mt-3 flex flex-wrap gap-x-3 gap-y-1">
+        <span class="inline-flex items-center gap-1"><span class="size-2 rounded-full bg-emerald-500"></span>Montées</span>
+        <span class="inline-flex items-center gap-1"><span class="size-2 rounded-full bg-rose-400"></span>Descentes</span>
+        <span>· largeur = trafic total</span>
+    </p>
+</div>
+{% endif %}
+
+{# ── Top tronçons (O-D) ──────────────────────────────────────────── #}
+{% set troncons = trafic.topTroncons ?? [] %}
+{% if troncons|length > 0 %}
+{% set maxNb = troncons|first.nb %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Top tronçons</h2>
+    <p class="text-sm text-muted-foreground">Les segments gare → gare les plus vendus sur la période</p>
+</div>
+<div class="card p-5">
+    <div class="space-y-2.5">
+        {% for t in troncons %}
+        <div>
+            <div class="flex items-baseline justify-between gap-2 mb-1 text-sm">
+                <span class="truncate min-w-0"><span class="font-medium">{{ t.de }}</span><span class="text-muted-foreground mx-1">→</span><span class="font-medium">{{ t.vers }}</span></span>
+                <span class="text-xs text-muted-foreground shrink-0 tabular-nums">{{ t.nb }} billets · {{ t.recette|number_format(0, ',', ' ') }} F</span>
+            </div>
+            <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div class="h-1.5 rounded-full bg-blue-500" style="width: {{ maxNb > 0 ? (t.nb / maxNb * 100) : 0 }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ── Exploitation par gare de départ ─────────────────────────────── #}
+{% set exploGares = exploitation.parGare ?? [] %}
+{% if exploGares|length > 0 %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Exploitation par gare de départ</h2>
+    <p class="text-sm text-muted-foreground">Taux de remplissage (billets vendus / capacité) des voyages partant de chaque gare. La revente par tronçon peut dépasser 100 %.</p>
+</div>
+<div class="card p-5">
+    <div class="space-y-3.5">
+        {% for g in exploGares %}
+        {% set barW = g.taux > 100 ? 100 : g.taux %}
+        {% set tone = g.taux >= 80 ? 'emerald' : (g.taux >= 40 ? 'blue' : 'zinc') %}
+        <div>
+            <div class="flex items-baseline justify-between gap-2 mb-1 text-sm">
+                <span class="font-medium truncate">{{ g.libelle }} <span class="text-xs text-muted-foreground font-normal">· {{ g.nbVoyages }} voyage(s)</span></span>
+                <span class="text-xs shrink-0 tabular-nums">
+                    <strong class="text-foreground">{{ g.placesVendues }}</strong> / {{ g.capacite }} places
+                    <span class="ml-1 font-semibold {{ tone == 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : (tone == 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground') }}">{{ g.taux }} %</span>
+                </span>
+            </div>
+            <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                <div class="h-2.5 rounded-full {{ tone == 'emerald' ? 'bg-emerald-500' : (tone == 'blue' ? 'bg-blue-500' : 'bg-zinc-400') }}" style="width: {{ barW }}%"></div>
+            </div>
+            <p class="text-[11px] text-muted-foreground mt-0.5">{{ g.placesRestantes|number_format(0, ',', ' ') }} place(s) restante(s){% if g.recette %} · recette totale {{ g.recette|number_format(0, ',', ' ') }} F{% endif %}</p>
+            {% if g.recette %}
+            <p class="text-[11px] text-muted-foreground/80 mt-0.5">
+                <span title="Caisse gare (guichet)">Gare {{ (g.recetteGare ?? 0)|number_format(0, ',', ' ') }} F</span>
+                {% if (g.recetteCommercial ?? 0) > 0 %} · <span title="Vente à bord (commercial)">à bord {{ g.recetteCommercial|number_format(0, ',', ' ') }} F</span>{% endif %}
+                {% if (g.recetteReservation ?? 0) > 0 %} · <span title="Réservation (compte admin)">résa {{ g.recetteReservation|number_format(0, ',', ' ') }} F</span>{% endif %}
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ── Courriers par gare ──────────────────────────────────────────── #}
+{% set courG = colis.courriersParGare ?? [] %}
+{% if courG|length > 0 %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Courriers par gare</h2>
+    <p class="text-sm text-muted-foreground">Émis (au départ) · reçus (à destination) · en attente de récupération</p>
+</div>
+<div class="card overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                <th class="text-left px-4 py-2.5 font-medium">Gare</th>
+                <th class="text-right px-4 py-2.5 font-medium">Émis</th>
+                <th class="text-right px-4 py-2.5 font-medium">Reçus</th>
+                <th class="text-right px-4 py-2.5 font-medium">En attente</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+            {% for g in courG %}
+            <tr class="hover:bg-muted/20 transition-colors">
+                <td class="px-4 py-2.5 font-medium">{{ g.libelle }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{{ g.emis }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-blue-600 dark:text-blue-400">{{ g.recus }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums {{ g.enAttente > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground' }}">{{ g.enAttente }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Bagages par gare ────────────────────────────────────────────── #}
+{% set bagG = colis.bagagesParGare ?? [] %}
+{% if bagG|length > 0 %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Bagages par gare</h2>
+    <p class="text-sm text-muted-foreground">Émis (au départ, avec poids total expédié) · livrés (à destination)</p>
+</div>
+<div class="card overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                <th class="text-left px-4 py-2.5 font-medium">Gare</th>
+                <th class="text-right px-4 py-2.5 font-medium">Émis</th>
+                <th class="text-right px-4 py-2.5 font-medium">Livrés</th>
+                <th class="text-right px-4 py-2.5 font-medium">Poids expédié</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+            {% for g in bagG %}
+            <tr class="hover:bg-muted/20 transition-colors">
+                <td class="px-4 py-2.5 font-medium">{{ g.libelle }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{{ g.emis }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-blue-600 dark:text-blue-400">{{ g.livres }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums">{{ g.poids|number_format(0, ',', ' ') }} kg</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Agents & gares ──────────────────────────────────────────────── #}
+{% set agParGare = stats.parGare ?? [] %}
+{% if agParGare|length > 0 %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Agents &amp; gares</h2>
+    <p class="text-sm text-muted-foreground">Effectif actif et productivité (recette moyenne par agent) · performance du meilleur agent vs la moyenne de sa gare</p>
+</div>
+<div class="card overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                <th class="text-left px-4 py-2.5 font-medium">Gare</th>
+                <th class="text-right px-4 py-2.5 font-medium">Agents actifs</th>
+                <th class="text-right px-4 py-2.5 font-medium">Recette totale</th>
+                <th class="text-right px-4 py-2.5 font-medium">Recette / agent</th>
+                <th class="text-left px-4 py-2.5 font-medium">Meilleur agent</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+            {% for g in agParGare %}
+            {% set moy = g.nbAgents > 0 ? (g.recetteTotale / g.nbAgents) : 0 %}
+            {% set top = g.agents|length > 0 ? g.agents|first : null %}
+            {% set perf = (top and moy > 0) ? (top.recette / moy) : 0 %}
+            <tr class="hover:bg-muted/20 transition-colors">
+                <td class="px-4 py-2.5 font-medium">{{ g.libelle }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums">{{ g.nbAgents }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums">{{ g.recetteTotale|number_format(0, ',', ' ') }} F</td>
+                <td class="px-4 py-2.5 text-right tabular-nums">{{ g.nbAgents > 0 ? (moy|round|number_format(0, ',', ' ')) ~ ' F' : '—' }}</td>
+                <td class="px-4 py-2.5">
+                    {% if top %}
+                    <span>{{ top.nom }}</span>
+                    {% if perf > 0 %}<span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full tabular-nums {{ perf >= 1.5 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' }}">×{{ perf|number_format(1, ',', ' ') }} moy.</span>{% endif %}
+                    {% else %}<span class="text-muted-foreground">—</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Pilotage : tendance N vs N-1 ────────────────────────────────── #}
+{% set pilGares = pilotage.parGare ?? [] %}
+{% if pilGares|length > 0 %}
+<div class="mt-7 mb-3">
+    <h2 class="text-lg font-medium">Pilotage — tendance par gare</h2>
+    <p class="text-sm text-muted-foreground">Recette de la période comparée à la précédente de même durée
+        {% if pilotage.periodePrecedente.debut is defined %}({{ pilotage.periodePrecedente.debut|date('d/m/Y') }} → {{ pilotage.periodePrecedente.fin|date('d/m/Y') }}){% endif %}
+    </p>
+</div>
+<div class="card overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                <th class="text-left px-4 py-2.5 font-medium">Gare</th>
+                <th class="text-right px-4 py-2.5 font-medium">Recette (N)</th>
+                <th class="text-right px-4 py-2.5 font-medium">Précédente (N-1)</th>
+                <th class="text-right px-4 py-2.5 font-medium">Tendance</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+            {% for g in pilGares %}
+            <tr class="hover:bg-muted/20 transition-colors">
+                <td class="px-4 py-2.5 font-medium">{{ g.libelle }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums">{{ g.recetteN|number_format(0, ',', ' ') }} F</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ g.recetteN1|number_format(0, ',', ' ') }} F</td>
+                <td class="px-4 py-2.5 text-right">
+                    <span class="inline-flex items-center gap-0.5 text-xs font-semibold tabular-nums {{ g.variation > 0 ? 'text-emerald-600 dark:text-emerald-400' : (g.variation < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground') }}">
+                        {{ g.variation > 0 ? '↑' : (g.variation < 0 ? '↓' : '=') }} {{ g.variation > 0 ? '+' }}{{ g.variation }} %
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

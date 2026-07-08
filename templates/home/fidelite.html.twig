@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Fidélité{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Fidélité', 'Programme', 'owner.stats.fidelite', debut, fin, 'stats.export.fidelite') }}
+
+{# Bandeau configuration du programme #}
+<div class="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-card px-5 py-3 text-sm">
+    <span class="inline-flex items-center gap-2">
+        <span class="size-2 rounded-full {{ fidelite.programmeActif ? 'bg-emerald-500' : 'bg-gray-400' }}"></span>
+        Programme <strong>{{ fidelite.programmeActif ? 'actif' : 'suspendu' }}</strong>
+    </span>
+    <span class="text-muted-foreground">Seuil : <strong class="text-foreground">{{ fidelite.seuil ?? 0 }}</strong> voyages</span>
+    <span class="text-muted-foreground">Récompense : <strong class="text-foreground">{{ fidelite.recompensePourcentage == 100 ? 'voyage offert' : (fidelite.recompensePourcentage ?? 0) ~ '%' }}</strong></span>
+    {% if is_granted('ROLE_ADMIN') %}
+    <a href="{{ path('admin.fidelite.config') }}" class="ml-auto text-primary hover:underline">Configurer →</a>
+    {% endif %}
+</div>
+
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
+        {{ s.kpi('Membres', fidelite.totalMembres ?? 0, '', 'violet', 'users', (fidelite.tauxAdhesion ?? 0) ~ '% des ' ~ (fidelite.totalClients ?? 0) ~ ' clients') }}
+        {{ s.kpi('Adhésions', fidelite.adhesionsPeriode ?? 0, '', 'blue', 'check', 'sur la période') }}
+        {{ s.kpi('Récompenses utilisées', fidelite.recompensesUtilisees ?? 0, '', 'emerald', 'ticket', 'sur la période') }}
+        {{ s.kpi('Valeur offerte', (fidelite.valeurRecompenses ?? 0) | number_format(0, ',', ' '), 'FCFA', 'amber', 'money', 'remises fidélité (période)') }}
+        {{ s.kpi('À réclamer', fidelite.recompensesDisponibles ?? 0, '', 'rose', 'alert', 'récompenses disponibles') }}
+    </div>
+
+    {# Top membres #}
+    <div class="card p-5">
+        {{ s.sectionTitle('Top clients fidèles', 'Par voyages cumulés depuis l\'adhésion') }}
+        {% if fidelite.topMembres is not empty %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Client</th>
+                        <th class="pb-2 font-medium">Téléphone</th>
+                        <th class="pb-2 font-medium text-right">Voyages cumulés</th>
+                        <th class="pb-2 font-medium text-right">Récompenses utilisées</th>
+                        <th class="pb-2 font-medium text-center">Carte en cours</th>
+                        <th class="pb-2 font-medium text-right">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in fidelite.topMembres %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2 font-medium">
+                            <a href="{{ path('client.show', {id: m.id}) }}" class="hover:underline">{{ m.nom }}</a>
+                        </td>
+                        <td class="py-2 text-muted-foreground">{{ m.contact ?? '—' }}</td>
+                        <td class="py-2 text-right tabular-nums font-semibold">{{ m.voyages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ m.recompensesUtilisees }}</td>
+                        <td class="py-2 text-center tabular-nums text-muted-foreground">{{ m.recompenseDisponible ? fidelite.seuil : m.progression }} / {{ fidelite.seuil }}</td>
+                        <td class="py-2 text-right">
+                            {% if m.recompenseDisponible %}
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">🎁 Récompense dispo</span>
+                            {% else %}
+                            <span class="text-xs text-muted-foreground">En cours</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="py-6 text-center text-sm text-muted-foreground">Aucun membre pour le moment. Faites adhérer vos clients depuis leur fiche.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

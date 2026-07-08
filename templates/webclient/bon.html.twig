@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DejaVu Sans', sans-serif; color: #111; font-size: 11px; width: 80mm; padding: 6mm 5mm; }
+    .center { text-align: center; }
+    .sigle { font-size: 17px; font-weight: bold; letter-spacing: 1px; }
+    .sub { font-size: 10px; color: #555; }
+    .title { margin-top: 6px; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
+    .code { margin: 8px 0; font-size: 20px; font-weight: bold; letter-spacing: 3px; text-align: center; }
+    .badge { display: inline-block; border: 1.5px solid #137a3f; color: #137a3f; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
+    .hr { border-top: 1px dashed #999; margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 3px 0; vertical-align: top; font-size: 11px; }
+    td.k { color: #666; }
+    td.v { text-align: right; font-weight: bold; }
+    .route { text-align: center; font-size: 13px; font-weight: bold; margin: 6px 0; }
+    .note { margin-top: 8px; font-size: 9.5px; color: #444; line-height: 1.35; }
+    .foot { margin-top: 10px; text-align: center; font-size: 9px; color: #999; }
+</style>
+</head>
+<body>
+    <div class="center">
+        <div class="sigle">{{ compagnie.sigle ?? compagnie.libelle ?? 'RESERVATION' }}</div>
+        {% if compagnie.libelle %}<div class="sub">{{ compagnie.libelle }}</div>{% endif %}
+        {% if compagnie.contact %}<div class="sub">{{ compagnie.contact }}</div>{% endif %}
+        <div class="title">BON DE RESERVATION</div>
+    </div>
+
+    <div class="code">{{ reservation.code }}</div>
+    <div class="center"><span class="badge">PAYÉ</span></div>
+
+    <div class="hr"></div>
+    <div class="route">{{ reservation.montee ?? '—' }} &rarr; {{ reservation.descente ?? '—' }}</div>
+    <div class="hr"></div>
+
+    <table>
+        <tr><td class="k">Passager</td><td class="v">{{ reservation.nomclient ?? '—' }}</td></tr>
+        <tr><td class="k">Téléphone</td><td class="v">{{ reservation.contactclient ?? '—' }}</td></tr>
+        <tr><td class="k">Voyage</td><td class="v">{{ reservation.codevoyage ?? '—' }}</td></tr>
+        <tr><td class="k">Départ prévu</td><td class="v">{{ reservation.datedepartprevue ? reservation.datedepartprevue|date('d/m/Y H:i') : '—' }}</td></tr>
+        <tr><td class="k">Montant payé</td><td class="v">{{ reservation.montant ? (reservation.montant|number_format(0, ',', ' ')) ~ ' FCFA' : '—' }}</td></tr>
+    </table>
+
+    <div class="hr"></div>
+    <div class="note">
+        Présentez ce bon (code <strong>{{ reservation.code }}</strong>) à la gare de départ pour retirer votre billet
+        et obtenir un siège. Le retrait doit se faire avant l'heure limite indiquée par la compagnie, sans quoi la place
+        est libérée (non remboursable).
+    </div>
+    <div class="foot">Bon généré le {{ 'now'|date('d/m/Y H:i') }}</div>
+</body>
+</html>

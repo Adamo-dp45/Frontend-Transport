@@ -1,0 +1,2111 @@
+/*
+    - steps(5, start ou end) : L'animation n'est plus fluid mais se fait dans le nombre d'étapes qu'on mais à l'intérieur
+*/
+
+/** Un clignotement rapide */
+@keyframes flash {
+    0%, 50%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0;
+    }
+}
+
+/** Un effet de battement */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/** Un effet d'élasticité */
+@keyframes rubberBand {
+    0% {
+        transform: scaleX(1);
+    }
+    30% {
+        transform: scaleX(1.25);
+    }
+    40% {
+        transform: scaleX(0.75);
+    }
+    50% {
+        transform: scaleX(1.15);
+    }
+    65% {
+        transform: scaleX(0.95);
+    }
+    75% {
+        transform: scaleX(1.05);
+    }
+    100% {
+        transform: scaleX(1);
+    }
+}
+
+/** Pour osciller un élément horizontalement */
+@keyframes shakeX {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-10px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(10px);
+    }
+}
+
+/** Pour osciller un élément verticalement */
+@keyframes shakeY {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateY(-10px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateY(10px);
+    }
+}
+
+/** Simuler un mouvement de tête de gauche à droite */
+@keyframes headShake {
+    0% {
+        transform: translateX(0);
+    }
+    6.5% {
+        transform: translateX(-6px) rotateY(-9deg);
+    }
+    18.5% {
+        transform: translateX(5px) rotateY(7deg);
+    }
+    31.5% {
+        transform: translateX(-3px) rotateY(-5deg);
+    }
+    43.5% {
+        transform: translateX(2px) rotateY(3deg);
+    }
+    50% {
+        transform: translateX(0);
+    }
+}
+
+/** Pour un mouvement de balancier en faisant pivoter un élément autour de son axe */
+@keyframes swing {
+    0% {
+        transform: rotateZ(0deg);
+    }
+    20% {
+        transform: rotateZ(15deg);
+    }
+    40% {
+        transform: rotateZ(-10deg);
+    }
+    60% {
+        transform: rotateZ(5deg);
+    }
+    80% {
+        transform: rotateZ(-5deg);
+    }
+    100% {
+        transform: rotateZ(0deg);
+    }
+}
+
+/** Combiner plusieurs transformations (agrandissement, rotation et mise à l'échelle) pour créer un effet dynamique où l'élément semble se réveiller ou faire un geste théâtral */
+@keyframes tada {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    10% {
+        transform: scale(1.1) rotate(-3deg);
+    }
+    20% {
+        transform: scale(1.1) rotate(3deg);
+    }
+    30% {
+        transform: scale(1.1) rotate(-3deg);
+    }
+    40% {
+        transform: scale(1.1) rotate(3deg);
+    }
+    50% {
+        transform: scale(1.1) rotate(0deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/** Donner une sensation de balancement rapide, souvent utilisé pour attirer l'attention sur un élément. Il combine des mouvements horizontaux et des transformations pour simuler ce balancement */
+@keyframes wobble {
+    0% {
+        transform: translateX(0);
+    }
+    15% {
+        transform: translateX(-25%) rotate(-5deg);
+    }
+    30% {
+        transform: translateX(20%) rotate(3deg);
+    }
+    45% {
+        transform: translateX(-15%) rotate(-3deg);
+    }
+    60% {
+        transform: translateX(10%) rotate(2deg);
+    }
+    75% {
+        transform: translateX(-5%) rotate(-1deg);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/** Donner un mouvement d'ondulation ou de vibration avec une transformation combinant des rotations et des translations */
+@keyframes jello {
+    0% {
+        transform: none;
+    }
+    15% {
+        transform: skewX(-12.5deg) skewY(-12.5deg);
+    }
+    30% {
+        transform: skewX(6.25deg) skewY(6.25deg);
+    }
+    45% {
+        transform: skewX(-3.125deg) skewY(-3.125deg);
+    }
+    60% {
+        transform: skewX(1.5625deg) skewY(1.5625deg);
+    }
+    75% {
+        transform: skewX(-0.78125deg) skewY(-0.78125deg);
+    }
+    100% {
+        transform: none;
+    }
+}
+
+/** Un effet de pulsation où l'élément bat en s'agrandissant et en se rétrécissant, comme un cœur */
+@keyframes heartBeat {
+    0% {
+        transform: scale(1);
+    }
+    14% {
+        transform: scale(1.3);
+    }
+    28% {
+        transform: scale(1);
+    }
+    42% {
+        transform: scale(1.3);
+    }
+    70% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/** Faire arriver un élément du haut de l'écran avec un effet de rétrécissement à mesure qu'il atteint sa position finale */
+@keyframes backInDown {
+    0% {
+        transform: translateY(-2000px) scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(30px) scale(1.1);
+        opacity: 1;
+    }
+    80% {
+        transform: translateY(-10px) scale(0.9);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire entrer un élément depuis la gauche avec un effet de rétrécissement au début, puis un retour à sa taille normale */
+@keyframes backInLeft {
+    0% {
+        transform: translateX(-2000px) scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(30px) scale(1.1);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(-10px) scale(0.9);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire entrer un élément depuis la droite, avec un effet de rétrécissement au début, puis un retour à sa taille normale */
+@keyframes backInRight {
+    0% {
+        transform: translateX(2000px) scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-30px) scale(1.1);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(10px) scale(0.9);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire entrer un élément depuis le bas avec un effet de rétrécissement initial, puis un retour à sa taille normale */
+@keyframes backInUp {
+    0% {
+        transform: translateY(2000px) scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(-30px) scale(1.1);
+        opacity: 1;
+    }
+    80% {
+        transform: translateY(10px) scale(0.9);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire disparaître un élément vers le bas avec un effet de rétrécissement avant de quitter */
+@keyframes backOutDown {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    20% {
+        transform: translateY(10px) scale(1.1);
+    }
+    40% {
+        transform: translateY(-10px) scale(1.05);
+    }
+    60% {
+        transform: translateY(30px) scale(0.9);
+    }
+    100% {
+        transform: translateY(2000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément vers la gauche avec un effet de rétrécissement */
+@keyframes backOutLeft {
+    0% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    20% {
+        transform: translateX(10px) scale(1.1);
+    }
+    40% {
+        transform: translateX(-10px) scale(1.05);
+    }
+    60% {
+        transform: translateX(-30px) scale(0.9);
+    }
+    100% {
+        transform: translateX(-2000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément vers la droite avec un effet de rétrécissement */
+@keyframes backOutRight {
+    0% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    20% {
+        transform: translateX(-10px) scale(1.1);
+    }
+    40% {
+        transform: translateX(10px) scale(1.05);
+    }
+    60% {
+        transform: translateX(30px) scale(0.9);
+    }
+    100% {
+        transform: translateX(2000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément vers le haut avec un effet de rétrécissement */
+@keyframes backOutUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    20% {
+        transform: translateY(-10px) scale(1.1);
+    }
+    40% {
+        transform: translateY(10px) scale(1.05);
+    }
+    60% {
+        transform: translateY(30px) scale(0.9);
+    }
+    100% {
+        transform: translateY(-2000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire apparaître un élément avec un effet de rebond */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en venant du haut, avec un effet de rebond */
+@keyframes bounceInDown {
+    0% {
+        transform: translateY(-1000px) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(30px) scale(1.1);
+        opacity: 1;
+    }
+    70% {
+        transform: translateY(-10px) scale(0.9);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en venant de la gauche, avec un effet de rebond */
+@keyframes bounceInLeft {
+    0% {
+        transform: translateX(-1000px) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(30px) scale(1.1);
+        opacity: 1;
+    }
+    70% {
+        transform: translateX(-10px) scale(0.9);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en venant de la droite, avec un effet de rebond */
+@keyframes bounceInRight {
+    0% {
+        transform: translateX(1000px) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(-30px) scale(1.1);
+        opacity: 1;
+    }
+    70% {
+        transform: translateX(10px) scale(0.9);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en venant du bas avec un effet de rebond */
+@keyframes bounceInUp {
+    0% {
+        transform: translateY(1000px) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(-30px) scale(1.1);
+        opacity: 1;
+    }
+    70% {
+        transform: translateY(10px) scale(0.9);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/** Faire disparaître un élément avec un effet de rebond */
+@keyframes bounceOut {
+    20% {
+        transform: scale(1.1);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    55% {
+        transform: translateY(10px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
+    70% {
+        transform: translateY(5px);
+    }
+    100% {
+        transform: translateY(2000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en se dirigeant vers le bas avec un effet de rebond */
+@keyframes bounceOutDown {
+    20% {
+        transform: translateY(-10px) scale(1.1);
+    }
+    50% {
+        transform: translateY(10px);
+    }
+    55% {
+        transform: translateY(-10px);
+    }
+    70% {
+        transform: translateY(20px);
+    }
+    100% {
+        transform: translateY(1000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en se dirigeant vers la gauche avec un effet de rebond */
+@keyframes bounceOutLeft {
+    20% {
+        transform: translateX(10px) scale(1.1);
+    }
+    50% {
+        transform: translateX(-10px);
+    }
+    55% {
+        transform: translateX(10px);
+    }
+    70% {
+        transform: translateX(-20px);
+    }
+    100% {
+        transform: translateX(-1000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en se dirigeant vers la droite avec un effet de rebond */
+@keyframes bounceOutRight {
+    20% {
+        transform: translateX(-10px) scale(1.1);
+    }
+    50% {
+        transform: translateX(10px);
+    }
+    55% {
+        transform: translateX(-10px);
+    }
+    70% {
+        transform: translateX(20px);
+    }
+    100% {
+        transform: translateX(1000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en se dirigeant vers le haut avec un effet de rebond */
+@keyframes bounceOutUp {
+    20% {
+        transform: translateY(-10px) scale(1.1);
+    }
+    50% {
+        transform: translateY(10px);
+    }
+    55% {
+        transform: translateY(-10px);
+    }
+    70% {
+        transform: translateY(20px);
+    }
+    100% {
+        transform: translateY(-1000px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Faire apparaître un élément en augmentant progressivement son opacité */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en bas et en augmentant progressivement son opacité */
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/** Faire apparaître un élément en bas avec un déplacement plus important et une augmentation progressive de son opacité */
+@keyframes fadeInDownBig {
+    0% {
+        opacity: 0;
+        transform: translateY(-2000px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis la gauche tout en augmentant progressivement son opacité */
+@keyframes fadeInLeft {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis la gauche avec un déplacement plus important et une augmentation progressive de son opacité */
+@keyframes fadeInLeftBig {
+    0% {
+        opacity: 0;
+        transform: translateX(-2000px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis la droite tout en augmentant progressivement son opacité */
+@keyframes fadeInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis la droite avec un mouvement plus important tout en augmentant progressivement son opacité */
+@keyframes fadeInRightBig {
+    0% {
+        opacity: 0;
+        transform: translateX(2000px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le bas tout en augmentant progressivement son opacité */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le bas avec un mouvement plus important tout en augmentant progressivement son opacité */
+@keyframes fadeInUpBig {
+    0% {
+        opacity: 0;
+        transform: translateY(2000px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le coin supérieur gauche tout en augmentant progressivement son opacité */
+@keyframes fadeInTopLeft {
+    0% {
+        opacity: 0;
+        transform: translate(-100px, -100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le coin supérieur droit tout en augmentant progressivement son opacité */
+@keyframes fadeInTopRight {
+    0% {
+        opacity: 0;
+        transform: translate(100px, -100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le coin inférieur gauche tout en augmentant progressivement son opacité */
+@keyframes fadeInBottomLeft {
+    0% {
+        opacity: 0;
+        transform: translate(-100px, 100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+/** Faire apparaître un élément en glissant depuis le coin inférieur droit tout en augmentant progressivement son opacité */
+@keyframes fadeInBottomRight {
+    0% {
+        opacity: 0;
+        transform: translate(100px, 100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+/** Faire disparaître un élément en réduisant progressivement son opacité tout en conservant sa position dans le flux de la page */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le bas tout en réduisant progressivement son opacité */
+@keyframes fadeOutDown {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le bas tout en réduisant progressivement son opacité, avec un déplacement plus grand que l'effet 'fadeOutDown' */
+@keyframes fadeOutDownBig {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(200px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers la gauche tout en réduisant progressivement son opacité */
+@keyframes fadeOutLeft {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-100px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers la gauche tout en réduisant progressivement son opacité, avec un déplacement plus grand que l'effet 'fadeOutLeft' */
+@keyframes fadeOutLeftBig {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-200px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers la droite tout en réduisant progressivement son opacité */
+@keyframes fadeOutRight {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers la droite tout en réduisant progressivement son opacité, avec un déplacement plus grand que l'effet 'fadeOutRight' */
+@keyframes fadeOutRightBig {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(200px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le haut tout en réduisant progressivement son opacité */
+@keyframes fadeOutUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant fortement vers le haut tout en réduisant progressivement son opacité, avec un déplacement plus grand que l'effet 'fadeOutUp' */
+@keyframes fadeOutUpBig {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-200px);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le coin supérieur gauche tout en réduisant progressivement son opacité */
+@keyframes fadeOutTopLeft {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-200%, -200%);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le coin supérieur droit tout en réduisant progressivement son opacité */
+@keyframes fadeOutTopRight {
+    0% {
+        opacity: 1;
+        transform: translate(50%, -50%);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(200%, -200%);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le coin inférieur droit tout en réduisant progressivement son opacité */
+@keyframes fadeOutBottomRight {
+    0% {
+        opacity: 1;
+        transform: translate(50%, 50%);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(200%, 200%);
+    }
+}
+
+/** Faire disparaître un élément en se déplaçant vers le coin inférieur gauche tout en réduisant progressivement son opacité */
+@keyframes fadeOutBottomLeft {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 50%);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-200%, 200%);
+    }
+}
+
+/** Faire pivoter un élément autour de l'axe Y comme s'il se retournait */
+@keyframes flip {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(180deg);
+    }
+}
+
+/** Faire apparaître un élément en effectuant une rotation autour de l'axe X, comme s'il venait de sortir d'un flip */
+@keyframes flipInX {
+    0% {
+        transform: rotateX(-180deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotateX(0deg);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en effectuant une rotation autour de l'axe Y, comme s'il se retournait verticalement pour apparaître */
+@keyframes flipInY {
+    0% {
+        transform: rotateY(-180deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotateY(0deg);
+        opacity: 1;
+    }
+}
+
+/** Faire disparaître un élément en effectuant une rotation autour de l'axe X, comme s'il s'éloignait de manière verticale */
+@keyframes flipOutX {
+    0% {
+        transform: rotateX(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotateX(180deg);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en effectuant une rotation autour de l'axe Y, comme s'il se retournait hors de la vue */
+@keyframes flipOutY {
+    0% {
+        transform: rotateY(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotateY(180deg);
+        opacity: 0;
+    }
+}
+
+/** L'élément arrive rapidement avec un effet de lumière */
+@keyframes lightSpeedIn {
+    0% {
+        transform: translateX(100%) skewX(-30deg);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-10px) skewX(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(0) skewX(0deg);
+    }
+}
+
+/** Faire apparaître un élément depuis la droite de l'écran avec un mouvement rapide, comme si l'élément glissait à grande vitesse tout en effectuant une légère rotation */
+@keyframes lightSpeedInRight {
+    0% {
+        transform: translateX(100%) skewX(30deg);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-10%) skewX(10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(0) skewX(0deg);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément depuis la gauche de l'écran avec un mouvement rapide, comme si l'élément glissait à grande vitesse tout en effectuant une légère rotation */
+@keyframes lightSpeedInLeft {
+    0% {
+        transform: translateX(-100%) skewX(-30deg);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(10%) skewX(-10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(0) skewX(0deg);
+        opacity: 1;
+    }
+}
+
+/** Faire disparaître un élément vers la droite de l'écran avec un mouvement rapide, en ajoutant une légère rotation pour l'effet visuel */
+@keyframes lightSpeedOutRight {
+    0% {
+        transform: translateX(0) skewX(0deg);
+        opacity: 1;
+    }
+    60% {
+        transform: translateX(10%) skewX(-10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%) skewX(30deg);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément vers la gauche de l'écran avec un mouvement rapide et une légère rotation, similaire à l'effet 'lightSpeedOutRight', mais dans l'autre direction */
+@keyframes lightSpeedOutLeft {
+    0% {
+        transform: translateX(0) skewX(0deg);
+        opacity: 1;
+    }
+    60% {
+        transform: translateX(-10%) skewX(10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-100%) skewX(-30deg);
+        opacity: 0;
+    }
+}
+
+/** Faire apparaître un élément en le faisant tourner depuis un angle spécifique jusqu'à sa position normale */
+@keyframes rotateIn {
+    0% {
+        transform: rotate(-200deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en tournant depuis le coin supérieur gauche tout en se déplaçant légèrement vers sa position d'origine */
+@keyframes rotateInDownLeft {
+    0% {
+        transform: rotate(-200deg) translateY(-100%) translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en tournant depuis le coin supérieur droit tout en se déplaçant légèrement vers sa position d'origine */
+@keyframes rotateInDownRight {
+    0% {
+        transform: rotate(200deg) translateY(-100%) translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en tournant depuis le coin inférieur gauche tout en se déplaçant légèrement vers sa position d'origine */
+@keyframes rotateInUpLeft {
+    0% {
+        transform: rotate(200deg) translateY(100%) translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire apparaître un élément en tournant depuis le coin inférieur droit tout en se déplaçant légèrement vers sa position d'origine */
+@keyframes rotateInUpRight {
+    0% {
+        transform: rotate(-200deg) translateY(100%) translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire disparaître un élément en tournant hors de l'écran tout en s'éloignant */
+@keyframes rotateOut {
+    0% {
+        transform: rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(200deg);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en tournant et en se déplaçant vers le bas à gauche */
+@keyframes rotateOutDownLeft {
+    0% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(-45deg) translateY(100%) translateX(-100%);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en tournant et en se déplaçant vers le bas à droite */
+@keyframes rotateOutDownRight {
+    0% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(45deg) translateY(100%) translateX(100%);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en tournant et en se déplaçant vers le haut à gauche */
+@keyframes rotateOutUpLeft {
+    0% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(-45deg) translateY(-100%) translateX(-100%);
+        opacity: 0;
+    }
+}
+
+/** Faire disparaître un élément en tournant et en se déplaçant vers le haut à droite */
+@keyframes rotateOutUpRight {
+    0% {
+        transform: rotate(0deg) translateY(0) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(45deg) translateY(-100%) translateX(100%);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression que l'élément se détache de son point d'ancrage et tombe, comme une porte qui se ferme brusquement */
+@keyframes hinge {
+    0% {
+        transform: rotate(0deg);
+        opacity: 1;
+    }
+    20% {
+        transform: rotate(80deg);
+        opacity: 1;
+    }
+    40% {
+        transform: rotate(-60deg);
+        opacity: 1;
+    }
+    60% {
+        transform: rotate(30deg);
+        opacity: 1;
+    }
+    80% {
+        transform: rotate(-10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(0deg) translateY(200px);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément sort soudainement d'une boîte avec un mouvement élastique */
+@keyframes jackInTheBox {
+    0% {
+        transform: scale(0) rotate(30deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(-15deg);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.9) rotate(5deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/** Donner l'impression qu'un élément fait un mouvement de rotation tout en entrant sur la scène */
+@keyframes rollIn {
+    0% {
+        transform: rotate(-120deg) translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(0deg) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément sort de la scène tout en effectuant une rotation */
+@keyframes rollOut {
+    0% {
+        transform: rotate(0deg) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(120deg) translateX(100%);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément apparaît en grandissant à partir d'un point central */
+@keyframes zoomIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément apparaît tout en zoomant vers le bas */
+@keyframes zoomInDown {
+    0% {
+        transform: scale(0.3) translateY(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément apparaît en zoomant depuis la gauche */
+@keyframes zoomInLeft {
+    0% {
+        transform: scale(0.3) translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément apparaît en zoomant depuis la droite */
+@keyframes zoomInRight {
+    0% {
+        transform: scale(0.3) translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément apparaît en zoomant depuis le bas vers le haut */
+@keyframes zoomInUp {
+    0% {
+        transform: scale(0.3) translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/** Donner l'impression qu'un élément disparaît tout en rétrécissant */
+@keyframes zoomOut {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément disparaît tout en rétrécissant et en se déplaçant vers le bas */
+@keyframes zoomOutDown {
+    0% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.3) translateY(100%);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément disparaît tout en rétrécissant et en se déplaçant vers la gauche */
+@keyframes zoomOutLeft {
+    0% {
+        transform: scale(1) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.3) translateX(-100%);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément disparaît tout en rétrécissant et en se déplaçant vers la droite */
+@keyframes zoomOutRight {
+    0% {
+        transform: scale(1) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.3) translateX(100%);
+        opacity: 0;
+    }
+}
+
+/** Donner l'impression qu'un élément disparaît tout en rétrécissant et en se déplaçant vers le haut */
+@keyframes zoomOutUp {
+    0% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.3) translateY(-100%);
+        opacity: 0;
+    }
+}
+
+/** Faire en sorte qu'un élément entre dans la vue depuis le haut de l'écran, tout en restant visible */
+@keyframes slideInDown {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/** Faire en sorte qu'un élément entre dans la vue depuis la gauche de l'écran */
+@keyframes slideInLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire en sorte qu'un élément entre dans la vue depuis la droite de l'écran */
+@keyframes slideInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/** Faire en sorte qu'un élément entre dans la vue depuis le bas de l'écran */
+@keyframes slideInUp {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/** Faire en sorte qu'un élément quitte la vue en se déplaçant vers le bas de l'écran */
+@keyframes slideOutDown {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/** Faire en sorte qu'un élément quitte la vue en se déplaçant vers la gauche de l'écran */
+@keyframes slideOutLeft {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+/** Pour quitter la vue en se déplaçant vers la droite de l'écran */
+@keyframes slideOutRight {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/** Pour quitter la vue en se déplaçant vers le haut de l'écran */
+@keyframes slideOutUp {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+}
+
+/* --- Animate --- */
+._animate {
+    &-flash {
+        animation-name: flash;
+        animation-duration: 1s;
+        animation-fill-mode: both;
+        animation-iteration-count: infinite;
+    }
+
+    &-pulse {
+        animation-name: pulse;
+        animation-duration: 1s;
+        animation-fill-mode: both;
+        animation-iteration-count: infinite;
+    }
+
+    &-rubberBand {
+        animation-name: rubberBand;
+        animation-duration: 1s;
+        animation-fill-mode: both;
+        animation-iteration-count: infinite;
+    }
+
+    &-shakeX {
+        animation-name: shakeX;
+        animation-duration: 1s;
+        animation-fill-mode: both;
+        animation-iteration-count: both;
+    }
+
+    &-shakeY {
+        animation-name: shakeY;
+        animation-duration: 1s;
+        animation-fill-mode: both;
+        animation-iteration-count: both;
+    }
+
+    &-headShake {
+        animation-name: headShake;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-swing {
+        animation-name: swing;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+        transform-origin: top center; /* Le point de pivotement */
+    }
+
+    &-tada {
+        animation-name: tada;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-wobble {
+        animation-name: wobble;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-jello {
+        animation-name: jello;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-heartBeat {
+        animation-name: heartBeat;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+        animation-fill-mode: both;
+    }
+
+    &-backInDown {
+        animation-name: backInDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-backInLeft {
+        animation-name: backInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-backInRight {
+        animation-name: backInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-backInUp {
+        animation-name: backInUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-backOutDown {
+        animation-name: backOutDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-backOutLeft {
+        animation-name: backOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-backOutRight {
+        animation-name: backOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-backOutUp {
+        animation-name: backOutUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceIn {
+        animation-name: bounceIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceInDown {
+        animation-name: bounceInDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceInLeft {
+        animation-name: bounceInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceInRight {
+        animation-name: bounceInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceInUp {
+        animation-name: bounceInUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceOut {
+        animation-name: bounceOut;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceOutDown {
+        animation-name: bounceOutDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceOutLeft {
+        animation-name: bounceOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceOutRight {
+        animation-name: bounceOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-bounceOutUp {
+        animation-name: bounceOutUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeIn {
+        animation-name: fadeIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInDown {
+        animation-name: fadeInDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInDownBig {
+        animation-name: fadeInDownBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInLeft {
+        animation-name: fadeInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInLeftBig {
+        animation-name: fadeInLeftBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInRight {
+        animation-name: fadeInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInRightBig {
+        animation-name: fadeInRightBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInUp {
+        animation-name: fadeInUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInUpBig {
+        animation-name: fadeInUpBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInTopLeft {
+        animation-name: fadeInTopLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInTopRight {
+        animation-name: fadeInTopRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInBottomLeft {
+        animation-name: fadeInBottomLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeInBottomRight {
+        animation-name: fadeInBottomRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOut {
+        animation-name: fadeOut;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutDown {
+        animation-name: fadeOutDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutDownBig {
+        animation-name: fadeOutDownBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutLeft {
+        animation-name: fadeOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutLeftBig {
+        animation-name: fadeOutLeftBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutRight {
+        animation-name: fadeOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutRightBig {
+        animation-name: fadeOutRightBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutUp {
+        animation-name: fadeOutUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutUpBig {
+        animation-name: fadeOutUpBig;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutTopLeft {
+        animation-name: fadeOutTopLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutTopRight {
+        animation-name: fadeOutTopRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutBottomRight {
+        animation-name: fadeOutBottomRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-fadeOutBottomLeft {
+        animation-name: fadeOutBottomLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-flip {
+        animation-name: flip;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-flipInX {
+        animation-name: flipInX;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-flipInY {
+        animation-name: flipInY;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-flipOutX {
+        animation-name: flipOutX;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-flipOutY {
+        animation-name: flipOutY;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-lightSpeedIn {
+        animation-name: lightSpeedIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+    }
+
+    &-lightSpeedInRight {
+        animation-name: lightSpeedInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-lightSpeedInLeft {
+        animation-name: lightSpeedInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-lightSpeedOutRight {
+        animation-name: lightSpeedOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-lightSpeedOutLeft {
+        animation-name: lightSpeedOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-rotateIn {
+        animation-name: rotateIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rotateInDownLeft {
+        animation-name: rotateInDownLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rotateInDownRight {
+        animation-name: rotateInDownRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rotateInUpLeft {
+        animation-name: rotateInUpLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rotateInUpRight {
+        animation-name: rotateInUpRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rotateOut {
+        animation-name: rotateOut;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-rotateOutDownLeft {
+        animation-name: rotateOutDownLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-rotateOutDownRight {
+        animation-name: rotateOutDownRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-rotateOutUpLeft {
+        animation-name: rotateOutUpLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-rotateOutUpRight {
+        animation-name: rotateOutUpRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-hinge {
+        animation-name: hinge;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-jackInTheBox {
+        animation-name: jackInTheBox;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-rollIn {
+        animation-name: rollIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-rollOut {
+        animation-name: rollOut;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-zoomIn {
+        animation-name: zoomIn;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomInDown {
+        animation-name: zoomInDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomInLeft {
+        animation-name: zoomInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomInRight {
+        animation-name: zoomInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomInUp {
+        animation-name: zoomInUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomOut {
+        animation-name: zoomOut;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomOutDown {
+        animation-name: zoomOutDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomOutLeft {
+        animation-name: zoomOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomOutRight {
+        animation-name: zoomOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-zoomOutUp {
+        animation-name: zoomOutUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+    }
+
+    &-slideInDown {
+        animation-name: slideInDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-slideInLeft {
+        animation-name: slideInLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-slideInRight {
+        animation-name: slideInRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-slideInUp {
+        animation-name: slideInUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+    }
+
+    &-slideOutDown {
+        animation-name: slideOutDown;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-slideOutLeft {
+        animation-name: slideOutLeft;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-slideOutRight {
+        animation-name: slideOutRight;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+    &-slideOutUp {
+        animation-name: slideOutUp;
+        animation-duration: 1s;
+        animation-timing-function: ease-in;
+        animation-fill-mode: both;
+    }
+
+}

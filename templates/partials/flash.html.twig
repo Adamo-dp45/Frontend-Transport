@@ -1,0 +1,5 @@
+{% for type, messages in app.flashes %}
+    <alert-message class="is-floating" type="{{ type }}" duration="5">
+        {{ messages | join('. ') }}
+    </alert-message>
+{% endfor %}

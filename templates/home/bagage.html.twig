@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Bagage{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Bagages', 'Statistiques', 'owner.stats.bagage', debut, fin, 'stats.export.bagage') }}
+
+<section class="mb-10">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total bagages', bagage.totalBagages, '', 'blue', 'bag') }}
+        {{ s.kpi('Recette totale', bagage.recetteTotale|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money') }}
+        {{ s.kpi('Poids total', bagage.poidsTotal, 'kg', 'teal', 'scale') }}
+        {{ s.kpi('Perdus', bagage.perdus, '', 'rose', 'alert', '', bagage.perdus > 0 ? 'text-rose-500' : '') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {# Statuts — doughnut #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Répartition par statut</p>
+            <canvas id="chartBagageStatuts" height="160"
+                data-values="{{ [
+                    {statut: 'Enregistré', total: bagage.enregistres},
+                    {statut: 'Embarqué',   total: bagage.embarques},
+                    {statut: 'Livré',      total: bagage.livres},
+                    {statut: 'Perdu',      total: bagage.perdus},
+                    {statut: 'Annulé',     total: bagage.annules}
+                ] | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par jour — barres #}
+        <div class="card p-5 md:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par jour</p>
+            <canvas id="chartBagageParJour" height="160"
+                data-values="{{ bagage.recettesParJour | map(r => {label: r.label, montant: r.montant, nbbagages: r.nbbagages, poids: r.poids}) | json_encode }}">
+            </canvas>
+        </div>
+    </div>
+</section>
+{% endblock %}

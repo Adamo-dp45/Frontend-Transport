@@ -1,0 +1,130 @@
+{#
+    Modale de création rapide d'une ressource liée (libellé seul).
+    À inclure une fois sur une page utilisant le macro fieldWithCreate.
+    Le lien [data-quickcreate] ouvre cette modale ; à la validation, l'option créée
+    est ajoutée au select cible et présélectionnée.
+#}
+<div id="quick-create-modal" data-csrf="{{ csrf_token('quick_create') }}"
+     class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 p-4">
+    <div class="card w-full max-w-md p-6" role="dialog" aria-modal="true" aria-labelledby="qc-title">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold" id="qc-title" data-qc-modal-title>Créer</h3>
+            <button type="button" data-qc-close class="btn-icon" aria-label="Fermer">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form data-qc-form novalidate>
+            <div class="field">
+                <label class="label" for="qc-libelle">Libellé <span class="text-red-500">*</span></label>
+                <input type="text" id="qc-libelle" name="libelle" class="input" autocomplete="off" required>
+            </div>
+            <p data-qc-error class="text-sm text-red-600 mt-2 hidden"></p>
+
+            <div class="flex items-center justify-end gap-3 mt-5">
+                <button type="button" data-qc-close class="btn btn-secondary">Annuler</button>
+                <button type="submit" data-qc-submit class="btn btn-primary inline-flex items-center gap-2">Créer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    if (window.__quickCreateInit) return; // délégation liée une seule fois (robuste à Turbo)
+    window.__quickCreateInit = true;
+
+    const getModal = () => document.getElementById('quick-create-modal');
+
+    function open(trigger) {
+        const modal = getModal();
+        if (!modal) return;
+        modal.dataset.endpoint = trigger.dataset.qcEndpoint || '';
+        modal.dataset.target = trigger.dataset.qcTarget || '';
+        modal.querySelector('[data-qc-modal-title]').textContent = trigger.dataset.qcTitle || 'Créer';
+        const err = modal.querySelector('[data-qc-error]');
+        err.classList.add('hidden');
+        err.textContent = '';
+        const input = modal.querySelector('#qc-libelle');
+        input.value = '';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => input.focus(), 50);
+    }
+
+    function close() {
+        const modal = getModal();
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('[data-quickcreate]');
+        if (trigger) { e.preventDefault(); open(trigger); return; }
+        if (e.target.closest('[data-qc-close]')) { close(); return; }
+        const modal = getModal();
+        if (modal && e.target === modal) { close(); } // clic sur le fond
+    });
+
+    document.addEventListener('keydown', function (e) {
+        const modal = getModal();
+        if (e.key === 'Escape' && modal && modal.classList.contains('flex')) close();
+    });
+
+    document.addEventListener('submit', async function (e) {
+        const form = e.target.closest('[data-qc-form]');
+        if (!form) return;
+        e.preventDefault();
+
+        const modal = getModal();
+        const input = modal.querySelector('#qc-libelle');
+        const err = modal.querySelector('[data-qc-error]');
+        const submitBtn = modal.querySelector('[data-qc-submit]');
+        const libelle = input.value.trim();
+
+        err.classList.add('hidden');
+        if (!libelle) { err.textContent = 'Le libellé est obligatoire'; err.classList.remove('hidden'); return; }
+
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+            '<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+            + '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>'
+            + '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>'
+            + '<span>Création…</span>';
+        try {
+            const body = new FormData();
+            body.append('libelle', libelle);
+            body.append('_token', modal.dataset.csrf);
+
+            const res = await fetch(modal.dataset.endpoint, {
+                method: 'POST',
+                body: body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Erreur lors de la création');
+
+            const select = document.getElementById(modal.dataset.target);
+            if (select) {
+                const opt = document.createElement('option');
+                opt.value = data.id;
+                opt.textContent = data.libelle;
+                select.appendChild(opt);
+                select.value = String(data.id);
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            close();
+        } catch (ex) {
+            err.textContent = ex.message;
+            err.classList.remove('hidden');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        }
+    });
+})();
+</script>

@@ -1,0 +1,204 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Feuille de route — {{ m.voyage.codevoyage }}{% endblock %}
+
+{% set roleBadge = {
+    'depart': { label: 'départ', cls: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300' },
+    'terminus': { label: 'terminus', cls: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' },
+    'intermediaire': { label: '', cls: '' }
+} %}
+
+{% block body %}
+<div class="max-w-[1000px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-5">
+        <div>
+            <a href="{{ path('voyage.show', { id: m.voyage.id }) }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour au voyage
+            </a>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Feuille de route</h1>
+            <p class="text-sm text-muted-foreground mt-1">
+                <span class="font-mono">{{ m.voyage.codevoyage }}</span> ·
+                {{ m.voyage.provenance }} → {{ m.voyage.destination }}
+                {% if m.voyage.car %} · {{ m.voyage.car }}{% endif %}
+                {% if m.voyage.datedepartprevue %} · {{ m.voyage.datedepartprevue }}{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {# Recette totale (hero) #}
+    <div class="card p-5 mb-3">
+        <p class="text-xs text-muted-foreground">Recette totale du voyage</p>
+        <p class="text-3xl font-semibold tabular-nums">{{ m.totaux.recetteTotale|number_format(0, ',', ' ') }} <span class="text-sm text-muted-foreground">FCFA</span></p>
+        <p class="text-xs text-muted-foreground mt-1">
+            Billets {{ m.totaux.recetteBillets|number_format(0, ',', ' ') }}{% if m.totaux.recetteBilletsCommerciaux %} <span class="opacity-80">(gares {{ m.totaux.recetteBilletsGares|number_format(0, ',', ' ') }} · commerciaux {{ m.totaux.recetteBilletsCommerciaux|number_format(0, ',', ' ') }})</span>{% endif %}
+            · Courriers {{ m.totaux.recetteCourriers|number_format(0, ',', ' ') }}
+            · Bagages {{ m.totaux.recetteBagages|number_format(0, ',', ' ') }}
+        </p>
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Passagers</p>
+            <p class="text-2xl font-semibold tabular-nums">{{ m.totaux.passagers }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Recette billets</p>
+            <p class="text-2xl font-semibold tabular-nums">{{ m.totaux.recetteBillets|number_format(0, ',', ' ') }} <span class="text-xs text-muted-foreground">F</span></p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Courriers</p>
+            <p class="text-2xl font-semibold tabular-nums">{{ m.totaux.courriers }}</p>
+            {% if m.totaux.recetteCourriers %}<p class="text-xs text-muted-foreground">{{ m.totaux.recetteCourriers|number_format(0, ',', ' ') }} F</p>{% endif %}
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Bagages</p>
+            <p class="text-2xl font-semibold tabular-nums">{{ m.totaux.bagages }}</p>
+            {% if m.totaux.recetteBagages %}<p class="text-xs text-muted-foreground">{{ m.totaux.recetteBagages|number_format(0, ',', ' ') }} F</p>{% endif %}
+        </div>
+    </div>
+
+    {# Ventes commerciales (vendeur à bord) : recette attribuée au commercial, détaillée par trajet #}
+    {% if m.commerciaux %}
+    <div class="card p-5 mb-5">
+        <div class="flex items-center gap-2 mb-3">
+            <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <h2 class="text-sm font-semibold">Ventes commerciales (vendeur à bord)</h2>
+        </div>
+        <div class="space-y-4">
+            {% for c in m.commerciaux %}
+            <div>
+                <div class="flex items-baseline justify-between gap-3">
+                    <span class="font-medium">{{ c.nom }}</span>
+                    <span class="text-sm text-muted-foreground"><span class="font-semibold tabular-nums text-foreground">{{ c.recette|number_format(0, ',', ' ') }}</span> F · {{ c.nb }} billet{{ c.nb > 1 ? 's' }}</span>
+                </div>
+                <div class="mt-1.5 divide-y divide-border/60 rounded-md border border-border/60">
+                    {% for t in c.trajets %}
+                    <div class="flex items-center justify-between gap-3 px-3 py-1.5 text-[13px]">
+                        <span class="text-muted-foreground">{{ t.de }} → {{ t.vers }}</span>
+                        <span class="tabular-nums">{{ t.nb }} × · {{ t.recette|number_format(0, ',', ' ') }} F</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Sélecteur de tronçon A → B #}
+    <div class="card p-4 mb-5">
+        <div class="flex items-end gap-3 flex-wrap">
+            <div class="flex-1 min-w-[140px]">
+                <label class="label" for="seg-de">De</label>
+                <select id="seg-de" class="input">
+                    {% for g in m.gares %}{% if not loop.last %}<option value="{{ g.ordre }}">{{ g.libelle }}</option>{% endif %}{% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 min-w-[140px]">
+                <label class="label" for="seg-vers">À</label>
+                <select id="seg-vers" class="input">
+                    {% for g in m.gares %}{% if not loop.first %}<option value="{{ g.ordre }}">{{ g.libelle }}</option>{% endif %}{% endfor %}
+                </select>
+            </div>
+            <button type="button" id="seg-reset" class="btn btn-secondary">Tout le voyage</button>
+        </div>
+        <div id="seg-summary" class="hidden mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200"></div>
+    </div>
+
+    {# Feuille de route #}
+    <div class="card p-6">
+        {% for g in m.gares %}
+        <div class="seg-gare flex gap-3" data-ordre="{{ g.ordre }}">
+            <div class="flex flex-col items-center w-3.5 shrink-0">
+                <span class="size-3.5 rounded-full border-2 {{ g.role == 'terminus' ? 'bg-zinc-500 border-zinc-500' : 'bg-background border-muted-foreground' }}"></span>
+                {% if not loop.last %}<span class="flex-1 w-0.5 bg-border"></span>{% endif %}
+            </div>
+            <div class="flex-1 pb-1 {{ loop.last ? '' : 'min-h-[1px]' }}">
+                <div class="flex items-center gap-2">
+                    <span class="font-medium">{{ g.libelle }}</span>
+                    {% if g.ville %}<span class="text-xs text-muted-foreground">· {{ g.ville }}</span>{% endif %}
+                    {% set rb = roleBadge[g.role] %}
+                    {% if rb.label %}<span class="text-[11px] px-2 py-0.5 rounded-full {{ rb.cls }}">{{ rb.label }}</span>{% endif %}
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[13px]">
+                    {% if g.montees %}<span class="text-green-700 dark:text-green-400">↑ {{ g.montees }} montée{{ g.montees > 1 ? 's' }}</span>{% endif %}
+                    {% if g.descentes %}<span class="text-orange-700 dark:text-orange-400">↓ {{ g.descentes }} descente{{ g.descentes > 1 ? 's' }}</span>{% endif %}
+                    {% if g.courriersDeposes or g.courriersArrivee %}<span class="text-muted-foreground">✉ {{ g.courriersDeposes }} déposé{{ g.courriersDeposes > 1 ? 's' }}{% if g.recetteCourriers %} · {{ g.recetteCourriers|number_format(0, ',', ' ') }} F{% endif %}{% if g.courriersArrivee %} · {{ g.courriersArrivee }} à destination{% endif %}</span>{% endif %}
+                    {% if g.bagagesCharges or g.bagagesArrivee %}<span class="text-muted-foreground">🧳 {{ g.bagagesCharges }} chargé{{ g.bagagesCharges > 1 ? 's' }}{% if g.recetteBagages %} · {{ g.recetteBagages|number_format(0, ',', ' ') }} F{% endif %}{% if g.bagagesArrivee %} · {{ g.bagagesArrivee }} déchargé{{ g.bagagesArrivee > 1 ? 's' }}{% endif %}</span>{% endif %}
+                    {% if g.recetteTotale %}<span class="font-medium">recette gare {{ g.recetteTotale|number_format(0, ',', ' ') }} F</span>{% endif %}
+                    {% if not (g.montees or g.descentes or g.courriersDeposes or g.courriersArrivee or g.bagagesCharges or g.bagagesArrivee) %}<span class="text-muted-foreground italic">aucun mouvement</span>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if not loop.last %}
+        {% set tr = m.troncons[loop.index0] %}
+        <div class="seg-troncon flex gap-3" data-ordre="{{ tr.ordre }}">
+            <div class="flex justify-center w-3.5 shrink-0"><span class="w-0.5 bg-border"></span></div>
+            <div class="flex-1 my-1 py-2 px-3 rounded-md bg-muted/40 border-l-[3px] border-emerald-500">
+                <p class="text-xs text-muted-foreground">Tronçon {{ tr.de }} → {{ tr.vers }}</p>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-0.5 text-[13px]">
+                    <span class="font-medium text-emerald-700 dark:text-emerald-400">{{ tr.aBord }} à bord</span>
+                    <span class="text-muted-foreground">{{ tr.aBord }}/{{ tr.placestotal }} ({{ tr.taux }}%)</span>
+                    <span class="inline-block w-28 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                        <span class="block h-full rounded-full {{ tr.taux >= 90 ? 'bg-red-500' : (tr.taux >= 70 ? 'bg-amber-500' : 'bg-emerald-500') }}" style="width: {{ tr.taux }}%"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+(function () {
+    const data = {{ m|json_encode|raw }};
+    const de = document.getElementById('seg-de');
+    const vers = document.getElementById('seg-vers');
+    const reset = document.getElementById('seg-reset');
+    const summary = document.getElementById('seg-summary');
+    const gareRows = Array.from(document.querySelectorAll('.seg-gare'));
+    const tronconRows = Array.from(document.querySelectorAll('.seg-troncon'));
+
+    function apply(full) {
+        let a = parseInt(de.value, 10);
+        let b = parseInt(vers.value, 10);
+        if (full || isNaN(a) || isNaN(b) || a >= b) {
+            gareRows.forEach(r => r.classList.remove('hidden'));
+            tronconRows.forEach(r => r.classList.remove('hidden'));
+            summary.classList.add('hidden');
+            return;
+        }
+        gareRows.forEach(r => {
+            const o = parseInt(r.dataset.ordre, 10);
+            r.classList.toggle('hidden', o < a || o > b);
+        });
+        tronconRows.forEach(r => {
+            const o = parseInt(r.dataset.ordre, 10);
+            r.classList.toggle('hidden', o < a || o >= b);
+        });
+        const garesRange = data.gares.filter(g => g.ordre >= a && g.ordre <= b);
+        const troncRange = data.troncons.filter(t => t.ordre >= a && t.ordre < b);
+        const montees = garesRange.reduce((s, g) => s + g.montees, 0);
+        const descentes = garesRange.reduce((s, g) => s + g.descentes, 0);
+        const recette = garesRange.reduce((s, g) => s + g.recetteTotale, 0);
+        const aBordMax = troncRange.reduce((s, t) => Math.max(s, t.aBord), 0);
+        const ga = data.gares.find(g => g.ordre === a), gb = data.gares.find(g => g.ordre === b);
+        summary.innerHTML = '<strong>' + ga.libelle + ' → ' + gb.libelle + '</strong> : '
+            + montees + ' montée(s), ' + descentes + ' descente(s) · '
+            + aBordMax + ' à bord au max · recette '
+            + Math.round(recette).toLocaleString('fr-FR') + ' F';
+        summary.classList.remove('hidden');
+    }
+
+    de.addEventListener('change', () => apply(false));
+    vers.addEventListener('change', () => apply(false));
+    reset.addEventListener('click', () => { apply(true); });
+})();
+</script>
+{% endblock %}

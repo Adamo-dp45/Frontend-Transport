@@ -1,0 +1,125 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Véhicule ({{ car.matricule }}){% endblock %}
+
+{% set etatMap = {
+        DISPO: ['Disponible', 'green'],
+        EN_MISSION: ['En mission', 'blue'],
+        PANNE: ['En panne', 'red'],
+        MAINTENANCE: ['Maintenance', 'orange']
+    }
+%}
+{% set etatCfg = etatMap[car.etat] ?? [car.etat, 'zinc'] %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('car.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux véhicules
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Véhicule</p>
+                {{ ui.badge(etatCfg[0], etatCfg[1]) }}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] font-mono break-words">{{ car.matricule }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">#{{ car.id }} · Créé le {{ car.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
+        {% if is_granted('CAR_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('car.edit', {id: car.id}) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {{ ui.stat('Nombre de sièges', car.nbrsiege) }}
+        {{ ui.stat('Voyages', car.voyagesCount) }}
+        {{ ui.stat('Dépannages', car.depannagesCount) }}
+        {{ ui.stat("Date d'arrivée", car.datearrivee ? car.datearrivee|date('d/m/Y') : '—') }}
+    </div>
+
+    <div class="card p-6 mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Classification</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+            {{ ui.field('Matricule', car.matricule, true) }}
+            {{ ui.field('Marque', car.marque.libelle is defined ? car.marque.libelle : null) }}
+            {{ ui.field('Type de véhicule', car.typevehicule.libelle is defined ? car.typevehicule.libelle : null) }}
+            {{ ui.field('Modèle de véhicule', car.modelvehicule.libelle is defined ? car.modelvehicule.libelle : null) }}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Voyages effectués</h2>
+                    <span class="text-xs text-muted-foreground">{{ car.voyagesCount }}</span>
+                </div>
+                <div {{ react_component('Collection/VoyagesCollectionTable', {
+                    voyages: voyages,
+                    meta: voyagesMeta,
+                    queryParams: voyagesParams,
+                    urlPrefix: 'v'
+                }) }}>
+                    <div class="flex items-center justify-center gap-6"><twig:Spinner class="size-8" /></div>
+                </div>
+            </div>
+
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dépannages</h2>
+                    <span class="text-xs text-muted-foreground">{{ car.depannagesCount }}</span>
+                </div>
+                <div {{ react_component('Collection/DepannagesCollectionTable', {
+                    depannages: depannages,
+                    meta: depannagesMeta,
+                    queryParams: depannagesParams,
+                    urlPrefix: 'd'
+                }) }}>
+                    <div class="flex items-center justify-center gap-6"><twig:Spinner class="size-8" /></div>
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-4">
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Fiabilité</h2>
+                {% set totalOps = car.voyagesCount + car.depannagesCount %}
+                {% if totalOps > 0 %}
+                {% set tauxPanne = (car.depannagesCount / totalOps * 100)|round %}
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-muted-foreground">Taux d'intervention</span>
+                        <span class="font-semibold {{ tauxPanne > 30 ? 'text-red-600 dark:text-red-400' : (tauxPanne > 10 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">{{ tauxPanne }} %</span>
+                    </div>
+                    <div class="w-full bg-muted rounded-full h-2">
+                        <div class="h-2 rounded-full {{ tauxPanne > 30 ? 'bg-red-500' : (tauxPanne > 10 ? 'bg-orange-500' : 'bg-green-500') }}" style="width: {{ tauxPanne }}%"></div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">{{ car.depannagesCount }} dépannage(s) pour {{ car.voyagesCount }} voyage(s)</p>
+                </div>
+                {% else %}
+                <p class="text-xs text-muted-foreground">Pas encore d'activité enregistrée</p>
+                {% endif %}
+            </div>
+
+            {% if is_granted('CAR_MODIFIER') or is_granted('DEPANNAGE_CREER') or is_granted('VOYAGE_CREER') %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <div class="flex flex-col gap-2">
+                    {% if is_granted('CAR_MODIFIER') %}<a href="{{ path('car.edit', { id: car.id }) }}" class="btn btn-secondary w-full justify-center">Modifier</a>{% endif %}
+                    {% if is_granted('DEPANNAGE_CREER') %}<a href="{{ path('depannage.new') }}" class="btn btn-secondary w-full justify-center">Nouveau dépannage</a>{% endif %}
+                    {% if is_granted('VOYAGE_CREER') %}<a href="{{ path('voyage.new') }}" class="btn btn-secondary w-full justify-center">Nouveau voyage</a>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

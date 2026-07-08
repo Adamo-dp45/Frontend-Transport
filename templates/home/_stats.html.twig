@@ -1,0 +1,120 @@
+{#
+    Macros partagées pour les pages de statistiques (style aligné sur la Caisse).
+    Usage : {% import 'home/_stats.html.twig' as s %}
+#}
+
+{# ── En-tête de page avec filtre période (+ export optionnel) ──────── #}
+{% macro pageHeader(title, eyebrow, route, debut, fin, exportRoute) %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
+    <div>
+        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Espace propriétaire
+        </a>
+        {% if eyebrow %}<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">{{ eyebrow }}</p>{% endif %}
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">{{ title }}</h1>
+        <p class="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+            <svg class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+            Du {{ debut|date('d/m/Y') }} au {{ fin|date('d/m/Y') }}
+        </p>
+    </div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {{ _self.periodeFilter(route, debut, fin) }}
+        {% if exportRoute %}{{ _self.exportButtons(exportRoute, debut, fin) }}{% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{# ── Boutons d'export Excel / PDF (nouvel onglet, hors Turbo) ──────── #}
+{% macro exportButtons(exportRoute, debut, fin) %}
+<div class="flex items-center gap-1.5 max-sm:w-full">
+    <a href="{{ path(exportRoute, { format: 'xlsx', debut: debut, fin: fin }) }}" title="Exporter en Excel"
+       target="_blank" rel="noopener" data-turbo="false"
+       class="inline-flex items-center justify-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-sm font-medium hover:bg-muted transition shrink-0 max-sm:flex-1">
+        <svg class="size-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Excel
+    </a>
+    <a href="{{ path(exportRoute, { format: 'pdf', debut: debut, fin: fin }) }}" title="Exporter en PDF"
+       target="_blank" rel="noopener" data-turbo="false"
+       class="inline-flex items-center justify-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-sm font-medium hover:bg-muted transition shrink-0 max-sm:flex-1">
+        <svg class="size-4 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        PDF
+    </a>
+</div>
+{% endmacro %}
+
+{# ── Filtre de période (responsive) — réutilisable (caisse, gares…) ── #}
+{% macro periodeFilter(route, debut, fin) %}
+<form method="get" action="{{ path(route) }}" class="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm sm:flex-row sm:items-center sm:gap-1.5 sm:p-1.5 max-sm:w-full">
+    <div class="flex items-center gap-1.5 min-w-0">
+        <input type="date" name="debut" value="{{ debut }}" aria-label="Date de début" class="input input-sm border-0 bg-transparent shadow-none w-full min-w-0" />
+        <span class="text-muted-foreground text-sm shrink-0">→</span>
+        <input type="date" name="fin" value="{{ fin }}" aria-label="Date de fin" class="input input-sm border-0 bg-transparent shadow-none w-full min-w-0" />
+    </div>
+    <button type="submit" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shrink-0 max-sm:w-full">
+        <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-13.5 6h10.5m-7.5 6h4.5" /></svg>
+        Filtrer
+    </button>
+</form>
+{% endmacro %}
+
+{# ── Titre de section ─────────────────────────────────────────────── #}
+{% macro sectionTitle(title, sub) %}
+<div class="flex items-end justify-between mb-4">
+    <h2 class="text-lg font-medium">{{ title }}</h2>
+    {% if sub %}<span class="text-xs text-muted-foreground">{{ sub }}</span>{% endif %}
+</div>
+{% endmacro %}
+
+{# ── Carte KPI (icône colorée + valeur + sous-texte) ──────────────── #}
+{% macro kpi(label, value, unit, color, icon, sub, valueClass) %}
+{% set tones = {
+    blue:    'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400',
+    amber:   'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400',
+    emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400',
+    rose:    'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400',
+    violet:  'bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400',
+    teal:    'bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-400',
+    orange:  'bg-orange-50 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400',
+    slate:   'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+} %}
+{% set icons = {
+    'ticket':  'M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z',
+    'mail':    'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75',
+    'bag':     'M20.25 14.15v4.073a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-4.072m16.5 0a2.25 2.25 0 00.659-1.591L19.8 9.75a2.25 2.25 0 00-2.15-1.59H6.35a2.25 2.25 0 00-2.15 1.59L2.84 12.56a2.25 2.25 0 00.659 1.591m16.5 0H3.75',
+    'money':   'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    'chart':   'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
+    'truck':   'M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
+    'box':     'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
+    'users':   'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z',
+    'route':   'M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z',
+    'alert':   'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z',
+    'check':   'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    'building':'M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21',
+    'scale':   'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z',
+} %}
+<div class="card p-5 flex flex-col">
+    <div class="flex items-start justify-between mb-3">
+        <span class="flex size-10 items-center justify-center rounded-xl {{ tones[color] ?? tones.slate }}">
+            <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ icons[icon] ?? icons.chart }}" />
+            </svg>
+        </span>
+    </div>
+    <p class="text-xs text-muted-foreground">{{ label }}</p>
+    <p class="text-2xl font-semibold tracking-tight mt-0.5 {{ valueClass }}">{{ value }}{% if unit %} <span class="text-sm font-normal text-muted-foreground">{{ unit }}</span>{% endif %}</p>
+    {% if sub %}<p class="text-xs text-muted-foreground mt-auto pt-2">{{ sub }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{# ── Carte « graphique / contenu » ───────────────────────────────── #}
+{% macro chartCardOpen(title, span) %}
+<div class="card p-5 {{ span }}">
+    <p class="text-sm font-medium text-muted-foreground mb-4">{{ title }}</p>
+{% endmacro %}
+
+{% macro chartCardClose() %}
+</div>
+{% endmacro %}

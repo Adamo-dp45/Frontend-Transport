@@ -1,0 +1,21 @@
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <p class="text-sm text-muted-foreground mb-5">
+            Définissez le prix d'un trajet entre deux gares. Ce tarif est <strong>global</strong> : il s'applique
+            à toutes les lignes qui desservent ce couple de gares (gare de départ → gare d'arrivée).
+        </p>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-3">
+            {{ form_row(form.garedepart) }}
+            {{ form_row(form.garearrivee) }}
+            <div class="sm:col-span-2">
+                {{ form_row(form.montant) }}
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('tarif.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

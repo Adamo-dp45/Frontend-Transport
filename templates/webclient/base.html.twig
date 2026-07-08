@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <title>{% block title %}Réserver{% endblock %} · {{ compagnie.libelle ?? 'Réservation' }}</title>
+        <meta name="theme-color" content="#ffffff">
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.1em%22 font-size=%2296%22>🎟️</text></svg>">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+        {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
+        {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+        <style>
+            /* ── Fix scroll : l'app agent force body{height:100vh;overflow:hidden} ── */
+            html { height: auto !important; }
+            body {
+                height: auto !important; min-height: 100dvh;
+                overflow-y: auto !important; overflow-x: hidden !important;
+                display: block !important;
+                background: var(--background);
+            }
+            /* ── Web-client — minimal & pro ── */
+            /* !important : le reset Tailwind (couche base) écrase sinon la marge auto → contenu collé à gauche */
+            .wc-shell { width: 100%; max-width: 30rem; margin-left: auto !important; margin-right: auto !important; }
+            .wc-hair { border: 1px solid var(--border); }
+            .wc-tap { transition: background-color .12s, border-color .12s; }
+            .wc-tap:hover { background: var(--muted); border-color: color-mix(in srgb, var(--foreground) 22%, var(--border)); }
+            .wc-tap:active { background: color-mix(in srgb, var(--foreground) 4%, var(--card)); }
+            @keyframes wc-in { from { opacity:0; transform: translateY(4px) } to { opacity:1; transform:none } }
+            .wc-in { animation: wc-in .2s ease both; }
+            .wc-skel { background: linear-gradient(90deg, var(--muted) 25%, var(--border) 37%, var(--muted) 63%);
+                background-size: 400% 100%; animation: wc-shimmer 1.3s ease infinite; }
+            @keyframes wc-shimmer { 0% { background-position: 100% 0 } 100% { background-position: 0 0 } }
+            .wc-notch { position: relative; border-top: 1px dashed var(--border); }
+            .wc-notch::before, .wc-notch::after { content:''; position:absolute; top:-11px; width:20px; height:20px;
+                border-radius:9999px; background: var(--background); }
+            .wc-notch::before { left:-11px } .wc-notch::after { right:-11px }
+        </style>
+    </head>
+    <body>
+        <header class="sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border">
+            <div class="wc-shell px-4 h-14 flex items-center gap-2.5">
+                <a href="{{ path('webclient.index', { slug: slug }) }}" class="flex items-center gap-2.5 min-w-0">
+                    <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-foreground text-background text-[12px] font-bold">
+                        {{ (compagnie.sigle ?? compagnie.libelle ?? 'R')|slice(0, 2)|upper }}
+                    </span>
+                    <span class="font-semibold text-[15px] leading-tight truncate">{{ compagnie.libelle ?? 'Réservation' }}</span>
+                </a>
+                {% if compagnie.contact %}
+                <a href="tel:{{ compagnie.contact }}" class="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                    <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"/></svg>
+                    <span class="hidden sm:inline">Aide</span>
+                </a>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="wc-shell px-4 pt-8 pb-20">
+            {% block body %}{% endblock %}
+        </main>
+
+        <footer class="wc-shell px-4 pb-8 text-center text-xs text-muted-foreground">
+            {{ compagnie.libelle ?? '' }}{% if compagnie.contact %} · {{ compagnie.contact }}{% endif %} · Réservation en ligne
+        </footer>
+    </body>
+</html>

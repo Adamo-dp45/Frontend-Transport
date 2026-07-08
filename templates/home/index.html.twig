@@ -1,0 +1,143 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Acceuil{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Tableau de bord', 'Vue globale', 'home', debut, fin) }}
+
+{# ── Exploitation ─────────────────────────────────────────────────── #}
+{% set voyagesTermines = 0 %}
+{% for st in exploitation.voyagesParStatut %}{% if st.statut == 'TERMINE' %}{% set voyagesTermines = st.total %}{% endif %}{% endfor %}
+
+<section class="mb-10">
+    {{ s.sectionTitle('Exploitation') }}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {{ s.kpi('Total voyages', exploitation.totalVoyages, '', 'blue', 'route') }}
+        {{ s.kpi('Taux de remplissage', exploitation.tauxRemplissage.moyenneGlobale, '%', 'violet', 'chart') }}
+        {{ s.kpi('Voyages terminés', voyagesTermines, '', 'emerald', 'check') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card p-5 md:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Voyages par jour</p>
+            <canvas id="chartVoyagesPeriode" height="120" data-values="{{ exploitation.voyagesParPeriode | map(v => {label: v.label, total: v.total}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Répartition par statut</p>
+            <canvas id="chartStatuts" height="120" data-values="{{ exploitation.voyagesParStatut | map(st => {statut: st.statut, total: st.total}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5 md:col-span-3">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Taux de remplissage par voyage</p>
+            <canvas id="chartTauxVoyages" height="120" data-values="{{ exploitation.tauxRemplissage.detailParVoyage | map(v => {label: v.codeVoyage, taux: v.taux}) | json_encode }}"></canvas>
+        </div>
+    </div>
+</section>
+
+{# ── Financier ────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    {{ s.sectionTitle('Financier') }}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        {{ s.kpi('Recettes totales', financiere.recettesTotales|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money') }}
+        {{ s.kpi('Coût dépannages', financiere.coutDepannages|number_format(0, ',', ' '), 'FCFA', 'rose', 'truck') }}
+        {{ s.kpi('Coût approvisionnements', financiere.coutApprovisionnements|number_format(0, ',', ' '), 'FCFA', 'amber', 'box') }}
+        {{ s.kpi('Bénéfice net', financiere.beneficeNet|number_format(0, ',', ' '), 'FCFA', 'violet', 'wallet', '', financiere.beneficeNet < 0 ? 'text-rose-500' : 'text-emerald-600') }}
+    </div>
+
+    {# Détail recettes #}
+    <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Billetterie</p>
+            <p class="text-lg font-semibold tabular-nums">{{ financiere.recettesTickets | number_format(0, ',', ' ') }} FCFA</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Courriers</p>
+            <p class="text-lg font-semibold tabular-nums">{{ financiere.recettesCourriers | number_format(0, ',', ' ') }} FCFA</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Bagages</p>
+            <p class="text-lg font-semibold tabular-nums">{{ financiere.recettesBagages | number_format(0, ',', ' ') }} FCFA</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par jour</p>
+            <canvas id="chartRecettes" height="120" data-values="{{ financiere.recettesParJour | map(r => {label: r.label, montant: r.montant}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Coûts par jour</p>
+            <canvas id="chartCouts" height="120" data-values="{{ financiere.coutsParJour | map(c => {label: c.label, depannage: c.depannage, approvisionnement: c.approvisionnement}) | json_encode }}"></canvas>
+        </div>
+    </div>
+</section>
+
+{# ── Stock ────────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    {{ s.sectionTitle('Stock') }}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total pièces', stock.totalPieces, '', 'blue', 'box') }}
+        {{ s.kpi('Pièces critiques', stock.piecesCritiques, '', 'rose', 'alert', '', stock.piecesCritiques > 0 ? 'text-rose-500' : '') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Stock actuel par pièce</p>
+            <canvas id="chartStockPieces" height="160" data-values="{{ stock.stockParPiece | map(p => {libelle: p.libelle, stockactuel: p.stockactuel, seuilstock: p.seuilstock, critique: p.critique}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Mouvements récents</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Pièce</th>
+                        <th class="pb-2 font-medium">Type</th>
+                        <th class="pb-2 font-medium text-right">Qté</th>
+                        <th class="pb-2 font-medium text-right">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in stock.mouvementsRecents %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">{{ m.piece }}</td>
+                        <td class="py-2">
+                            <span class="text-xs px-2 py-0.5 rounded-full
+                                {% if m.typemouvement == 'ENTREE' %}bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300
+                                {% elseif m.typemouvement == 'SORTIE' %}bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300
+                                {% else %}bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300{% endif %}">
+                                {{ m.typemouvement }}
+                            </span>
+                        </td>
+                        <td class="py-2 text-right tabular-nums">{{ m.quantite }}</td>
+                        <td class="py-2 text-right text-muted-foreground">{{ m.date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{# ── Flotte ───────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    {{ s.sectionTitle('Flotte') }}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total véhicules', flotte.totalVehicules, '', 'blue', 'truck') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Véhicules par état</p>
+            <canvas id="chartVehiculesEtat" height="160" data-values="{{ flotte.vehiculesParEtat | map(v => {etat: v.etat, total: v.total}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Véhicules les plus en panne</p>
+            <canvas id="chartVehiculesDepannage" height="160" data-values="{{ flotte.vehiculesParDepannage | map(v => {matricule: v.matricule, nbrdepannages: v.nbrdepannages}) | json_encode }}"></canvas>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Coût maintenance par véhicule</p>
+            <canvas id="chartCoutMaintenance" height="160" data-values="{{ flotte.coutMaintenanceParVehicule | map(v => {matricule: v.matricule, couttotal: v.couttotal}) | json_encode }}"></canvas>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvel approvisionnement{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('approvisionnement.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouvel approvisionnement</h1>
+    </div>
+</div>
+
+<form action="{{ path('approvisionnement.new') }}" method="post">
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        {#
+            <select name="fournisseur" required class="input">
+                <option value="">-- Sélectionner un fournisseur --</option>
+                {% for f in fournisseurs %}
+                    <option value="{{ f.id }}">{{ f.libelle }}</option>
+                {% endfor %}
+            </select>
+        #}
+        <select
+            name="fournisseur"
+            required
+            data-remote-select="fournisseurs"
+            placeholder="-- Rechercher un fournisseur --"
+        ></select>
+    </div>
+
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <h2 class="text-2xl font-light">Pièces approvisionnées</h2>
+            <button type="button" id="btn-add-ligne" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter une ligne
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="table-details">
+                <thead>
+                    <tr class="border-b bg-muted/40">
+                        <th class="text-left px-4 py-3 font-semibold">Pièce</th>
+                        <th class="text-left px-4 py-3 font-semibold w-32">Quantité</th>
+                        <th class="text-left px-4 py-3 font-semibold w-40">Prix unitaire (FCFA)</th>
+                        <th class="text-left px-4 py-3 font-semibold w-40">Total</th>
+                        <th class="w-12"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-details">
+                    {# Première ligne vide par défaut #}
+                    <tr class="detail-ligne border-b" data-index="0">
+                        <td class="px-4 py-3">
+                            {# ── ÉTAT PRÉCÉDENT (désactivé) — toutes les pièces chargées + prix via data-prix ──
+                            <select name="detail_piece[]" class="piece-select input" required>
+                                <option value="">-- Pièce --</option>
+                                {% for p in pieces %}
+                                <option value="{{ p.id }}" data-prix="{{ p.prixunitaire }}">{{ p.libelle }}</option>
+                                {% endfor %}
+                            </select>
+                            #}
+                            {# Autocomplete distant — pas de classe .input (tom-select). Le prix est repris de raw.prixunitaire (cf. script). #}
+                            <select name="detail_piece[]" class="piece-select" required
+                                    data-remote-select="pieces"
+                                    placeholder="-- Rechercher une pièce --"></select>
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="number" name="detail_quantite[]" min="1" value="1" class="quantite-input input" required />
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="number" name="detail_prixunitaire[]" min="0" value="0" class="prix-input input" required />
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="total-ligne font-semibold tabular-nums text-muted-foreground">0 FCFA</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <button type="button" class="btn-remove-ligne btn btn-danger" title="Supprimer la ligne">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="border-t bg-muted/20">
+                        <td colspan="3" class="px-4 py-3 text-sm font-semibold text-right">Total général :</td>
+                        <td class="px-4 py-3 font-bold tabular-nums" id="total-general">0 FCFA</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+        <a href="{{ path('approvisionnement.index') }}" class="btn btn-secondary">Annuler</a>
+        <button class="btn btn-primary">
+            Créer
+        </button>
+    </div>
+</form>
+
+<template id="template-ligne">
+    <tr class="detail-ligne border-b">
+        <td class="px-4 py-3">
+            {# ── ÉTAT PRÉCÉDENT (désactivé) ──
+            <select name="detail_piece[]" class="piece-select input" required>
+                <option value="">-- Pièce --</option>
+                {% for p in pieces %}
+                <option value="{{ p.id }}" data-prix="{{ p.prixunitaire }}">{{ p.libelle }}</option>
+                {% endfor %}
+            </select>
+            #}
+            <select name="detail_piece[]" class="piece-select" required
+                    data-remote-select="pieces"
+                    placeholder="-- Rechercher une pièce --"></select>
+        </td>
+        <td class="px-4 py-3">
+            <input type="number" name="detail_quantite[]" min="1" value="1" class="quantite-input input" required />
+        </td>
+        <td class="px-4 py-3">
+            <input type="number" name="detail_prixunitaire[]" min="0" value="0" class="prix-input input" required />
+        </td>
+        <td class="px-4 py-3">
+            <span class="total-ligne font-semibold tabular-nums text-muted-foreground">0 FCFA</span>
+        </td>
+        <td class="px-4 py-3">
+            <button type="button" class="btn-remove-ligne btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>
+(function () {
+    const tbody = document.getElementById('tbody-details')
+    const template = document.getElementById('template-ligne')
+    const btnAdd = document.getElementById('btn-add-ligne')
+    const totalGen = document.getElementById('total-general')
+
+    function formatFCFA(n) {
+        return n.toLocaleString('fr-FR') + ' FCFA'
+    }
+
+    function updateTotaux() {
+        let grandTotal = 0
+        tbody.querySelectorAll('.detail-ligne').forEach(function(row) {
+            const qte  = parseFloat(row.querySelector('.quantite-input').value)  || 0
+            const prix = parseFloat(row.querySelector('.prix-input').value)       || 0
+            const total = qte * prix
+            grandTotal += total
+            row.querySelector('.total-ligne').textContent = formatFCFA(total)
+        })
+        totalGen.textContent = formatFCFA(grandTotal)
+    }
+
+    function bindRow(row) {
+        // Pré-remplir le prix depuis l'item tom-select (raw.prixunitaire) quand on choisit une pièce.
+        // (Avant : data-prix sur les <option> ; en autocomplete distant les options sont chargées à la volée.)
+        row.querySelector('.piece-select').addEventListener('change', function() {
+            const ts  = this.tomselect
+            const val = this.value
+            const opt = ts && val ? ts.options[val] : null
+            let prix = null
+            if (opt) prix = (opt.raw && opt.raw.prixunitaire != null) ? opt.raw.prixunitaire : opt.prixunitaire
+            if (prix != null && prix !== '') row.querySelector('.prix-input').value = prix
+            updateTotaux()
+        })
+        row.querySelector('.quantite-input').addEventListener('input', updateTotaux)
+        row.querySelector('.prix-input').addEventListener('input', updateTotaux)
+        row.querySelector('.btn-remove-ligne').addEventListener('click', function() {
+            if (tbody.querySelectorAll('.detail-ligne').length > 1) {
+                row.remove()
+                updateTotaux()
+            }
+        })
+    }
+
+    // Binder la première ligne (son tom-select est initialisé par le initRemoteSelects() global au turbo:load)
+    tbody.querySelectorAll('.detail-ligne').forEach(bindRow)
+
+    // Ajouter une ligne
+    btnAdd.addEventListener('click', function() {
+        const clone = template.content.cloneNode(true)
+        const row   = clone.querySelector('tr')
+        tbody.appendChild(row)
+        bindRow(row)
+        // Le initRemoteSelects() global a déjà tourné → on initialise tom-select sur le nouveau select
+        if (window.initRemoteSelect) {
+            window.initRemoteSelect(row.querySelector('.piece-select'), 'pieces')
+        }
+    })
+})()
+</script>
+{% endblock %}

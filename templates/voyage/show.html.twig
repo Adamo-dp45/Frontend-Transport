@@ -1,0 +1,482 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}{{ voyage.provenance }} → {{ voyage.destination }}{% endblock %}
+
+{% set estDestination = app.user.gare and voyage.ligne.gareterminus.id == app.user.gare.id %}
+{# Exploitation (car/chauffeur) : tout le monde sauf le terminus ET sauf une gare en amont de la provenance (départ partiel). #}
+{% set peutGererVoyage = is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or (not estDestination and not gareEnAmont) %}
+{# Planification (modifier / commercial / démarrer / supprimer) : gare de PROVENANCE (origine effective) uniquement (+ admin/central). #}
+{% set origineEffId = voyage.gareprovenance ? voyage.gareprovenance.id : voyage.ligne.gareorigine.id %}
+{% set peutPlanifierVoyage = is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or not app.user.gare or origineEffId == app.user.gare.id %}
+{% set cloture = voyage.datearriveereelle is defined and voyage.datearriveereelle != null %}
+
+{% block body %}
+<div class="max-w-[1200px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('voyage.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux voyages
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Voyage</p>
+                {{ ui.badge(voyage.codevoyage, 'zinc') }}
+                {% if cloture %}{{ ui.badge('Clôturé', 'red') }}{% elseif voyage.datedepartreelle %}{{ ui.badge('Parti', 'green') }}{% else %}{{ ui.badge('Préparation', 'blue') }}{% endif %}
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-light tracking-[-0.5px] leading-[1.2] flex items-center gap-3 flex-wrap">
+                <span>{{ voyage.provenance }}</span>
+                <svg class="size-5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/></svg>
+                <span>{{ voyage.destination }}</span>
+            </h1>
+            <p class="text-sm text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                <span>Ligne <span class="font-mono">{{ voyage.ligne.codeligne }}</span></span>
+                <span>Départ prévu <strong class="text-foreground font-medium">{{ voyage.datedepartprevue ? voyage.datedepartprevue|date('d/m/Y H:i') : '—' }}</strong></span>
+                <span>Arrivée prévue <strong class="text-foreground font-medium">{{ voyage.datearriveeprevue ? voyage.datearriveeprevue|date('d/m/Y H:i') : '—' }}</strong></span>
+            </p>
+            {% if voyage.datedepartreelle or cloture %}
+            <p class="text-sm mt-1 flex flex-wrap gap-x-4 gap-y-1 text-emerald-600 dark:text-emerald-400">
+                {% if voyage.datedepartreelle %}<span>Départ réel <strong>{{ voyage.datedepartreelle|date('d/m/Y H:i') }}</strong></span>{% endif %}
+                {% if cloture %}<span>Arrivée réelle <strong>{{ voyage.datearriveereelle|date('d/m/Y H:i') }}</strong></span>{% endif %}
+            </p>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            {% if voyage.datearriveereelle is not defined and is_granted('VOYAGE_MODIFIER') and peutGererVoyage %}
+            <a href="{{ path('voyage.affect.personnel', {id: voyage.id}) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Affecter du personnel
+            </a>
+            {% endif %}
+            <a href="{{ path('voyage.manifeste', {id: voyage.id}) }}" class="btn btn-secondary">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                Feuille de route
+            </a>
+            <a href="{{ path('bordereau.chauffeur', {voyageId: voyage.id}) }}" target="_blank" class="btn btn-secondary">Bordereau chauffeur</a>
+            {# Réception : ni la PROVENANCE effective, ni le terminus, ni une gare en amont de la provenance. #}
+            {% if app.user.gare and voyage.datearriveereelle is null
+                  and not gareEnAmont
+                  and origineEffId != app.user.gare.id
+                  and voyage.ligne.gareterminus.id != app.user.gare.id %}
+            <form method="POST" action="{{ path('voyage.receptionner', { id: voyage.id }) }}" onsubmit="return confirm('Confirmer la réception de ce voyage à votre gare ({{ app.user.gare.libelle }}) ? Les courriers et bagages qui y descendent seront mis à jour.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('receptionner_voyage') }}">
+                <button type="submit" class="btn btn-primary">Réceptionner à ma gare</button>
+            </form>
+            {% endif %}
+            {% if voyage.car and voyage.datedepartreelle is null and voyage.datearriveereelle is null and is_granted('VOYAGE_MODIFIER') and peutPlanifierVoyage %}
+            <form method="POST" action="{{ path('voyage.demarrer', { id: voyage.id }) }}" onsubmit="return confirm('Démarrer le voyage ? Les colis passeront en transit et les bagages seront embarqués.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('demarrer_voyage') }}">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 12h15"/></svg>
+                    Démarrer le voyage
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Recette totale</p>
+            <p class="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">{{ recette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+            <p class="text-[11px] text-muted-foreground mt-1 leading-snug">
+                Billets {{ recette_billets|number_format(0, ',', ' ') }}
+                · Courriers {{ recette_courriers|number_format(0, ',', ' ') }}
+                · Bagages {{ recette_bagages|number_format(0, ',', ' ') }}
+            </p>
+        </div>
+        {{ ui.stat('Tickets vendus', nbr_tickets, null, 'sur ' ~ voyage.placestotal ~ ' places') }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Remplissage</p>
+            <p class="text-2xl font-semibold tabular-nums mt-0.5">{{ taux_remplissage }} %</p>
+            <div class="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div class="h-1.5 rounded-full {{ taux_remplissage >= 90 ? 'bg-red-500' : (taux_remplissage >= 60 ? 'bg-amber-400' : 'bg-emerald-500') }}" style="width: {{ taux_remplissage }}%"></div>
+            </div>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Places restantes</p>
+            <p class="text-2xl font-semibold tabular-nums mt-0.5 {{ places_restantes == 0 ? 'text-red-500' : 'text-green-600 dark:text-green-400' }}">{{ places_restantes }}</p>
+            <p class="text-xs text-muted-foreground">{{ places_restantes == 0 ? 'Voyage complet' : 'au tronçon le plus chargé' }}</p>
+        </div>
+        {{ ui.stat('Places totales', voyage.placestotal ?? '—') }}
+        {{ ui.stat('Pic d\'occupation', places_occupees) }}
+        {{ ui.stat('Personnel affecté', voyage.detailpersonnels|length) }}
+    </div>
+
+    {# Remplissage par tronçon #}
+    {% if segments|length > 0 %}
+    <div class="card p-5 mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Remplissage par tronçon</h2>
+        <div class="space-y-2.5">
+            {% for seg in segments %}
+            <div class="flex items-center gap-3">
+                <div class="w-44 shrink-0 text-sm truncate">
+                    <span class="font-medium">{{ seg.depart }}</span>
+                    <span class="text-muted-foreground mx-1">→</span>
+                    <span class="font-medium">{{ seg.arrivee }}</span>
+                </div>
+                <div class="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
+                    <div class="h-2.5 rounded-full {{ seg.taux >= 90 ? 'bg-red-500' : (seg.taux >= 60 ? 'bg-amber-400' : 'bg-emerald-500') }}" style="width: {{ seg.taux }}%"></div>
+                </div>
+                <div class="w-20 shrink-0 text-right text-sm tabular-nums text-muted-foreground">{{ seg.occupees }}/{{ voyage.placestotal }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# ════════════════ Détail du voyage (redesign) ════════════════ #}
+
+    {# Macro locale : petit compteur dans les en-têtes de section #}
+    {% macro pill(n) %}<span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold tabular-nums">{{ n }}</span>{% endmacro %}
+    {% import _self as t %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">
+
+        {# ─────────── Sidebar (à droite sur lg, après les tables sur mobile) ─────────── #}
+        <aside class="space-y-6 order-last lg:col-span-1">
+
+            {# Commercial à bord — mis en avant (violet) #}
+            <section class="card overflow-hidden">
+                <header class="px-5 py-3.5 border-b border-border bg-violet-50/60 dark:bg-violet-950/20">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        Commercial à bord
+                    </h2>
+                </header>
+                <div class="p-5">
+                    {% if voyage.commercial %}
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 shrink-0 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300 flex items-center justify-center text-sm font-semibold uppercase">
+                            {{ voyage.commercial.prenom|first }}{{ voyage.commercial.nom|first }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-medium text-sm truncate">{{ voyage.commercial.prenom }} {{ voyage.commercial.nom }}</p>
+                            <p class="text-xs text-muted-foreground">Vend depuis <strong class="text-foreground">{{ voyage.garecourante.libelle ?? voyage.provenance }}</strong></p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-muted-foreground">Aucun commercial affecté à ce voyage.</p>
+                    {% endif %}
+
+                    {# Avancement de la position — réservé au commercial à bord #}
+                    {% if voyage.commercial and app.user.id == voyage.commercial.id and voyage.datearriveereelle is null %}
+                        {% set courant = arrets|filter(a => a.id == (voyage.garecourante.id ?? null))|first %}
+                        {% set avals = arrets|filter(a => a.ordre > (courant.ordre ?? 0)) %}
+                        {% if avals is not empty %}
+                        <form method="post" action="{{ path('voyage.avancer', { id: voyage.id }) }}" class="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+                            <input type="hidden" name="_token" value="{{ csrf_token('voyage_avancer') }}">
+                            <select name="gare" class="input flex-1 text-sm" required>
+                                <option value="">Le car est arrivé à…</option>
+                                {% for a in avals %}<option value="{{ a.id }}">{{ a.libelle }}</option>{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Avancer</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+
+                    {# Commercial — planification : gare d'ORIGINE uniquement #}
+                    {% if is_granted('VOYAGE_MODIFIER') and voyage.datearriveereelle is null and peutPlanifierVoyage %}
+                    <a href="{{ path('voyage.commercial', { id: voyage.id }) }}" class="btn btn-secondary btn-sm w-full justify-center mt-4">
+                        {{ voyage.commercial ? 'Gérer le commercial' : 'Affecter un commercial' }}
+                    </a>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Véhicule #}
+            {% if voyage.car %}
+            <section class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Véhicule</h2>
+                <div class="grid grid-cols-1 gap-y-3 mb-3">
+                    {{ ui.field('Matricule', voyage.car.matricule, true) }}
+                    {{ ui.field('Capacité', voyage.car.nbrsiege ~ ' places') }}
+                    {% if voyage.car.marque is defined and voyage.car.marque %}{{ ui.field('Marque', voyage.car.marque.libelle) }}{% endif %}
+                </div>
+                <a href="{{ path('car.show', { id: voyage.car.id }) }}" class="btn btn-secondary w-full justify-center">Voir la fiche véhicule</a>
+                {# Changer le car (ex. panne en route) — exploitation : toute gare de la route sauf terminus #}
+                {% if voyage.datearriveereelle is null and is_granted('VOYAGE_MODIFIER') and peutGererVoyage %}
+                <a href="{{ path('voyage.affect.car', { id: voyage.id }) }}" class="btn btn-secondary w-full justify-center mt-2">Changer le car (panne)</a>
+                {% endif %}
+            </section>
+            {% else %}
+            <section class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Véhicule</h2>
+                <p class="text-sm text-muted-foreground">Aucun car affecté.</p>
+                {% if voyage.placesprevues %}
+                <p class="text-sm mt-2">Capacité prévisionnelle : <strong>{{ voyage.placesprevues }} places</strong> <span class="text-muted-foreground">(réservations ouvertes)</span></p>
+                {% else %}
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">Aucune capacité prévisionnelle : les réservations sont impossibles tant qu'aucun car n'est affecté ou que les « places prévues » ne sont pas renseignées.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {# Actions #}
+            {% if is_granted('VOYAGE_MODIFIER') and voyage.datearriveereelle is null %}
+            <section class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <div class="flex flex-col gap-2">
+                    {# Modifier — planification : gare d'ORIGINE #}
+                    {% if peutPlanifierVoyage %}
+                    <a href="{{ path('voyage.edit', {id: voyage.id}) }}" class="btn btn-primary w-full justify-center">Modifier</a>
+                    {% endif %}
+                    {# Affecter du personnel — exploitation : toute gare sauf terminus #}
+                    {% if peutGererVoyage %}
+                    <a href="{{ path('voyage.affect.personnel', {id: voyage.id}) }}" class="btn btn-secondary w-full justify-center">Affecter du personnel</a>
+                    {% endif %}
+                    {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or estDestination %}
+                    <a href="{{ path('voyage.cloturer', {id: voyage.id}) }}" class="btn btn-danger w-full justify-center">Clôturer le voyage</a>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+        </aside>
+
+        {# ─────────── Colonne principale ─────────── #}
+        <div class="lg:col-span-2 space-y-6">
+
+            {# Personnel affecté #}
+            <section class="card overflow-hidden">
+                <header class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Personnel affecté</h2>
+                    {{ t.pill(voyage.detailpersonnels|length) }}
+                </header>
+                {% if voyage.detailpersonnels is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun personnel affecté</div>
+                {% else %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                                <th class="text-left px-6 py-2.5 font-medium">Personnel</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Type</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Contact</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Motif</th>
+                                <th class="px-6 py-2.5"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            {% for dp in voyage.detailpersonnels %}
+                            <tr class="hover:bg-muted/20 transition-colors">
+                                <td class="px-6 py-3">
+                                    <p class="font-medium">{{ dp.personnel.prenom }} {{ dp.personnel.nom }}</p>
+                                    <p class="text-xs text-muted-foreground font-mono">{{ dp.personnel.code }}</p>
+                                </td>
+                                <td class="px-6 py-3">{{ ui.badge(dp.personnel.typepersonnel.libelle ?? '—', 'blue') }}</td>
+                                <td class="px-6 py-3 text-muted-foreground text-xs">{{ dp.personnel.contact ?? '—' }}</td>
+                                <td class="px-6 py-3 text-xs italic text-muted-foreground">{{ dp.motif ?? '—' }}</td>
+                                <td class="px-6 py-3 text-right">
+                                    {% if is_granted('PERSONNEL_MODIFIER') and voyage.datearriveereelle is null %}
+                                    <form method="post" action="{{ path('personnel.desaffecter', { id: dp.id }) }}" class="inline" onsubmit="return confirm('Désaffecter {{ dp.personnel.nom }} de ce voyage ?')">
+                                        <input type="hidden" name="redirect_url" value="{{ path('voyage.show', { id: voyage.id }) }}">
+                                        <button type="submit" class="text-xs text-red-600 hover:text-red-700 hover:underline">Désaffecter</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </section>
+
+            {# Billets émis #}
+            <section class="card overflow-hidden">
+                <header class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Billets émis</h2>
+                    {{ t.pill(voyage.tickets|length) }}
+                </header>
+                {% if voyage.tickets is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun billet émis pour ce voyage</div>
+                {% else %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                                <th class="text-left px-6 py-2.5 font-medium">Code</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Passager</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Tronçon</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Place</th>
+                                <th class="text-right px-6 py-2.5 font-medium">Prix</th>
+                                <th class="w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            {% for ticket in voyage.tickets %}
+                            <tr class="hover:bg-muted/20 transition-colors">
+                                <td class="px-6 py-3 font-mono text-xs font-semibold">{{ ticket.codeticket ?? '—' }}</td>
+                                <td class="px-6 py-3">
+                                    <p class="font-medium">{{ ticket.nomclient ?? '—' }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ ticket.contactclient ?? '' }}</p>
+                                </td>
+                                <td class="px-6 py-3 text-xs">
+                                    <span class="font-medium">{{ ticket.gare.libelle ?? '—' }}</span>
+                                    <span class="text-muted-foreground mx-1">→</span>
+                                    <span class="font-medium">{{ ticket.garedescente.libelle ?? voyage.destination }}</span>
+                                </td>
+                                <td class="px-6 py-3 font-semibold tabular-nums">{{ ticket.siege.numero }}</td>
+                                <td class="px-6 py-3 text-right tabular-nums font-semibold">{{ ticket.prix is defined ? ticket.prix|number_format(0, ',', ' ') ~ ' FCFA' : '—' }}</td>
+                                <td class="px-6 py-3 text-right">
+                                    {% if ticket.id is defined %}<a href="{{ path('ticket.show', { id: ticket.id }) }}" class="text-xs text-primary hover:underline">Voir</a>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </section>
+
+            {# Journal d'activité — qui a fait quoi sur ce voyage #}
+            <section class="card overflow-hidden">
+                <header class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Journal d'activité</h2>
+                    {{ t.pill(activites|length) }}
+                </header>
+                {% if activites is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucune activité enregistrée pour ce voyage</div>
+                {% else %}
+                {% set tones = {
+                    VOYAGE_CAR: 'bg-blue-500', VOYAGE_COMMERCIAL: 'bg-violet-500', VOYAGE_POSITION: 'bg-emerald-500',
+                    VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500'
+                } %}
+                <ul class="px-6 py-4">
+                    {% for a in activites %}
+                    <li class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <span class="size-2.5 rounded-full {{ tones[a.type] ?? 'bg-zinc-400' }} mt-1.5 shrink-0"></span>
+                            {% if not loop.last %}<span class="w-px flex-1 bg-border my-1"></span>{% endif %}
+                        </div>
+                        <div class="min-w-0 {{ loop.last ? '' : 'pb-4' }}">
+                            <p class="text-sm font-medium break-words">{{ a.libelle }}</p>
+                            <p class="text-xs text-muted-foreground">{{ a.auteur ? (a.auteur.prenom ~ ' ' ~ a.auteur.nom) : 'Système' }} · {{ a.createdAt ? a.createdAt|date('d/m/Y à H:i') : '—' }}</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    {# ════════════════ Colis transportés ════════════════ #}
+
+    {# Bagages #}
+    <section class="card overflow-hidden mt-6">
+        <header class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Bagages</h2>
+                {{ t.pill(voyage.bagages|length) }}
+            </div>
+            {% if is_granted('BAGAGE_CREER') and voyage.datearriveereelle is null %}
+            <a href="{{ path('bagage.new') }}?voyage={{ voyage.id }}" class="btn btn-primary btn-sm">
+                <svg class="h-3 w-3" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+                Ajouter
+            </a>
+            {% endif %}
+        </header>
+        {% if voyage.bagages is empty %}
+        <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun bagage enregistré pour ce voyage</div>
+        {% else %}
+        {% set typeTones = { LEGER: 'sky', LOURD: 'orange', VOLUMINEUX: 'purple', FRAGILE: 'amber' } %}
+        {% set typeLabels = { LEGER: 'Léger', LOURD: 'Lourd', VOLUMINEUX: 'Volumineux', FRAGILE: 'Fragile' } %}
+        {% set statutTones = { ENREGISTRE: 'zinc', EMBARQUE: 'blue', LIVRE: 'green', PERDU: 'red', ANNULE: 'amber' } %}
+        {% set statutLabels = { ENREGISTRE: 'Enregistré', EMBARQUE: 'Embarqué', LIVRE: 'Livré', PERDU: 'Perdu', ANNULE: 'Annulé' } %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Code</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Client</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Nature</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Type</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Poids</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Montant</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Statut</th>
+                        <th class="px-4 py-2.5"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for bagage in voyage.bagages %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3 font-mono text-xs font-semibold">{{ bagage.codebagage }}</td>
+                        <td class="px-4 py-3">
+                            <p class="font-medium">{{ bagage.ticket.nomclient ?? '—' }}</p>
+                            <p class="text-xs text-muted-foreground">{{ bagage.ticket.contactclient ?? '' }}</p>
+                        </td>
+                        <td class="px-4 py-3">{{ bagage.nature }}</td>
+                        <td class="px-4 py-3">{{ ui.badge(typeLabels[bagage.type] ?? bagage.type, typeTones[bagage.type] ?? 'zinc') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ bagage.poids }} kg</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ bagage.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3">{{ ui.badge(statutLabels[bagage.statut] ?? bagage.statut, statutTones[bagage.statut] ?? 'zinc') }}</td>
+                        <td class="px-4 py-3 text-right"><a href="{{ path('bagage.show', { id: bagage.id }) }}" class="text-xs text-primary hover:underline">Voir</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t border-border bg-muted/20">
+                        <td colspan="5" class="px-4 py-3 text-right font-semibold">Total bagages</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ voyage.bagages|map(b => b.montant)|reduce((carry, v) => carry + v, 0)|number_format(0, ',', ' ') }} FCFA</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% endif %}
+    </section>
+
+    {# Courriers #}
+    <section class="card overflow-hidden mt-6">
+        <header class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Courriers</h2>
+                {{ t.pill(voyage.courriers|length) }}
+            </div>
+            {% if is_granted('COURRIER_CREER') and voyage.datearriveereelle is null %}
+            <a href="{{ path('courrier.new') }}?voyage={{ voyage.id }}" class="btn btn-primary btn-sm">
+                <svg class="h-3 w-3" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+                Ajouter
+            </a>
+            {% endif %}
+        </header>
+        {% if voyage.courriers is empty %}
+        <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun courrier enregistré pour ce voyage</div>
+        {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Code</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Expéditeur</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Destinataire</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Montant</th>
+                        <th class="px-4 py-2.5"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for courrier in voyage.courriers %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3 font-mono text-xs font-semibold">{{ courrier.codecourrier }}</td>
+                        <td class="px-4 py-3">
+                            <p class="font-medium">{{ courrier.nomexpediteur }}</p>
+                            <p class="text-xs text-muted-foreground">{{ courrier.contactexpediteur }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            <p class="font-medium">{{ courrier.nomdestinataire }}</p>
+                            <p class="text-xs text-muted-foreground">{{ courrier.contactdestinataire }}</p>
+                        </td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ courrier.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3 text-right"><a href="{{ path('courrier.show', { id: courrier.id }) }}" class="text-xs text-primary hover:underline">Voir</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

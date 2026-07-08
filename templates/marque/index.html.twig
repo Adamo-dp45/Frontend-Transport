@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste des marques{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des marques</h1>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('MARQUE_CREER') %}
+        <a href="{{ path('marque.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvelle marque
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Flotte/MarqueTable', {
+        marques: marques,
+        canEdit: is_granted('MARQUE_MODIFIER'),
+        canDelete: is_granted('MARQUE_SUPPRIMER'),
+        csrfDelete: csrf_token('delete_marque')
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

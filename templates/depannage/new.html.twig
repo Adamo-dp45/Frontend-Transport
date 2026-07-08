@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau dépannage{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('depannage.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2] mb-0.5">Nouveau dépannage</h1>
+        <p class="text-muted-foreground text-sm mt-0.5">
+            Enregistrer une intervention de maintenance
+        </p>
+    </div>
+</div>
+
+<form action="{{ path('depannage.new') }}" method="post">
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="field">
+                <label for="car" class="label">Car</label>
+                {# ── ÉTAT PRÉCÉDENT (désactivé) — tous les cars chargés ──
+                <select name="car" id="car" required class="input">
+                    <option value="">-- Sélectionner un car --</option>
+                    {% for c in cars %}
+                        <option value="{{ c.id }}">{{ c.matricule }} - {{ c.marque.libelle ?? '' }}</option>
+                    {% endfor %}
+                </select>
+                #}
+                <select name="car" id="car" required
+                        data-remote-select="cars_disponibles"
+                        placeholder="-- Rechercher un car --"></select>
+            </div>
+            <div class="field">
+                <label for="lieudepannage" class="label">Lieu du dépannage</label>
+                <input type="text" name="lieudepannage" id="lieudepannage" required placeholder="Ex: Abidjan, Bouaké..." class="input" />
+            </div>
+            <div class="field">
+                <label for="typepanne" class="label">Type de panne</label>
+                <select name="typepanne" id="typepanne" required class="input">
+                    <option value="">-- Sélectionner un type --</option>
+                    {% for t in typepannes %}
+                        <option value="{{ t.id }}">{{ t.libelle }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field col-span-2">
+                <label for="description" class="label">Description</label>
+                <textarea name="description" id="description" rows="3" placeholder="Décrivez la nature de la panne ou de l'intervention..." class="input"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between p-4">
+        <h2 class="text-2xl font-light">Pièces utilisées</h2>
+        <button type="button" id="btn-add-ligne" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Ajouter une pièce
+        </button>
+    </div>
+    <div class="overflow-x-auto mb-3">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b bg-muted/40">
+                    <th class="text-left px-4 py-3 font-semibold">Pièce</th>
+                    <th class="text-left px-4 py-3 font-semibold w-36">Quantité</th>
+                    <th class="w-12"></th>
+                </tr>
+            </thead>
+            <tbody id="tbody-details">
+                <tr class="detail-ligne border-b">
+                    <td class="px-4 py-3">
+                        {# ── ÉTAT PRÉCÉDENT (désactivé) — toutes les pièces chargées ──
+                        <select name="detail_piece[]" required class="input">
+                            <option value="">-- Pièce --</option>
+                            {% for p in pieces %}
+                                <option value="{{ p.id }}">{{ p.libelle }} (stock : {{ p.stockactuel ?? p.stockinitial }})</option>
+                            {% endfor %}
+                        </select>
+                        #}
+                        <select name="detail_piece[]" required class="piece-select"
+                                data-remote-select="pieces"
+                                placeholder="-- Rechercher une pièce --"></select>
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" name="detail_quantite[]" min="1" value="1" required class="input" />
+                    </td>
+                    <td class="px-4 py-3">
+                        <button type="button" class="btn-remove-ligne btn btn-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="flex items-center justify-end gap-3">
+        <a href="{{ path('depannage.index') }}" class="btn btn-secondary">Annuler</a>
+        <button class="btn btn-primary">
+            Créer
+        </button>
+    </div>
+</form>
+
+<template id="template-ligne">
+    <tr class="detail-ligne border-b">
+        <td class="px-4 py-3">
+            {# ── ÉTAT PRÉCÉDENT (désactivé) ── #}
+            <select name="detail_piece[]" required class="piece-select"
+                    data-remote-select="pieces"
+                    placeholder="-- Rechercher une pièce --"></select>
+        </td>
+        <td class="px-4 py-3">
+            <input type="number" name="detail_quantite[]" min="1" value="1" required class="input" />
+        </td>
+        <td class="px-4 py-3">
+            <button type="button" class="btn-remove-ligne btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>
+(function () {
+    const tbody  = document.getElementById('tbody-details')
+    const tmpl   = document.getElementById('template-ligne')
+    const btnAdd = document.getElementById('btn-add-ligne')
+
+    function bindRow(row) {
+        row.querySelector('.btn-remove-ligne').addEventListener('click', function () {
+            if (tbody.querySelectorAll('.detail-ligne').length > 1) row.remove()
+        })
+    }
+
+    tbody.querySelectorAll('.detail-ligne').forEach(bindRow)
+
+    btnAdd.addEventListener('click', function () {
+        const clone = tmpl.content.cloneNode(true)
+        const row   = clone.querySelector('tr')
+        tbody.appendChild(row)
+        bindRow(row)
+        // Init tom-select sur le nouveau select de pièce (le initRemoteSelects() global a déjà tourné)
+        if (window.initRemoteSelect) {
+            window.initRemoteSelect(row.querySelector('.piece-select'), 'pieces')
+        }
+    })
+})()
+</script>
+{% endblock %}

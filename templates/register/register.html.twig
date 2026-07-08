@@ -1,0 +1,54 @@
+{% extends 'app-base.html.twig' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block body %}
+<div class="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <div class="w-full max-w-2xl">
+        <twig:Card class="w-full max-w-2xl">
+            <twig:Card:Header>
+                <twig:Card:Title>Inscription</twig:Card:Title>
+            </twig:Card:Header>
+            <twig:Card:Content>
+                {{ form_errors(form) }}
+                {{ form_start(form) }}
+                <h2 class="text-2xl font-light mb-4">Les informations de l'utilisateur</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.nom) }}
+                    {{ form_row(form.prenom) }}
+                    {{ form_row(form.password.first) }}
+                    {{ form_row(form.password.second) }}
+                </div>
+
+                <h2 class="text-2xl font-light mb-4">Les informations de l'entreprise</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {{ form_row(form.libelle) }}
+                    {{ form_row(form.contact1) }}
+                    {{ form_row(form.contact2) }}
+                    {{ form_row(form.adresse) }}
+                    {{ form_row(form.emailEntreprise) }}
+                    {{ form_row(form.anneecreation) }}
+                    {{ form_row(form.sigle) }}
+                    {{ form_row(form.siteweb) }}
+                    {{ form_row(form.rccm) }}
+                    {{ form_row(form.banque) }}
+                    {{ form_row(form.type) }}
+                    {{ form_row(form.centreimpot) }}
+                    {{ form_row(form.tauxtva) }}
+                </div>
+                <div class="mb-4">
+                    {{ form_row(form.agreeTerms) }}
+                </div>
+                <twig:Button type="submit" class="w-full">
+                    S'inscrire
+                </twig:Button>
+                {{ form_end(form) }}
+            </twig:Card:Content>
+            <twig:Card:Footer>
+                <twig:Button as="a" href="{{ path('app_login') }}" variant="outline" class="w-full">Se connecter</twig:Button>
+            </twig:Card:Footer>
+        </twig:Card>
+    </div>
+</div>
+{% endblock %}

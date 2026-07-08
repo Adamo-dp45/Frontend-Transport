@@ -1,0 +1,322 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Caisse{% endblock %}
+
+{% block body %}
+{% set totalOps      = caisse.totalTickets + caisse.totalCourriers + caisse.totalBagages %}
+{% set shareTickets  = caisse.recetteTotale > 0 ? (caisse.recetteTickets / caisse.recetteTotale * 100)|round : 0 %}
+{% set shareCourriers= caisse.recetteTotale > 0 ? (caisse.recetteCourriers / caisse.recetteTotale * 100)|round : 0 %}
+{% set shareBagages  = caisse.recetteTotale > 0 ? (caisse.recetteBagages / caisse.recetteTotale * 100)|round : 0 %}
+
+{# ── En-tête ─────────────────────────────────────────────────────── #}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
+    <div>
+        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Espace propriétaire
+        </a>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Tableau de bord</p>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Caisse</h1>
+        <p class="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+            <svg class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+            Du {{ debut|date('d/m/Y') }} au {{ fin|date('d/m/Y') }}
+        </p>
+    </div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {{ s.periodeFilter('owner.caisse', debut, fin) }}
+        {{ s.exportButtons('stats.export.caisse', debut, fin) }}
+    </div>
+</div>
+
+{# ── KPI globaux ─────────────────────────────────────────────────── #}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
+    {# Recette totale — carte vedette #}
+    <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white shadow-sm">
+        <svg class="absolute -right-4 -bottom-4 size-28 text-white/10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9v3" />
+        </svg>
+        <div class="relative">
+            <p class="text-[11px] font-medium uppercase tracking-wider text-blue-100 mb-1.5">Recette totale</p>
+            <p class="text-3xl font-semibold tracking-tight leading-none">{{ caisse.recetteTotale|number_format(0, ',', ' ') }}<span class="text-base font-normal text-blue-100 ml-1">FCFA</span></p>
+            <p class="text-xs text-blue-100/90 mt-3">{{ totalOps }} opération{{ totalOps > 1 ? 's' : '' }} sur la période</p>
+        </div>
+    </div>
+
+    {# Billetterie #}
+    <div class="card p-5 flex flex-col">
+        <div class="flex items-start justify-between mb-3">
+            <span class="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+                </svg>
+            </span>
+            <span class="text-[11px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">{{ shareTickets }}%</span>
+        </div>
+        <p class="text-xs text-muted-foreground">Billetterie</p>
+        <p class="text-2xl font-semibold tracking-tight mt-0.5">{{ caisse.recetteTickets|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+        <p class="text-xs text-muted-foreground mt-auto pt-2">{{ caisse.totalTickets }} ticket{{ caisse.totalTickets > 1 ? 's' : '' }}</p>
+    </div>
+
+    {# Courriers #}
+    <div class="card p-5 flex flex-col">
+        <div class="flex items-start justify-between mb-3">
+            <span class="flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+            </span>
+            <span class="text-[11px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">{{ shareCourriers }}%</span>
+        </div>
+        <p class="text-xs text-muted-foreground">Courriers</p>
+        <p class="text-2xl font-semibold tracking-tight mt-0.5">{{ caisse.recetteCourriers|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+        <p class="text-xs text-muted-foreground mt-auto pt-2">{{ caisse.totalCourriers }} courrier{{ caisse.totalCourriers > 1 ? 's' : '' }}</p>
+    </div>
+
+    {# Bagages #}
+    <div class="card p-5 flex flex-col">
+        <div class="flex items-start justify-between mb-3">
+            <span class="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.073a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-4.072m16.5 0a2.25 2.25 0 00.659-1.591L19.8 9.75a2.25 2.25 0 00-2.15-1.59H6.35a2.25 2.25 0 00-2.15 1.59L2.84 12.56a2.25 2.25 0 00.659 1.591m16.5 0H3.75m6-9.34V6.34a1.5 1.5 0 011.5-1.5h1.5a1.5 1.5 0 011.5 1.5v.81" />
+                </svg>
+            </span>
+            <span class="text-[11px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">{{ shareBagages }}%</span>
+        </div>
+        <p class="text-xs text-muted-foreground">Bagages</p>
+        <p class="text-2xl font-semibold tracking-tight mt-0.5">{{ caisse.recetteBagages|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+        <p class="text-xs text-muted-foreground mt-auto pt-2">{{ caisse.totalBagages }} bagage{{ caisse.totalBagages > 1 ? 's' : '' }}</p>
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════
+   Détail des recettes — présentation redesignée
+   ════════════════════════════════════════════════════════════════ #}
+
+{% macro typeBreakdown(nbtickets, recetteTickets, nbcourriers, recetteCourriers, nbbagages, recetteBagages) %}
+    <div class="grid grid-cols-3 gap-2">
+        <div class="rounded-lg border border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-blue-500"></span>
+                <span class="text-[11px] text-muted-foreground">Tickets · {{ nbtickets }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteTickets|number_format(0, ',', ' ') }}</p>
+        </div>
+        <div class="rounded-lg border border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-amber-500"></span>
+                <span class="text-[11px] text-muted-foreground">Courriers · {{ nbcourriers }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteCourriers|number_format(0, ',', ' ') }}</p>
+        </div>
+        <div class="rounded-lg border border-emerald-100 dark:border-emerald-950 bg-emerald-50/50 dark:bg-emerald-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[11px] text-muted-foreground">Bagages · {{ nbbagages }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteBagages|number_format(0, ',', ' ') }}</p>
+        </div>
+    </div>
+{% endmacro %}
+
+{% import _self as caissefx %}
+
+{# ── Recette par gare (multi-gares) ─────────────────────────────── #}
+<section class="mb-10">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-medium flex items-center gap-2">
+            <svg class="size-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3" />
+            </svg>
+            Recette par gare
+        </h2>
+        <span class="text-xs text-muted-foreground">{{ caisse.parGare|length }} gare{{ caisse.parGare|length > 1 ? 's' : '' }}</span>
+    </div>
+
+    {% if caisse.parGare is empty %}
+        <div class="card p-6 text-center text-sm text-muted-foreground">Aucune recette par gare sur la période.</div>
+    {% else %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {% for gare in caisse.parGare %}
+        {% set part = caisse.recetteTotale > 0 ? (gare.recetteTotale / caisse.recetteTotale * 100) : 0 %}
+        <div class="card p-4 flex flex-col">
+            <div class="flex items-start justify-between gap-2 mb-1">
+                <p class="font-medium leading-tight">{{ gare.gareLibelle }}</p>
+                <span class="shrink-0 text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 rounded-full px-2 py-0.5">
+                    {{ part|round }}%
+                </span>
+            </div>
+            <p class="text-2xl font-semibold tracking-tight mb-3">{{ gare.recetteTotale|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+
+            <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden mb-4">
+                <div class="h-full rounded-full bg-blue-600" style="width: {{ part }}%"></div>
+            </div>
+
+            <div class="mt-auto">
+                {{ caissefx.typeBreakdown(gare.nbtickets, gare.recetteTickets, gare.nbcourriers, gare.recetteCourriers, gare.nbbagages, gare.recetteBagages) }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if (caisse.recetteTicketsCommerciaux ?? 0) > 0 %}
+    <div class="mt-3 card p-4 border-l-[3px] border-indigo-500 flex items-center justify-between gap-3">
+        <div>
+            <p class="font-medium leading-tight">Ventes à bord (commerciaux)</p>
+            <p class="text-xs text-muted-foreground mt-0.5">Encaissées par les commerciaux en route — hors caisse des gares (incluses dans le total « recette tickets »)</p>
+        </div>
+        <p class="text-xl font-semibold tabular-nums shrink-0">{{ (caisse.recetteTicketsCommerciaux ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+    </div>
+    {% endif %}
+    {% if (caisse.recetteTicketsReservation ?? 0) > 0 %}
+    <div class="mt-3 card p-4 border-l-[3px] border-violet-500 flex items-center justify-between gap-3">
+        <div>
+            <p class="font-medium leading-tight">Billets de réservation</p>
+            <p class="text-xs text-muted-foreground mt-0.5">Émis depuis un bon payé sur le compte de l'administrateur (mobile/bancaire) — hors caisse des gares (inclus dans le total « recette tickets »)</p>
+        </div>
+        <p class="text-xl font-semibold tabular-nums shrink-0">{{ (caisse.recetteTicketsReservation ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+    </div>
+    {% endif %}
+    {% if (caisse.bonsReservationNonEmisMontant ?? 0) > 0 %}
+    <div class="mt-3 card p-4 border-l-[3px] border-dashed border-amber-500 flex items-center justify-between gap-3">
+        <div>
+            <p class="font-medium leading-tight">Bons de réservation payés, non émis <span class="text-xs font-normal text-amber-600">· avance</span></p>
+            <p class="text-xs text-muted-foreground mt-0.5">Encaissés d'avance sur le compte admin, billet pas encore émis — <strong>non</strong> comptés dans les recettes ci-dessus</p>
+        </div>
+        <div class="text-right shrink-0">
+            <p class="text-xl font-semibold tabular-nums">{{ (caisse.bonsReservationNonEmisMontant ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+            <p class="text-xs text-muted-foreground">{{ caisse.bonsReservationNonEmisCount ?? 0 }} bon{{ (caisse.bonsReservationNonEmisCount ?? 0) > 1 ? 's' : '' }}</p>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</section>
+
+{# ── Par agent / Par jour ───────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    {# Par agent #}
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium flex items-center gap-2">
+                <svg class="size-5 text-muted-foreground" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z" />
+                </svg>
+                Par agent
+            </h2>
+            <span class="text-xs text-muted-foreground">{{ caisse.parAgent|length }}</span>
+        </div>
+
+        {% if caisse.parAgent is empty %}
+            <div class="card p-6 text-center text-sm text-muted-foreground">Aucune vente sur la période.</div>
+        {% endif %}
+
+        <div class="space-y-3">
+        {% for agent in caisse.parAgent %}
+        <div class="card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase">
+                        {{ agent.prenom|slice(0,1) }}{{ agent.nom|slice(0,1) }}
+                    </span>
+                    <p class="font-medium truncate">{{ agent.prenom }} {{ agent.nom }}</p>
+                </div>
+                <span class="shrink-0 font-semibold text-sm tabular-nums">{{ agent.recetteTotale | number_format(0, ',', ' ') }} FCFA</span>
+            </div>
+
+            {{ caissefx.typeBreakdown(agent.nbtickets, agent.recetteTickets, agent.nbcourriers, agent.recetteCourriers, agent.nbbagages, agent.recetteBagages) }}
+
+            {% if agent.detailParVoyage is not empty %}
+            <details class="group mt-3">
+                <summary class="cursor-pointer list-none text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 select-none">
+                    <svg class="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    Détail billetterie par voyage ({{ agent.detailParVoyage|length }})
+                </summary>
+                <table class="w-full text-sm mt-2">
+                    <thead>
+                        <tr class="text-left text-muted-foreground border-b">
+                            <th class="pb-2 font-medium">Voyage</th>
+                            <th class="pb-2 font-medium">Trajet</th>
+                            <th class="pb-2 font-medium text-right">Tickets</th>
+                            <th class="pb-2 font-medium text-right">Recette</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in agent.detailParVoyage %}
+                        <tr class="border-b last:border-0">
+                            <td class="py-1.5 text-muted-foreground text-xs font-mono">{{ v.codevoyage }}</td>
+                            <td class="py-1.5">{{ v.provenance }} → {{ v.destination }}</td>
+                            <td class="py-1.5 text-right tabular-nums">{{ v.nbtickets }}</td>
+                            <td class="py-1.5 text-right tabular-nums">{{ v.recette | number_format(0, ',', ' ') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+        </div>
+    </section>
+
+    {# Par jour #}
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium flex items-center gap-2">
+                <svg class="size-5 text-muted-foreground" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Par jour
+            </h2>
+            <span class="text-xs text-muted-foreground">{{ caisse.parJour|length }}</span>
+        </div>
+
+        {% if caisse.parJour is empty %}
+            <div class="card p-6 text-center text-sm text-muted-foreground">Aucune vente sur la période.</div>
+        {% endif %}
+
+        <div class="space-y-3">
+        {% for jour in caisse.parJour %}
+        <div class="card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <p class="font-medium">{{ jour.jour | date('d/m/Y') }}</p>
+                <span class="font-semibold text-sm tabular-nums">{{ jour.recetteTotale | number_format(0, ',', ' ') }} FCFA</span>
+            </div>
+
+            {{ caissefx.typeBreakdown(jour.nbtickets, jour.recetteTickets, jour.nbcourriers, jour.recetteCourriers, jour.nbbagages, jour.recetteBagages) }}
+
+            {% if jour.detailParVoyage is not empty %}
+            <details class="group mt-3">
+                <summary class="cursor-pointer list-none text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 select-none">
+                    <svg class="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    Détail billetterie par voyage ({{ jour.detailParVoyage|length }})
+                </summary>
+                <table class="w-full text-sm mt-2">
+                    <thead>
+                        <tr class="text-left text-muted-foreground border-b">
+                            <th class="pb-2 font-medium">Voyage</th>
+                            <th class="pb-2 font-medium">Trajet</th>
+                            <th class="pb-2 font-medium text-right">Tickets</th>
+                            <th class="pb-2 font-medium text-right">Recette</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in jour.detailParVoyage %}
+                        <tr class="border-b last:border-0">
+                            <td class="py-1.5 text-muted-foreground text-xs font-mono">{{ v.codevoyage }}</td>
+                            <td class="py-1.5">{{ v.provenance }} → {{ v.destination }}</td>
+                            <td class="py-1.5 text-right tabular-nums">{{ v.nbtickets }}</td>
+                            <td class="py-1.5 text-right tabular-nums">{{ v.recette | number_format(0, ',', ' ') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

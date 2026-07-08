@@ -1,0 +1,16 @@
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-3">
+            {{ form_row(form.libelle) }}
+            {{ form_row(form.poidsmin) }}
+            {{ form_row(form.poidsmax) }}
+            {{ form_row(form.montant) }}
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('tarifbagage.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

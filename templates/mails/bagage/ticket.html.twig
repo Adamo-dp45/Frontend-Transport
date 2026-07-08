@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            color: #000;
+            width: 72mm;
+            padding: 4mm;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .large { font-size: 14px; }
+        .xlarge { font-size: 18px; }
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 4px 0;
+        }
+        .separator-solid {
+            border-top: 1px solid #000;
+            margin: 4px 0;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        .label { color: #444; }
+        .value { font-weight: bold; }
+        .code-block {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 6px 0;
+            padding: 4px;
+            border: 1px solid #000;
+        }
+        .montant-block {
+            text-align: center;
+            margin: 6px 0;
+        }
+        .footer {
+            font-size: 8px;
+            color: #555;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border: 1px solid #000;
+            font-size: 9px;
+        }
+        .statut-banner {
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 3px 2px;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+    {#
+    <div class="center">
+        <div class="bold large">{{ entreprise.libelle }}</div>
+        {% if entreprise.sigle %}
+            <div>{{ entreprise.sigle }}</div>
+        {% endif %}
+        {% if entreprise.contact1 %}
+            <div>{{ entreprise.contact1 }}</div>
+        {% endif %}
+    </div>
+    #}
+
+    <div class="separator-solid"></div>
+
+    <div class="center bold large">TICKET DE PESÉE</div>
+    <div class="center" style="font-size:8px; margin-bottom: 4px;">
+        {{ "now"|date("d/m/Y H:i") }}
+    </div>
+
+    {% if bagage.statut in ['PERDU', 'ANNULE'] %}
+    <div class="statut-banner">{{ bagage.statut == 'PERDU' ? 'Bagage perdu' : 'Bagage annulé' }}</div>
+    {% endif %}
+
+    <div class="separator"></div>
+
+    <div class="code-block">{{ bagage.codebagage }}</div>
+
+    <div class="separator"></div>
+
+    <div class="row">
+        <span class="label">Client</span>
+        <span class="value">{{ bagage.ticket.nomclient ?? '—' }}</span>
+    </div>
+    <div class="row">
+        <span class="label">Contact</span>
+        <span class="value">{{ bagage.ticket.contactclient ?? '—' }}</span>
+    </div>
+    {% if bagage.ticket %}
+    <div class="row">
+        <span class="label">Billet</span>
+        <span class="value">{{ bagage.ticket.codeticket }}</span>
+    </div>
+    {% endif %}
+
+    <div class="separator"></div>
+
+    <div class="row">
+        <span class="label">Voyage</span>
+        <span class="value">{{ bagage.voyage.codevoyage }}</span>
+    </div>
+    <div class="row">
+        <span class="label">Trajet</span>
+        <span class="value">{{ bagage.voyage.provenance }} → {{ bagage.voyage.destination }}</span>
+    </div>
+    {% if bagage.garedepart %}
+    <div class="row">
+        <span class="label">Départ</span>
+        <span class="value">{{ bagage.garedepart.libelle }}</span>
+    </div>
+    {% endif %}
+    {% if bagage.garedescente %}
+    <div class="row">
+        <span class="label">Descente</span>
+        <span class="value">{{ bagage.garedescente.libelle }}</span>
+    </div>
+    {% endif %}
+
+    <div class="separator"></div>
+
+    <div class="row">
+        <span class="label">Nature</span>
+        <span class="value">{{ bagage.nature }}</span>
+    </div>
+    <div class="row">
+        <span class="label">Type</span>
+        <span class="value">
+            {% set typeMap = { LEGER: 'Léger', LOURD: 'Lourd', VOLUMINEUX: 'Volumineux', FRAGILE: 'Fragile' } %}
+            {{ typeMap[bagage.type] ?? bagage.type }}
+        </span>
+    </div>
+    <div class="row">
+        <span class="label">Poids</span>
+        <span class="value">{{ bagage.poids }} kg</span>
+    </div>
+    {% if bagage.tarifbagage %}
+    <div class="row">
+        <span class="label">Tarif appliqué</span>
+        <span class="value">{{ bagage.tarifbagage.libelle }}</span>
+    </div>
+    {% endif %}
+
+    <div class="separator-solid"></div>
+
+    <div class="montant-block">
+        <div class="label" style="font-size:9px;">MONTANT PAYÉ</div>
+        <div class="xlarge bold">{{ bagage.montant|number_format(0, ',', ' ') }} FCFA</div>
+        {% if bagage.montantforce %}
+            <div style="font-size: 8px; color: #555;">(montant ajusté)</div>
+        {% endif %}
+    </div>
+
+    <div class="separator-solid"></div>
+
+    {#
+    <div class="footer">
+        <p>NB : Ce ticket est non remboursable</p>
+        <p>Conservez ce ticket jusqu'à destination</p>
+        {% if entreprise.contact1 %}
+            <p>{{ entreprise.contact1 }}</p>
+        {% endif %}
+    </div>
+    #}
+</body>
+</html>

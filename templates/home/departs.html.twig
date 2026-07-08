@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Départs & départs partiels{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Départs effectifs', 'Statistiques · Réseau', 'owner.stats.departs', debut, fin) }}
+
+{# ── KPIs ─────────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Voyages complets', departs.voyagesComplets ?? 0, '', 'blue', 'route', 'Départ à l\'origine de la ligne') }}
+        {{ s.kpi('Départs partiels', departs.voyagesPartiels ?? 0, '', 'amber', 'building', (departs.partVoyagesPartiels ?? 0) ~ ' % des voyages') }}
+        {{ s.kpi('Recette en départ partiel', (departs.recettePartiel ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Captée depuis une gare intermédiaire') }}
+        {{ s.kpi('Part recette partielle', departs.partRecettePartielle ?? 0, '%', 'emerald', 'chart', 'De la recette billets au départ') }}
+    </div>
+
+    {# ── Recette complet vs partiel ─────────────────────────────────── #}
+    {% set recTot = departs.recetteTotale ?? 0 %}
+    {% set recComplet = departs.recetteComplet ?? 0 %}
+    {% set recPartiel = departs.recettePartiel ?? 0 %}
+    <div class="card p-5">
+        <p class="text-sm font-medium text-muted-foreground mb-4">Recette billets selon le type de départ</p>
+        {% if recTot > 0 %}
+        <div class="flex h-4 w-full overflow-hidden rounded-full bg-muted">
+            <div class="h-full bg-blue-500" style="width: {{ (recComplet / recTot * 100)|round(1) }}%" title="Départ complet"></div>
+            <div class="h-full bg-amber-500" style="width: {{ (recPartiel / recTot * 100)|round(1) }}%" title="Départ partiel"></div>
+        </div>
+        <div class="flex flex-wrap gap-6 mt-4">
+            <div class="flex items-center gap-2">
+                <span class="size-3 rounded-sm bg-blue-500"></span>
+                <div>
+                    <p class="text-sm font-semibold tabular-nums">{{ recComplet|number_format(0, ',', ' ') }} FCFA</p>
+                    <p class="text-xs text-muted-foreground">Départ complet ({{ recTot > 0 ? (recComplet / recTot * 100)|round : 0 }} %)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="size-3 rounded-sm bg-amber-500"></span>
+                <div>
+                    <p class="text-sm font-semibold tabular-nums">{{ recPartiel|number_format(0, ',', ' ') }} FCFA</p>
+                    <p class="text-xs text-muted-foreground">Départ partiel ({{ departs.partRecettePartielle ?? 0 }} %)</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-sm text-muted-foreground">Aucune recette de départ sur la période.</p>
+        {% endif %}
+    </div>
+</section>
+
+{# ── Recette par gare de départ effective ─────────────────────────── #}
+<section class="mb-4">
+    {{ s.sectionTitle('Recette par gare de départ effective', 'Gare de provenance du voyage') }}
+    <div class="card overflow-hidden">
+        {% set parGare = departs.parGare ?? [] %}
+        {% if parGare|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Gare de départ</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Billets</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Recette</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Dont départ partiel</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for g in parGare %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3">
+                            <p class="font-medium">{{ g.libelle }}</p>
+                            {% if g.ville %}<p class="text-xs text-muted-foreground">{{ g.ville }}</p>{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right tabular-nums">{{ g.billets }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ g.recette|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3 text-right tabular-nums">
+                            {% if g.recettePartielle > 0 %}
+                            <span class="inline-flex items-center rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-xs font-medium">
+                                {{ g.recettePartielle|number_format(0, ',', ' ') }} FCFA
+                            </span>
+                            {% else %}
+                            <span class="text-muted-foreground">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun départ sur la période.</p>
+        {% endif %}
+    </div>
+    <p class="text-xs text-muted-foreground mt-3">
+        « Départ partiel » : billets vendus sur des voyages partis depuis une gare intermédiaire (et non l'origine de la ligne).
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau role{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('admin.role.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau rôle</h1>
+    </div>
+</div>
+
+{{ form_start(form) }}
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.name) }}</div>
+            <div>{{ form_row(form.typerole) }}</div>
+        </div>
+        <div>{{ form_row(form.description) }}</div>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <h2 class="text-base font-semibold">Permissions</h2>
+            <button type="button" id="btn-select-all" class="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
+                Tout sélectionner / désélectionner
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b bg-muted/40">
+                        <th class="text-left px-4 py-3 font-semibold w-44">Entité</th>
+                        {% for action in actions %}
+                        <th class="text-center px-4 py-3 font-semibold">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                                {% if action == 'VOIR' %}bg-blue-100 text-blue-800
+                                {% elseif action == 'CREER' %}bg-green-100 text-green-800
+                                {% elseif action == 'MODIFIER' %}bg-yellow-100 text-yellow-800
+                                {% elseif action == 'SUPPRIMER' %}bg-red-100 text-red-800
+                                {% endif %}">
+                                {{ action }}
+                            </span>
+                        </th>
+                        {% endfor %}
+                        <th class="text-center px-3 py-3 text-xs text-muted-foreground font-medium">Tout</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    {% for entityKey, entityLabel in entities %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3 font-medium text-sm">{{ entityLabel }}</td>
+                        {% for action in actions %}
+                            {% set choiceKey = entityKey ~ '_' ~ action %}
+                        <td class="text-center px-4 py-3">
+                            {# On trouve la checkbox correspondante dans le form #}
+                            {% for roleChoice in form.permissions %}
+                                {% if roleChoice.vars.value == choiceKey %}
+                                    {{ form_widget(roleChoice, { attr: { class: 'h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer perm-cb', 'data-entity': entityKey } }) }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% endfor %}
+                        <td class="text-center px-3 py-3">
+                            <input type="checkbox" data-toggle-row="{{ entityKey }}" class="h-4 w-4 rounded border-gray-300 text-muted-foreground cursor-pointer" title="Tout cocher/décocher pour {{ entityLabel }}" />
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+        <a href="{{ path('ticket.index') }}" class="btn btn-secondary">Annuler</a>
+        <button class="btn btn-primary">Créer</button>
+    </div>
+{{ form_end(form) }}
+
+<script>
+document.addEventListener('turbo:load', () => {
+    // Toggle toute la ligne d'une entité
+    document.querySelectorAll('[data-toggle-row]').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            const entity = this.dataset.toggleRow
+            document.querySelectorAll(`.perm-cb[data-entity="${entity}"]`).forEach(function(cb) {
+                cb.checked = toggle.checked
+            })
+        })
+    })
+
+    // Tout sélectionner / désélectionner
+    let allSelected = false
+    document.getElementById('btn-select-all').addEventListener('click', function() {
+        allSelected = !allSelected
+        document.querySelectorAll('.perm-cb, [data-toggle-row]').forEach(function(cb) {
+            cb.checked = allSelected
+        })
+    })
+})
+</script>
+{% endblock %}

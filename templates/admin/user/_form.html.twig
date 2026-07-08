@@ -1,0 +1,45 @@
+{{ form_start(form, { attr: { enctype: 'multipart/form-data'} }) }}
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.nom) }}</div>
+            <div>{{ form_row(form.prenom) }}</div>
+            <div>{{ form_row(form.email) }}</div>
+            {% if isAdminGare == false %}
+                <div>{{ form_row(form.gare) }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            <div>{{ form_row(form.password.first) }}</div>
+            <div>{{ form_row(form.password.second) }}</div>
+        </div>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
+        <h2 class="text-xl font-light mb-3">Rôles attribués</h2>
+        {% if form.roles is defined %}
+           {% if form.roles|length > 0 %}
+               <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                   {% for roleChoice in form.roles %}
+                   <div class="checkbox-wrapper p-3 cursor-pointer hover:bg-muted/40 transition-colors has-checked:border-primary has-checked:bg-primary/5">
+                        {{ form_widget(roleChoice) }}
+                        <label for="" class="">{{ form_label(roleChoice) }}</label>
+                   </div>
+                   {% endfor %}
+               </div>
+           {% else %}
+               <p class="text-sm text-muted-foreground">Aucun rôle disponible</p>
+               {% do form.roles.setRendered() %} {#
+                    - Vu que symfony marque un champ composé comme rendu seulement si tous ses enfants sont rendus et qu'il y a au moins un enfant
+               #}
+           {% endif %}
+       {% endif %}
+       {{ form_errors(form.roles) }}
+    </div>
+    <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+        <a href="{{ path('admin.user.index') }}" class="btn btn-secondary">Annuler</a>
+        <button class="btn btn-primary">
+            {{ button }}
+        </button>
+    </div>
+{{ form_end(form) }}

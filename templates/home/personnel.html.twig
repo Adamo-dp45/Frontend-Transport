@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Personnel{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Personnel', 'Affectations', 'owner.personnels', debut, fin, 'stats.export.personnel') }}
+
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total personnels', personnel.totalPersonnels, '', 'blue', 'users') }}
+        {{ s.kpi('Actifs sur la période', personnel.personnelsActifs, '', 'emerald', 'check') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Affectations par personnel — barres groupées #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Affectations par personnel</p>
+            <canvas id="chartPersonnelAffectations" height="160"
+                data-values="{{ personnel.performances | map(p => {
+                    label: p.prenom ~ ' ' ~ p.nom,
+                    nbvoyages: p.nbvoyages,
+                    nbdepannages: p.nbdepannages,
+                    actif: p.actif
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau détail #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail affectations</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Personnel</th>
+                        <th class="pb-2 font-medium">Type</th>
+                        <th class="pb-2 font-medium text-right">Voyages</th>
+                        <th class="pb-2 font-medium text-right">Dépannages</th>
+                        <th class="pb-2 font-medium text-right">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in personnel.performances %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">{{ p.prenom }} {{ p.nom }}</td>
+                        <td class="py-2 text-muted-foreground">{{ p.type }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ p.nbvoyages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ p.nbdepannages }}</td>
+                        <td class="py-2 text-right">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ p.actif ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
+                                {{ p.actif ? 'Actif' : 'Inactif' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

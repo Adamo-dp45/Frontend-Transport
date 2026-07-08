@@ -1,0 +1,50 @@
+{#
+    Composants partagés des fiches « show » (détail d'une entité).
+    Usage : {% import 'components/detail.html.twig' as ui %}
+#}
+
+{# Champ label / valeur (cellule d'une grille d'infos). '—' si vide.
+   html=true : la valeur est du HTML déjà construit (ex. un lien) → sortie via |raw.
+   ⚠ '|raw' est un indice de compilation au point de sortie : on NE peut PAS le passer comme
+   argument de macro (il serait ré-échappé). On passe donc la chaîne brute + html=true. #}
+{% macro field(label, value, mono, html) %}
+<div class="min-w-0">
+    <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ label }}</p>
+    <p class="mt-0.5 font-medium break-words {{ mono ? 'font-mono text-sm' : '' }}">
+        {%- if value is null or value == '' %}—{% elseif html %}{{ value|raw }}{% else %}{{ value }}{% endif -%}
+    </p>
+</div>
+{% endmacro %}
+
+{# Badge de statut. tone ∈ green|red|amber|blue|zinc|purple|emerald|sky|orange #}
+{% macro badge(text, tone) %}
+    {% set tones = {
+        'green':   'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+        'emerald': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+        'red':     'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+        'amber':   'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+        'orange':  'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+        'blue':    'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+        'sky':     'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
+        'purple':  'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+        'zinc':    'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+    } %}
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ tones[tone] ?? tones.zinc }}">{{ text }}</span>
+{% endmacro %}
+
+{# Titre de section #}
+{% macro section(title, hint) %}
+<div class="flex items-center justify-between gap-3 mb-3 mt-7">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ title }}</h2>
+    {% if hint %}<span class="text-xs text-muted-foreground shrink-0">{{ hint }}</span>{% endif %}
+</div>
+{% endmacro %}
+
+{# Petite carte chiffre-clé (KPI) #}
+{% macro stat(label, value, unit, sub) %}
+<div class="card p-4">
+    <p class="text-xs text-muted-foreground">{{ label }}</p>
+    <p class="text-2xl font-semibold tabular-nums leading-tight mt-0.5">{{ value }}{% if unit %} <span class="text-xs font-normal text-muted-foreground">{{ unit }}</span>{% endif %}</p>
+    {% if sub %}<p class="text-xs text-muted-foreground mt-0.5">{{ sub }}</p>{% endif %}
+</div>
+{% endmacro %}

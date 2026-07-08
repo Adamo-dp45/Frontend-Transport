@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La liste des utilisateurs{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des utilisateurs</h1>
+        {# <p>{{ items|length }} compte{{ items|length > 1 ? 's' : '' }} dans cette entreprise</p> #}
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('USER_CREER') %}
+        <a href="{{ path('admin.user.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvel utilisateur
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Administration/UserTable', {
+        users: items,
+        meta: meta,
+        queryParams: queryParams,
+        canEdit: is_granted('USER_MODIFIER') and not is_granted('ROLE_SUPER_ADMIN'),
+        currentUserId: app.user.id,
+        currentUserGareId: app.user.gare.id ?? null,
+        isAdmin: is_granted('ROLE_ADMIN'),
+        csrfDelete: csrf_token('delete_user'),
+        apiUrl: api_url,
+        isSuperAdmin: is_granted('ROLE_SUPER_ADMIN'),
+        canSuspend: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN_GARE'),
+        currentUserIsFounder: app.user.founder,
+        canPromouvoirAdminGare: is_granted('ROLE_ADMIN'),
+        csrfPromouvoirAdminGare: csrf_token('promouvoir_admin_gare'),
+        canFilterGare: is_granted('ROLE_ADMIN'),
+        gares: gares|default([])
+    }) }}
+    class="mb-3"
+> {# currentUserRoles: app.user.roles #}
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

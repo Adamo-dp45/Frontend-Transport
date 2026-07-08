@@ -1,0 +1,32 @@
+{% import 'form/_macros.html.twig' as ui %}
+<div class="rounded-xl border bg-card shadow-sm p-6 mb-3">
+    {{ form_start(form, { attr: { enctype: 'multipart/form-data'} }) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>{{ form_row(form.nom) }}</div>
+            <div>{{ form_row(form.prenom) }}</div>
+            <div>{{ form_row(form.contact) }}</div>
+            <div>{{ form_row(form.code) }}</div>
+            <div>{{ ui.fieldWithCreate(form.typepersonnel, 'typepersonnel', 'Nouveau type', 'TYPEPERSONNEL_CREER') }}</div>
+            <div>{{ form_row(form.dateembauche) }}</div>
+            <div>{{ form_row(form.image) }}</div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('personnel.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+{% if personnel.image is defined and personnel.image %}
+<div class="flex items-center gap-4 mb-6 p-4 card">
+    <img src="{{ api_url ~ '/media' ~ personnel.image.contentUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="Photo actuelle" class="h-16 w-16 rounded-full object-cover ring-2 ring-border" />
+    <div>
+        <p class="text-sm font-medium">Photo actuelle</p>
+        <p class="text-xs text-muted-foreground">Uploader une nouvelle image pour la remplacer</p>
+    </div>
+</div>
+{% endif %}
+
+{% include 'form/_quick_create_modal.html.twig' %}

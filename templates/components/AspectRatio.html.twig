@@ -1,0 +1,10 @@
+{# @prop ratio string The ratio to use, example `3 / 4`, `16 / 9` #}
+{# @prop style string Additional CSS styles to apply #}
+{# @block content The default block #}
+{%- props ratio, style = '' -%}
+<div
+    style="aspect-ratio: {{ ratio }}; {{ style }}"
+    {{ attributes.without('style') }}
+>
+    {%- block content %}{% endblock -%}
+</div>

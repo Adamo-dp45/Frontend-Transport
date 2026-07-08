@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord - Propriétaire{% endblock %}
+
+{% macro tile(route, icon, tone, badge, title, desc) %}
+{% set tones = {
+    blue:    'bg-blue-100 text-blue-700',
+    green:   'bg-green-100 text-green-700',
+    emerald: 'bg-emerald-100 text-emerald-700',
+    violet:  'bg-violet-100 text-violet-700',
+    purple:  'bg-purple-100 text-purple-700',
+    cyan:    'bg-cyan-100 text-cyan-700',
+    pink:    'bg-pink-100 text-pink-700',
+    amber:   'bg-amber-100 text-amber-700',
+    orange:  'bg-orange-100 text-orange-700',
+    red:     'bg-red-100 text-red-700',
+    teal:    'bg-teal-100 text-teal-700',
+    fuchsia: 'bg-fuchsia-100 text-fuchsia-700',
+} %}
+<a href="{{ path(route) }}" class="card p-6 hover:border-primary transition-colors group">
+    <div class="flex items-start justify-between mb-4">
+        <div class="size-10 rounded-lg {{ tones[tone] ?? tones.blue }} flex items-center justify-center text-lg">{{ icon }}</div>
+        <span class="text-xs text-muted-foreground text-right">{{ badge }}</span>
+    </div>
+    <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">{{ title }}</p>
+    <p class="text-sm text-muted-foreground">{{ desc }}</p>
+</a>
+{% endmacro %}
+
+{% import _self as t %}
+
+{% block body %}
+<div class="mb-8">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Tableau de bord</p>
+    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Espace propriétaire</h1>
+    <p class="text-muted-foreground mt-2">Vue d'ensemble de votre compagnie de transport</p>
+</div>
+
+{# ── Vue d'ensemble ───────────────────────────────────────────────── #}
+<section class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Vue d'ensemble</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('home', '📊', 'blue', 'Exploitation · Financier · Stock · Flotte', 'Tableau de bord', 'Vue globale — voyages, recettes, stock et flotte sur la période') }}
+        {{ t.tile('owner.caisse', '🧾', 'green', 'Journalier · Par agent', 'Caisse', 'Résumé des encaissements par agent et par jour avec détail par voyage') }}
+        {{ t.tile('owner.activite', '🕓', 'violet', 'Qui · Quoi · Quand', 'Activité', 'Journal des actions : changement de car, commercial, réception, clôture… qui a fait quoi') }}
+    </div>
+</section>
+
+{# ── Ventes & Commercial ──────────────────────────────────────────── #}
+<section class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Ventes &amp; Commercial</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('owner.billetterie', '🎫', 'purple', 'Tickets · Recettes · Trajets · Cars', 'Billetterie', 'Recettes par jour, par trajet et par véhicule sur la période') }}
+        {{ t.tile('owner.stats.commercial', '🧑‍💼', 'fuchsia', 'Vendeur à bord · Classement · Trajets', 'Performance commerciale', 'Recette captée à bord, classement des commerciaux et meilleurs trajets') }}
+        {{ t.tile('owner.agent', '👤', 'amber', 'Ventes · Classement', 'Agents', 'Performance des agents — tickets vendus et recettes générées') }}
+    </div>
+</section>
+
+{# ── Réseau & Gares ───────────────────────────────────────────────── #}
+<section class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Réseau &amp; Gares</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('owner.stats.gares', '🏪', 'emerald', 'Classement · Panier · Agents', 'Stats par gare', 'Recettes par gare : classement, panier moyen, évolution et croisement par agent') }}
+        {{ t.tile('owner.stats.departs', '🧭', 'teal', 'Complets · Partiels · Gare effective', 'Départs effectifs', 'Départs complets vs partiels et recette captée par gare de provenance') }}
+        {{ t.tile('owner.trajets', '🗺️', 'teal', 'Utilisation · Recettes', 'Lignes', 'Lignes les plus utilisées, recettes et nombre de tickets par ligne') }}
+    </div>
+</section>
+
+{# ── Clients & Réservations ───────────────────────────────────────── #}
+<section class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Clients &amp; Réservations</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('owner.stats.clients', '👥', 'cyan', 'Volume · Actifs · Top clients', 'Clients', 'Base clients — nouveaux, actifs, panier moyen et clients les plus fidèles') }}
+        {{ t.tile('owner.stats.fidelite', '🎁', 'pink', 'Membres · Récompenses · Top clients', 'Fidélité', 'Adhésions, récompenses offertes et classement des clients les plus fidèles') }}
+        {{ t.tile('owner.stats.reservations', '🎟️', 'amber', 'Conversion · Recette · Canal', 'Réservations', 'Volume, statuts, taux de conversion, no-shows et trajets les plus réservés') }}
+    </div>
+</section>
+
+{# ── Colis ────────────────────────────────────────────────────────── #}
+<section class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Colis</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('owner.stats.courrier', '📦', 'blue', 'Statuts · Recettes · Trajets', 'Courriers', 'Suivi des colis — recettes, statuts et trajets les plus actifs') }}
+        {{ t.tile('owner.stats.bagage', '🧳', 'amber', 'Statuts · Recettes · Poids', 'Bagages', 'Suivi des bagages — recettes, poids total et bagages perdus') }}
+    </div>
+</section>
+
+{# ── Exploitation & Ressources ────────────────────────────────────── #}
+<section class="mb-4">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Exploitation &amp; Ressources</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {{ t.tile('owner.flotte', '🚌', 'red', 'Activité · Pannes · Coûts', 'Flotte', 'Activité des véhicules — voyages, dépannages et coûts de maintenance') }}
+        {{ t.tile('owner.personnels', '👷', 'orange', 'Voyages · Dépannages', 'Personnel', 'Affectations par employé — voyages effectués et dépannages traités') }}
+        {{ t.tile('owner.stats.stock', '📦', 'amber', 'Valeur · Conso · Achats', 'Stock & Approvisionnement', 'Valeur du stock, rotation, pièces consommées et achats par fournisseur') }}
+    </div>
+</section>
+{% endblock %}

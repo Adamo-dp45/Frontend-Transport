@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Voir l'entreprise - {{ entreprise.libelle }}{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <a href="{{ path('admin.entreprise.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux entreprises
+            </a>
+            {% endif %}
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Entreprise</p>
+                {% if entreprise.statut %}{{ ui.badge(entreprise.statut == 'ACTIF' ? 'Active' : 'Suspendue', entreprise.statut == 'ACTIF' ? 'green' : 'red') }}{% endif %}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ entreprise.libelle }}</h1>
+            <p class="text-sm text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                {% if entreprise.sigle %}<span class="font-mono font-medium">{{ entreprise.sigle }}</span>{% endif %}
+                {% if entreprise.type %}<span>· {{ entreprise.type }}</span>{% endif %}
+                <span>· Depuis le {{ entreprise.createdAt ? entreprise.createdAt|date('d/m/Y') : '—' }}</span>
+            </p>
+        </div>
+        {% if is_granted('ENTREPRISE_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('admin.entreprise.edit', { id: entreprise.id }) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            {# Informations générales #}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations générales</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Raison sociale', entreprise.libelle) }}
+                    {{ ui.field('Sigle', entreprise.sigle, true) }}
+                    {{ ui.field('Type', entreprise.type) }}
+                    {{ ui.field('Adresse', entreprise.adresse) }}
+                    {{ ui.field('Email', entreprise.email ? '<a href="mailto:' ~ entreprise.email ~ '" class="text-primary hover:underline">' ~ entreprise.email ~ '</a>' : null, false, true) }}
+                    {{ ui.field('Contact 1', entreprise.contact1 ? '<a href="tel:' ~ entreprise.contact1 ~ '" class="text-primary hover:underline">' ~ entreprise.contact1 ~ '</a>' : null, false, true) }}
+                    {{ ui.field('Contact 2', entreprise.contact2 ? '<a href="tel:' ~ entreprise.contact2 ~ '" class="text-primary hover:underline">' ~ entreprise.contact2 ~ '</a>' : null, false, true) }}
+                </div>
+            </div>
+
+            {# Informations légales & fiscales #}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations légales & fiscales</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('RCCM', entreprise.rccm, true) }}
+                    {{ ui.field('Banque', entreprise.banque) }}
+                    {{ ui.field('Centre d\'impôt', entreprise.centreimpot) }}
+                    {{ ui.field('Taux TVA', entreprise.tauxtva is not null ? entreprise.tauxtva ~ ' %' : null) }}
+                    {{ ui.field('Enregistrée le', entreprise.createdAt ? entreprise.createdAt|date('d/m/Y à H:i') : null) }}
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-4">
+            {# Identité #}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Identité</h2>
+                <div class="flex items-center justify-center py-3">
+                    <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {% if entreprise.image is defined and entreprise.image %}
+                        <img src="{{ api_url ~ '/media' ~ entreprise.image.contentUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="{{ entreprise.libelle }}" class="w-full h-full object-cover" />
+                        {% else %}
+                        <span class="text-2xl font-semibold text-primary">{{ entreprise.sigle ? entreprise.sigle|upper|slice(0,2) : entreprise.libelle|upper|slice(0,2) }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 gap-y-3 pt-2">
+                    {{ ui.field('Sigle', entreprise.sigle, true) }}
+                    {{ ui.field('Type', entreprise.type) }}
+                    {{ ui.field('Taux TVA', (entreprise.tauxtva ?? 0) ~ ' %') }}
+                </div>
+            </div>
+
+            {# Contacts & statut #}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Contacts rapides</h2>
+                <div class="space-y-2">
+                    {% if entreprise.email %}
+                    <a href="mailto:{{ entreprise.email }}" class="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                        <svg class="h-4 w-4 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <span class="truncate text-xs">{{ entreprise.email }}</span>
+                    </a>
+                    {% endif %}
+                    {% if entreprise.contact1 %}
+                    <a href="tel:{{ entreprise.contact1 }}" class="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                        <svg class="h-4 w-4 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <span class="text-xs">{{ entreprise.contact1 }}</span>
+                    </a>
+                    {% endif %}
+                    {% if entreprise.contact2 %}
+                    <a href="tel:{{ entreprise.contact2 }}" class="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                        <svg class="h-4 w-4 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <span class="text-xs">{{ entreprise.contact2 }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <form method="post" action="{{ path('admin.entreprise.desactiver', { id: entreprise.id }) }}" class="pt-1" onsubmit="return confirm('{{ entreprise.statut == 'ACTIF' ? 'Désactiver' : 'Réactiver' }} cette entreprise ?')">
+                        <button type="submit" class="btn {{ entreprise.statut == 'ACTIF' ? 'btn-warning' : 'btn-success' }} w-full justify-center">
+                            {{ entreprise.statut == 'ACTIF' ? 'Désactiver l\'entreprise' : 'Réactiver l\'entreprise' }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if is_granted('ENTREPRISE_MODIFIER') %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <a href="{{ path('admin.entreprise.edit', { id: entreprise.id }) }}" class="btn btn-secondary w-full justify-center">Modifier l'entreprise</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

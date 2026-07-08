@@ -1,0 +1,149 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bagage {{ bagage.codebagage }}{% endblock %}
+
+{% block body %}
+{% set statutMap = {
+    ENREGISTRE: ['Enregistré', 'bg-gray-100 text-gray-700'],
+    EMBARQUE: ['Embarqué', 'bg-blue-100 text-blue-800'],
+    LIVRE: ['Livré', 'bg-green-100 text-green-800'],
+    PERDU: ['Perdu', 'bg-red-100 text-red-800'],
+    ANNULE: ['Annulé', 'bg-amber-100 text-amber-800']
+} %}
+{% set typeMap = {
+    LEGER: ['Léger', 'bg-sky-50 text-sky-700'],
+    LOURD: ['Lourd', 'bg-orange-50 text-orange-700'],
+    VOLUMINEUX: ['Volumineux', 'bg-purple-50 text-purple-700'],
+    FRAGILE: ['Fragile', 'bg-yellow-50 text-yellow-700']
+} %}
+{% set statutCfg = statutMap[bagage.statut] ?? [bagage.statut, 'bg-gray-100 text-gray-700'] %}
+{% set typeCfg = typeMap[bagage.type] ?? [bagage.type, 'bg-gray-100 text-gray-700'] %}
+
+<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">
+            Bagage {{ bagage.codebagage }}
+        </h1>
+        <p class="text-sm font-light text-muted-foreground">
+            Enregistré le {{ bagage.createdAt|date('d/m/Y à H:i') }}
+        </p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
+        <a href="{{ path('bagage.index') }}" class="btn btn-secondary">
+            <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+            Retour
+        </a>
+        {# Ticket de pesée : billet lié + gare créatrice (dépôt) #}
+        {% if is_granted('BAGAGE_VOIR') and bagage.ticket and peutAgirDepart %}
+        <a href="{{ path('bagage.print', { id: bagage.id }) }}" target="_blank" class="btn btn-secondary">
+            <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#print"></use></svg>
+            Ticket de pesée
+        </a>
+        {% endif %}
+        {# Seul un bagage ENREGISTRE (pas encore embarqué) est modifiable — cf. BagageProcessor::handlePatch #}
+        {% if is_granted('BAGAGE_MODIFIER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
+        <a href="{{ path('bagage.edit', { id: bagage.id }) }}" class="btn btn-primary">
+            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+            Modifier
+        </a>
+        {% endif %}
+        {# Annuler : uniquement tant que le bagage est ENREGISTRE (non embarqué), par la gare de dépôt #}
+        {% if is_granted('BAGAGE_MODIFIER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
+        <form method="POST" action="{{ path('bagage.annuler', { id: bagage.id }) }}" class="inline"
+              onsubmit="return confirm('Annuler ce bagage ?')">
+            <button type="submit" class="btn btn-warning">Annuler</button>
+        </form>
+        {% endif %}
+        {% if is_granted('BAGAGE_SUPPRIMER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
+        <form method="POST" action="{{ path('bagage.delete', { id: bagage.id }) }}" class="inline"
+              onsubmit="return confirm('Supprimer ce bagage ?')">
+            <button type="submit" class="btn btn-danger">Supprimer</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-sm font-light text-muted-foreground mb-2">Statut</p>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ statutCfg[1] }}">
+            {{ statutCfg[0] }}
+        </span>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-sm font-light text-muted-foreground mb-2">Type</p>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ typeCfg[1] }}">
+            {{ typeCfg[0] }}
+        </span>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-sm font-light text-muted-foreground mb-2">Poids</p>
+        <p class="font-bold text-lg">{{ bagage.poids }} kg</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-sm font-light text-muted-foreground mb-2">Montant</p>
+        <p class="font-bold text-lg">{{ bagage.montant|number_format(0, ',', ' ') }} FCFA</p>
+        {% if bagage.montantforce %}
+            <p class="text-xs text-orange-600 mt-1">Montant forcé manuellement</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Client</p>
+        {% if bagage.ticket %}
+            <p class="font-semibold">{{ bagage.ticket.nomclient ?? 'Client anonyme' }}</p>
+            <p class="text-sm text-muted-foreground">{{ bagage.ticket.contactclient ?? '—' }}</p>
+            <p class="text-xs text-muted-foreground mt-2">
+                Billet <span class="font-mono">{{ bagage.ticket.codeticket }}</span>
+            </p>
+        {% else %}
+            <p class="text-sm text-muted-foreground">Aucun billet rattaché</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Voyage</p>
+        {% if bagage.voyage %}
+            <p class="font-semibold font-mono">{{ bagage.voyage.codevoyage }}</p>
+            <p class="text-sm text-muted-foreground">
+                {{ bagage.voyage.provenance }} → {{ bagage.voyage.destination }}
+            </p>
+        {% else %}
+            <p class="text-sm text-muted-foreground">Aucun</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Gare de départ</p>
+        {% if bagage.garedepart %}
+            <p class="font-semibold">{{ bagage.garedepart.libelle }}</p>
+            {% if bagage.garedepart.ville %}<p class="text-sm text-muted-foreground">{{ bagage.garedepart.ville }}</p>{% endif %}
+        {% else %}
+            <p class="text-sm text-muted-foreground">Non définie</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Gare de descente</p>
+        {% if bagage.garedescente %}
+            <p class="font-semibold">{{ bagage.garedescente.libelle }}</p>
+            {% if bagage.garedescente.ville %}<p class="text-sm text-muted-foreground">{{ bagage.garedescente.ville }}</p>{% endif %}
+        {% else %}
+            <p class="text-sm text-muted-foreground">Non définie</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Nature</p>
+        <p class="font-semibold">{{ bagage.nature }}</p>
+    </div>
+    {% if bagage.tarifbagage %}
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Tarif appliqué</p>
+        <p class="font-semibold">{{ bagage.tarifbagage.libelle }}</p>
+        <p class="text-sm text-muted-foreground">
+            {{ bagage.tarifbagage.poidsmin }} kg
+            → {{ bagage.tarifbagage.poidsmax ? bagage.tarifbagage.poidsmax ~ ' kg' : 'Illimité' }}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

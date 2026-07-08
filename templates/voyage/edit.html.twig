@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier voyage{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('voyage.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">
+            Modifier le voyage <strong>{{ voyage.codevoyage }}</strong>
+        </h1>
+        <p class="text-muted-foreground text-sm">{{ voyage.provenance }} → {{ voyage.destination }}</p>
+    </div>
+</div>
+
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3 space-y-2">
+            <div>{{ form_row(form.datedepartprevue) }}</div>
+            <div>{{ form_row(form.datearriveeprevue) }}</div>
+            <div>{{ form_row(form.car) }}</div>
+            <div>{{ form_row(form.placesprevues) }}</div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('voyage.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">Modifier</button>
+        </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

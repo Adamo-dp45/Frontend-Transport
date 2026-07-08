@@ -1,0 +1,70 @@
+{#
+    Rend un champ de formulaire (select de ressource liée) avec, à côté du label,
+    un lien « créer » qui ouvre une MODALE de création rapide (sans quitter le
+    formulaire). À la validation, la ressource créée est ajoutée au select et
+    présélectionnée. Si le JS est indisponible, le lien retombe sur la page de
+    création classique (nouvel onglet).
+
+    Nécessite d'inclure une fois sur la page : {% include 'form/_quick_create_modal.html.twig' %}
+
+    Usage :
+        {% import 'form/_macros.html.twig' as ui %}
+        {{ ui.fieldWithCreate(form.typepiece, 'typepiece', 'Nouveau type', 'TYPEPIECE_CREER') }}
+
+    - field      : le champ de formulaire (select)
+    - resource   : clé de ressource (typepiece, marquepiece, model…) — sert à l'endpoint et au repli `<resource>.new`
+    - label      : texte du lien et titre de la modale
+    - permission : permission requise (ou null pour toujours afficher)
+#}
+{% macro fieldWithCreate(field, resource, label, permission = null) %}
+    <div class="field">
+        <div class="flex items-center justify-between gap-2">
+            {{ form_label(field) }}
+            {% if permission is null or is_granted(permission) %}
+                <a href="{{ path(resource ~ '.new') }}" target="_blank" rel="noopener"
+                   data-quickcreate
+                   data-qc-endpoint="{{ path('quick_create.create', { resource: resource }) }}"
+                   data-qc-target="{{ field.vars.id }}"
+                   data-qc-title="{{ label }}"
+                   class="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+                   title="Créer sans quitter le formulaire">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {{ label }}
+                </a>
+            {% endif %}
+        </div>
+        {{ form_widget(field) }}
+        {{ form_errors(field) }}
+    </div>
+{% endmacro %}
+
+{#
+    Variante « lien simple » pour les ressources COMPLEXES (multi-champs) qu'on ne
+    peut pas créer dans une petite modale (ex. Ligne, Car). Affiche, à côté du label,
+    un lien vers la page de création complète, ouverte dans un nouvel onglet (pas de
+    présélection automatique : recharger la page pour voir la nouvelle entrée).
+
+    Usage :
+        {{ ui.fieldWithLink(form.ligne, 'ligne.new', 'Nouvelle ligne', 'LIGNE_CREER') }}
+#}
+{% macro fieldWithLink(field, route, label, permission = null) %}
+    <div class="field">
+        <div class="flex items-center justify-between gap-2">
+            {{ form_label(field) }}
+            {% if permission is null or is_granted(permission) %}
+                <a href="{{ path(route) }}" target="_blank" rel="noopener"
+                   class="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+                   title="Créer (s'ouvre dans un nouvel onglet)">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {{ label }}
+                </a>
+            {% endif %}
+        </div>
+        {{ form_widget(field) }}
+        {{ form_errors(field) }}
+    </div>
+{% endmacro %}

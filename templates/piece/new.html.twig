@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle piece{% endblock %}
+
+{% block body %}
+{% import 'form/_macros.html.twig' as ui %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('piece.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouvelle pièce</h1>
+    </div>
+</div>
+
+<div class="card p-6">
+    {{ form_start(form, { attr: { enctype: 'multipart/form-data'} }) }}
+        <div class="flex flex-col gap-6 lg:flex-row mb-3">
+            <div class="flex-1 flex flex-col gap-4 min-w-0">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>{{ form_row(form.libelle) }}</div>
+                    <div>{{ form_row(form.prixunitaire) }}</div>
+                    <div>{{ ui.fieldWithCreate(form.typepiece, 'typepiece', 'Nouveau type', 'TYPEPIECE_CREER') }}</div>
+                    <div>{{ ui.fieldWithCreate(form.marquepiece, 'marquepiece', 'Nouvelle marque', 'MARQUEPIECE_CREER') }}</div>
+                    <div>{{ ui.fieldWithCreate(form.model, 'model', 'Nouveau modèle', 'MODEL_CREER') }}</div>
+                    <div>{{ form_row(form.stockinitial) }}</div>
+                </div>
+            </div>
+            <div class="shrink-0 flex flex-col gap-4">
+                <div>{{ form_row(form.imageFile) }}</div>
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('piece.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                Créer
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+{% include 'form/_quick_create_modal.html.twig' %}
+{% endblock %}

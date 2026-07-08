@@ -1,0 +1,281 @@
+{% extends 'base.html.twig' %}
+{% import _self as h %}
+
+{% block title %}Aide{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# ── En-tête ── #}
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold tracking-[-0.5px]">Comment utiliser iTransport</h1>
+        <p class="mt-1 text-muted-foreground">Guide pas à pas des opérations courantes. Choisissez une rubrique dans le sommaire.</p>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
+
+        {# ── Sommaire ── #}
+        <aside class="mb-6 lg:mb-0">
+            <nav class="lg:sticky lg:top-4 rounded-xl border bg-card p-3 text-sm">
+                <p class="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sommaire</p>
+                <ul class="space-y-0.5">
+                    {{ h.toc('demarrer', 'Bien démarrer') }}
+                    {% if is_granted('TICKET_VOIR') %}{{ h.toc('billet', 'Vendre un billet') }}{% endif %}
+                    {% if is_granted('TICKET_VOIR') %}{{ h.toc('desistement', 'Annuler / reporter un billet') }}{% endif %}
+                    {% if is_granted('CLIENT_VOIR') or is_granted('TICKET_VOIR') %}{{ h.toc('fidelite', 'Fidélité client') }}{% endif %}
+                    {% if is_granted('RESERVATION_VOIR') or is_granted('TICKET_VOIR') %}{{ h.toc('reservation', 'Réserver une place') }}{% endif %}
+                    {% if is_granted('VOYAGE_VOIR') %}{{ h.toc('voyage', 'Créer et suivre un voyage') }}{% endif %}
+                    {% if is_granted('VOYAGE_VOIR') %}{{ h.toc('reception', 'Réceptionner à ma gare') }}{% endif %}
+                    {% if is_granted('COURRIER_VOIR') %}{{ h.toc('courrier', 'Envoyer un courrier') }}{% endif %}
+                    {% if is_granted('BAGAGE_VOIR') %}{{ h.toc('bagage', 'Enregistrer un bagage') }}{% endif %}
+                    {{ h.toc('suivi', 'Suivre les cars') }}
+                    {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
+                    {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
+                    {{ h.toc('compte', 'Mon compte') }}
+                </ul>
+            </nav>
+        </aside>
+
+        {# ── Contenu ── #}
+        <div class="space-y-10">
+
+            {# Bien démarrer #}
+            {{ h.open('demarrer', 'rocket', 'Bien démarrer', 'Se repérer dans l\'application') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, '<strong>Connectez-vous</strong> avec votre email et votre mot de passe. En cas d\'oubli, cliquez sur « mot de passe oublié » sur l\'écran de connexion.') }}
+                    {{ h.step(2, 'Le <strong>menu de gauche</strong> liste les modules auxquels vous avez accès : vous ne voyez que ce que votre rôle autorise.') }}
+                    {{ h.step(3, 'Votre <strong>gare de rattachement</strong> est affichée en haut de l\'écran (pastille à côté de la recherche). C\'est la gare depuis laquelle vous travaillez.') }}
+                    {{ h.step(4, 'Le lien <strong>« Ma gare »</strong> ouvre votre tableau de bord (suivi des cars, et la recette si vous êtes administrateur de gare).') }}
+                </ol>
+                {{ h.note('La plupart des actions sont liées à votre gare : un agent de gare ne traite que les voyages, billets, courriers et bagages qui passent par <strong>sa</strong> gare.') }}
+            {{ h.close() }}
+
+            {# Vendre un billet #}
+            {% if is_granted('TICKET_VOIR') %}
+            {{ h.open('billet', 'ticket', 'Vendre un billet', 'Module Billetterie') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Billetterie</strong> dans le menu, puis « Nouveau billet ».') }}
+                    {{ h.step(2, 'Choisissez le <strong>voyage</strong>, puis le trajet du client : gare de <strong>montée</strong> → gare de <strong>descente</strong>. Le prix s\'ajuste automatiquement selon ce trajet.') }}
+                    {{ h.step(3, 'Sur le <strong>plan des sièges</strong>, cliquez un siège libre. Un siège peut être libre sur une portion du trajet et occupé sur une autre : l\'app vérifie la disponibilité <strong>sur le trajet choisi</strong>.') }}
+                    {{ h.step(4, 'Renseignez si besoin le <strong>nom</strong> et le <strong>contact</strong> du client, appliquez une éventuelle remise/bénéficiaire, puis <strong>validez</strong>.') }}
+                    {{ h.step(5, 'Le billet est créé : utilisez le bouton <strong>« Imprimer »</strong> pour remettre le reçu au client.') }}
+                </ol>
+                {{ h.note('Si un passager descend plus tôt que prévu, déclarez-le « descendu » depuis le billet : son siège redevient vendable pour la suite du trajet.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Désistement #}
+            {% if is_granted('TICKET_VOIR') %}
+            {{ h.open('desistement', 'swap', 'Annuler ou reporter un billet', 'Désistement') }}
+                <p class="mb-3 text-sm text-muted-foreground">Depuis la fiche d\'un billet, le bouton « Désistement » propose deux options :</p>
+                <ol class="space-y-3">
+                    {{ h.step('1', '<strong>Annulation</strong> — le billet passe ' ~ h.chip('Annulé', 'rose') ~ ', le siège est libéré et les éventuels <strong>bagages rattachés</strong> sont annulés.') }}
+                    {{ h.step('2', '<strong>Report</strong> — choisissez un autre voyage de la <strong>même ligne</strong> et un siège. Un nouveau billet ' ~ h.chip('Valide', 'emerald') ~ ' est créé (même trajet, même prix) ; l\'ancien passe ' ~ h.chip('Reporté', 'amber') ~ ' et libère son siège.') }}
+                </ol>
+                {{ h.warn('Un billet déjà annulé ou reporté ne peut plus être modifié. Les billets annulés/reportés ne comptent pas dans les recettes.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Fidélité #}
+            {% if is_granted('CLIENT_VOIR') or is_granted('TICKET_VOIR') %}
+            {{ h.open('fidelite', 'gift', 'Fidélité client', 'Carte à tampons') }}
+                <p class="mb-3 text-sm text-muted-foreground">Le programme récompense les clients réguliers : tous les <strong>N voyages payés</strong>, le client gagne un <strong>billet offert</strong> (ou réduit). Le suivi est automatique, basé sur l\'historique réel des billets.</p>
+                <ol class="space-y-3">
+                    {{ h.step(1, '<strong>Adhésion</strong> — depuis la fiche d\'un client (ou la liste des clients), cliquez <strong>« Faire adhérer »</strong>. Une carte de fidélité est ouverte ; seuls les clients <strong>membres</strong> cumulent.') }}
+                    {{ h.step(2, '<strong>Cumul</strong> — chaque billet payé après l\'adhésion ajoute un <strong>tampon</strong>. La fiche client affiche la jauge (ex. 7/10) et le nombre de voyages cumulés.') }}
+                    {{ h.step(3, '<strong>Récompense</strong> — une fois le seuil atteint, la fiche indique ' ~ h.chip('Récompense disponible', 'green') ~ '. Au guichet, en saisissant le <strong>téléphone</strong> du client, l\'application le reconnaît et propose la case <strong>« Utiliser la récompense »</strong>.') }}
+                    {{ h.step(4, 'Cochez la case : le billet est <strong>offert</strong> (ou réduit selon le réglage). La récompense consomme les tampons et le compteur repart à zéro pour la carte suivante.') }}
+                </ol>
+                {{ h.note('Le client est identifié par son <strong>numéro de téléphone</strong> : pensez à le renseigner à la vente pour que les voyages soient bien rattachés à sa carte.') }}
+                {% if is_granted('ROLE_ADMIN') %}
+                {{ h.note('<strong>Administrateur</strong> : réglez le <strong>seuil</strong> (nombre de voyages) et la <strong>récompense</strong> (100 % = offert) dans <strong>Billetterie → Programme fidélité</strong>. Vous pouvez aussi suspendre le programme.') }}
+                {% endif %}
+                {{ h.warn('La récompense exige un client <strong>membre</strong> ayant atteint le seuil. Sans téléphone renseigné, le voyage ne peut pas être rattaché à une carte.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Réservation #}
+            {% if is_granted('RESERVATION_VOIR') or is_granted('TICKET_VOIR') %}
+            {{ h.open('reservation', 'ticket', 'Réserver une place', 'Module Billetterie') }}
+                <p class="mb-3 text-sm text-muted-foreground">La réservation tient une <strong>place</strong> sur un tronçon (montée → descente) <strong>avant</strong> le départ, sans choisir de siège. Le siège est attribué à la <strong>confirmation</strong> (émission du billet).</p>
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Billetterie → Réservations → « Nouvelle réservation »</strong>. Choisissez le <strong>voyage</strong>, le trajet (montée → descente), et renseignez le <strong>nom</strong> et le <strong>contact</strong> du client.') }}
+                    {{ h.step(2, 'La réservation est créée ' ~ h.chip('En attente', 'amber') ~ ' : elle réserve une place et <strong>expire</strong> automatiquement un certain délai avant le départ si elle n\'est pas confirmée.') }}
+                    {{ h.step(3, '<strong>Confirmer (payer)</strong> — encaisse le paiement, attribue un siège libre et émet le <strong>billet</strong> ' ~ h.chip('Valide', 'emerald') ~ '. La réservation passe ' ~ h.chip('Confirmée', 'green') ~ '.') }}
+                    {{ h.step(4, '<strong>Annuler</strong> — libère la place tant que la réservation est encore en attente.') }}
+                </ol>
+                {{ h.note('Pour réserver alors qu\'aucun car n\'est encore affecté, le voyage doit avoir une <strong>capacité prévisionnelle</strong> (« places prévues ») ; sinon la capacité du car affecté fait foi.') }}
+                {% if is_granted('ROLE_ADMIN') %}
+                {{ h.note('<strong>Administrateur</strong> : réglez le <strong>délai d\'expiration</strong> (en minutes avant le départ) dans <strong>Billetterie → Paramètres réservation</strong>.') }}
+                {% endif %}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Voyage #}
+            {% if is_granted('VOYAGE_VOIR') %}
+            {{ h.open('voyage', 'route', 'Créer et suivre un voyage', 'Module Voyages') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Voyages</strong> → « Nouveau voyage ». Choisissez la <strong>ligne</strong> et la date de départ.') }}
+                    {{ h.step(2, 'Sur la fiche du voyage, <strong>affectez</strong> : le <strong>véhicule</strong>, le <strong>personnel</strong> (chauffeur…) et, si vous en avez un, le <strong>commercial à bord</strong>.') }}
+                    {{ h.step(3, 'Pendant le trajet, la <strong>position du car</strong> avance à chaque gare qui le réceptionne. Le commercial à bord vend depuis cette position.') }}
+                    {{ h.step(4, 'À l\'arrivée, la gare de destination <strong>clôture</strong> le voyage : il est terminé.') }}
+                </ol>
+            {{ h.close() }}
+            {% endif %}
+
+            {# Réception #}
+            {% if is_granted('VOYAGE_VOIR') %}
+            {{ h.open('reception', 'check', 'Réceptionner un voyage à ma gare', 'Gare intermédiaire') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Quand un car arrive à votre gare, ouvrez la fiche du voyage et cliquez <strong>« Réceptionner »</strong>.') }}
+                    {{ h.step(2, 'Cela confirme le <strong>passage du car</strong> à votre gare et met à jour automatiquement : les <strong>courriers</strong> qui y descendent passent ' ~ h.chip('Réceptionné', 'orange') ~ ', les <strong>bagages</strong> passent ' ~ h.chip('Livré', 'green') ~ '.') }}
+                    {{ h.step(3, 'La position du car avance jusqu\'à votre gare — utile pour le suivi et pour le commercial à bord.') }}
+                </ol>
+                {{ h.note('La réception est réservée aux gares <strong>intermédiaires</strong> de la ligne (ni l\'origine, ni le terminus). La gare de destination, elle, <strong>clôture</strong> le voyage.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Courrier #}
+            {% if is_granted('COURRIER_VOIR') %}
+            {{ h.open('courrier', 'mail', 'Envoyer un courrier', 'Module Courrier') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Courrier</strong> → « Nouveau courrier ». Renseignez l\'<strong>expéditeur</strong>, le <strong>destinataire</strong>, le voyage et la gare d\'arrivée.') }}
+                    {{ h.step(2, 'Ajoutez un ou plusieurs <strong>colis</strong> : pour chacun, une nature/désignation et une <strong>tranche tarifaire</strong> (selon la valeur déclarée).') }}
+                    {{ h.step(3, 'Validez et imprimez le <strong>reçu</strong>. Le courrier suit son cycle : ' ~ h.chip('En attente', 'slate') ~ ' ' ~ h.chip('En transit', 'blue') ~ ' ' ~ h.chip('Réceptionné', 'orange') ~ ' ' ~ h.chip('Livré', 'green') ~ '.') }}
+                    {{ h.step(4, 'À destination, confirmez la <strong>livraison</strong> au destinataire depuis la fiche.') }}
+                </ol>
+                {{ h.warn('Un colis peut être déclaré ' ~ h.chip('Perdu', 'rose') ~ ' individuellement ; si tous les colis sont perdus, le courrier l\'est aussi. Déclarer le <strong>courrier perdu</strong> passe tous ses colis en perdu. Un reçu réimprimé d\'un envoi perdu/annulé porte un bandeau de statut.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Bagage #}
+            {% if is_granted('BAGAGE_VOIR') %}
+            {{ h.open('bagage', 'bag', 'Enregistrer un bagage', 'Module Bagages') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Bagages</strong> → « Nouveau bagage ». <strong>Recherchez le billet</strong> du client (par nom ou code).') }}
+                    {{ h.step(2, 'Le bagage <strong>hérite du billet</strong> : provenance, destination et identité du client sont reprises automatiquement — vous n\'avez pas à les ressaisir.') }}
+                    {{ h.step(3, 'Saisissez la <strong>nature</strong>, le <strong>type</strong> et le <strong>poids</strong>. Le montant se calcule selon la grille tarifaire (vous pouvez le forcer si besoin).') }}
+                    {{ h.step(4, 'Validez et imprimez le <strong>ticket de pesée</strong>. Statuts : ' ~ h.chip('Enregistré', 'slate') ~ ' ' ~ h.chip('Embarqué', 'blue') ~ ' ' ~ h.chip('Livré', 'green') ~ '.') }}
+                </ol>
+                {{ h.note('Un bagage est ' ~ h.chip('Annulé', 'amber') ~ ' automatiquement si le billet de son client est annulé, et peut être déclaré ' ~ h.chip('Perdu', 'rose') ~ ' depuis sa fiche.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Suivi des cars #}
+            {{ h.open('suivi', 'building', 'Suivre les cars depuis ma gare', 'Ma gare') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Ma gare</strong>. La section <strong>« Suivi des cars »</strong> liste les voyages qui desservent votre gare.') }}
+                    {{ h.step(2, 'Colonne <strong>« Vers ma gare »</strong> : les cars en approche (avec le nombre d\'arrêts restants et l\'heure de départ d\'origine). Colonne <strong>« Depuis ma gare »</strong> : les cars à quai ou déjà partis.') }}
+                    {{ h.step(3, 'Le <strong>mini-plan de ligne</strong> montre la position du car (icône bus) par rapport à votre gare. Cliquez une ligne pour ouvrir la fiche du voyage (si vous y avez accès).') }}
+                </ol>
+            {{ h.close() }}
+
+            {# Stats & export #}
+            {% if is_granted('ROLE_ADMIN') %}
+            {{ h.open('stats', 'chart', 'Statistiques et export', 'Espace propriétaire') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Les pages de statistiques (Billetterie, Courrier, Bagages, Exploitation, Flotte, Stock, Gares…) présentent KPI, graphiques et tableaux.') }}
+                    {{ h.step(2, 'Utilisez le <strong>filtre de période</strong> (dates de début/fin) en haut de page, puis « Filtrer ».') }}
+                    {{ h.step(3, 'Cliquez <strong>« Excel »</strong> ou <strong>« PDF »</strong> en haut de page pour <strong>exporter</strong> les données de la période. Le fichier se télécharge dans un nouvel onglet.') }}
+                </ol>
+                {{ h.note('Les recettes ne comptent que les opérations valides : un billet annulé ou reporté ne double-compte jamais.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Administration #}
+            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}
+            {{ h.open('admin', 'shield', 'Administration', 'Réservé aux administrateurs') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, '<strong>Utilisateurs & rôles</strong> : créez des comptes et déléguez des droits. Un acteur de gare ne délègue que sur le périmètre de sa gare.') }}
+                    {{ h.step(2, '<strong>Gares & lignes</strong> : les lignes (suite ordonnée d\'arrêts) servent de base aux voyages et aux tarifs.') }}
+                    {{ h.step(3, '<strong>Flotte & stock</strong> : véhicules, dépannages, pièces, approvisionnements ; chaque mouvement de stock est tracé avec son auteur.') }}
+                    {{ h.step(4, 'Le <strong>journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, pertes, livraisons, changements sur les voyages.') }}
+                </ol>
+            {{ h.close() }}
+            {% endif %}
+
+            {# Mon compte #}
+            {{ h.open('compte', 'user', 'Mon compte', 'Profil et sécurité') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Cliquez sur votre <strong>profil</strong> (en haut à droite) pour modifier vos informations et votre <strong>photo</strong>.') }}
+                    {{ h.step(2, 'Changez régulièrement votre <strong>mot de passe</strong> depuis votre profil.') }}
+                </ol>
+            {{ h.close() }}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# ── Macros ── #}
+
+{% macro toc(anchor, label) %}
+    <li><a href="#{{ anchor }}" class="block rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{{ label }}</a></li>
+{% endmacro %}
+
+{# Ouvre une rubrique (toujours visible) : ancre + en-tête icône/titre + ouverture de la carte. #}
+{% macro open(anchor, icon, title, eyebrow) %}
+    <section id="{{ anchor }}" class="scroll-mt-6">
+        <div class="mb-4 flex items-center gap-3">
+            <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                {% if icon == 'rocket' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                {% elseif icon == 'ticket' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                {% elseif icon == 'swap' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                {% elseif icon == 'gift' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                {% elseif icon == 'route' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                {% elseif icon == 'check' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                {% elseif icon == 'mail' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                {% elseif icon == 'bag' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                {% elseif icon == 'building' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+                {% elseif icon == 'chart' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                {% elseif icon == 'shield' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                {% else %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {% endif %}
+            </div>
+            <div>
+                {% if eyebrow %}<p class="text-[11px] font-semibold uppercase tracking-wide text-primary">{{ eyebrow }}</p>{% endif %}
+                <h2 class="text-xl font-semibold leading-tight">{{ title }}</h2>
+            </div>
+        </div>
+        <div class="card p-5">
+{% endmacro %}
+
+{% macro close() %}
+        </div>
+    </section>
+{% endmacro %}
+
+{% macro step(n, text) %}
+    <li class="flex gap-3">
+        <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{{ n }}</span>
+        <span class="pt-0.5 text-sm leading-relaxed">{{ text|raw }}</span>
+    </li>
+{% endmacro %}
+
+{% macro note(text) %}
+    <div class="mt-4 flex gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-sm leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+        <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>{{ text|raw }}</span>
+    </div>
+{% endmacro %}
+
+{% macro warn(text) %}
+    <div class="mt-4 flex gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm leading-relaxed text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <span>{{ text|raw }}</span>
+    </div>
+{% endmacro %}
+
+{# Petit badge de statut pour les légendes (renvoie du HTML, à utiliser dans h.step via concat). #}
+{% macro chip(label, tone) %}
+{%- set tones = {
+    slate:   'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    blue:    'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+    orange:  'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+    green:   'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+    amber:   'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    rose:    'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+} -%}
+<span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium {{ tones[tone] ?? tones.slate }}">{{ label }}</span>
+{%- endmacro %}

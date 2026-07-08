@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Réservations{% endblock %}
+
+{% set statutLabels = { EN_ATTENTE: 'En attente', CONFIRMEE: 'Payée', A_REGULARISER: 'À régulariser', EXPIREE: 'Expirée', ANNULEE: 'Annulée' } %}
+{% set statutDot = { EN_ATTENTE: 'bg-amber-400', CONFIRMEE: 'bg-emerald-500', A_REGULARISER: 'bg-orange-500', EXPIREE: 'bg-slate-400', ANNULEE: 'bg-rose-500' } %}
+{% set sourceLabels = { GUICHET: 'Guichet (agent)', MOBILE: 'En ligne (web / mobile)' } %}
+
+{% block body %}
+{{ s.pageHeader('Réservations', 'Module réservation', 'owner.stats.reservations', debut, fin) }}
+
+<section class="mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
+        {{ s.kpi('Réservations', reservations.total ?? 0, '', 'slate', 'ticket', 'sur la période') }}
+        {{ s.kpi('Payées', reservations.confirmees ?? 0, '', 'emerald', 'check', (reservations.tauxConversion ?? 0) ~ '% payées / total') }}
+        {{ s.kpi('Recette', (reservations.recetteConfirmee ?? 0) | number_format(0, ',', ' '), 'FCFA', 'amber', 'money', 'réservations payées') }}
+        {{ s.kpi('En attente', reservations.enAttente ?? 0, '', 'blue', 'route', 'paiement à venir') }}
+        {{ s.kpi('À régulariser', reservations.aRegulariser ?? 0, '', 'orange', 'alert', 'no-show à reporter') }}
+        {{ s.kpi('No-shows', reservations.noShows ?? 0, '', 'rose', 'alert', 'payés, départ manqué (à régulariser / perdus)') }}
+        {{ s.kpi('Part en ligne', reservations.partMobile ?? 0, '%', 'violet', 'chart', 'réservé par les clients') }}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {# Par statut #}
+        <div class="card p-5">
+            {{ s.sectionTitle('Répartition par statut', 'Volume et recette encaissée') }}
+            {% if reservations.parStatut is not empty %}
+            <table class="w-full text-sm">
+                <thead><tr class="text-left text-muted-foreground border-b">
+                    <th class="pb-2 font-medium">Statut</th>
+                    <th class="pb-2 font-medium text-right">Nombre</th>
+                    <th class="pb-2 font-medium text-right">Recette payée</th>
+                </tr></thead>
+                <tbody>
+                {% for r in reservations.parStatut %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2"><span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full {{ statutDot[r.statut] ?? 'bg-slate-400' }}"></span>{{ statutLabels[r.statut] ?? r.statut }}</span></td>
+                        <td class="py-2 text-right tabular-nums font-semibold">{{ r.total }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ r.recette | number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}<p class="py-6 text-center text-sm text-muted-foreground">Aucune réservation sur la période.</p>{% endif %}
+        </div>
+
+        {# Par canal #}
+        <div class="card p-5">
+            {{ s.sectionTitle('Répartition par canal', 'Guichet vs réservation en ligne') }}
+            {% if reservations.parSource is not empty %}
+            <ul class="space-y-3 mt-1">
+            {% for r in reservations.parSource %}
+                {% set pct = reservations.total > 0 ? (r.total * 100 / reservations.total) : 0 %}
+                <li>
+                    <div class="flex items-center justify-between text-sm mb-1">
+                        <span class="font-medium">{{ sourceLabels[r.source] ?? r.source }}</span>
+                        <span class="tabular-nums text-muted-foreground">{{ r.total }} · {{ pct | round }}%</span>
+                    </div>
+                    <div class="h-2 rounded-full bg-muted overflow-hidden"><div class="h-full rounded-full bg-primary" style="width: {{ pct | round }}%"></div></div>
+                </li>
+            {% endfor %}
+            </ul>
+            {% else %}<p class="py-6 text-center text-sm text-muted-foreground">Aucune donnée.</p>{% endif %}
+
+            <div class="mt-5 pt-4 border-t border-border grid grid-cols-2 gap-4 text-sm">
+                <div><p class="text-muted-foreground text-xs">Billets émis</p><p class="font-semibold tabular-nums">{{ reservations.billetsEmis ?? 0 }}</p></div>
+                <div><p class="text-muted-foreground text-xs">Expirées / annulées</p><p class="font-semibold tabular-nums">{{ (reservations.expirees ?? 0) + (reservations.annulees ?? 0) }}</p></div>
+            </div>
+        </div>
+    </div>
+
+    {# Top trajets #}
+    <div class="card p-5 mt-5">
+        {{ s.sectionTitle('Top trajets réservés', 'Les tronçons les plus demandés sur la période') }}
+        {% if reservations.topTrajets is not empty %}
+        <table class="w-full text-sm">
+            <thead><tr class="text-left text-muted-foreground border-b">
+                <th class="pb-2 font-medium">#</th>
+                <th class="pb-2 font-medium">Trajet</th>
+                <th class="pb-2 font-medium text-right">Réservations</th>
+            </tr></thead>
+            <tbody>
+            {% for t in reservations.topTrajets %}
+                <tr class="border-b last:border-0">
+                    <td class="py-2 text-muted-foreground tabular-nums">{{ loop.index }}</td>
+                    <td class="py-2 font-medium">{{ t.montee }} <span class="text-muted-foreground">→</span> {{ t.descente }}</td>
+                    <td class="py-2 text-right tabular-nums font-semibold">{{ t.total }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p class="py-6 text-center text-sm text-muted-foreground">Aucun trajet réservé sur la période.</p>{% endif %}
+    </div>
+</section>
+{% endblock %}

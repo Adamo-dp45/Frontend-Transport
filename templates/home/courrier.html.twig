@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Courrier{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Courriers', 'Statistiques', 'owner.stats.courrier', debut, fin, 'stats.export.courrier') }}
+
+<section class="mb-10">
+    {% set tauxPA = courrier.totalCourriers > 0 ? ((courrier.perdus + courrier.annules) / courrier.totalCourriers * 100)|round : 0 %}
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+        {{ s.kpi('Total courriers', courrier.totalCourriers, '', 'blue', 'mail') }}
+        {{ s.kpi('Recette totale', courrier.recetteTotale|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money') }}
+        {{ s.kpi('Délai moyen livraison', details.delaiMoyenHeures is not null ? details.delaiMoyenHeures : '—', details.delaiMoyenHeures is not null ? 'h' : '', 'violet', 'check', (details.nbLivres ?? 0) ~ ' livré(s)') }}
+        {{ s.kpi('Taux perte + annul.', tauxPA, '%', 'rose', 'alert', '', tauxPA > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Courriers perdus', courrier.perdus, '', 'rose', 'alert', '', courrier.perdus > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Colis perdus', details.colisPerdus ?? 0, '', 'rose', 'alert', (details.tauxPerteColis ?? 0) ~ '% des colis', (details.colisPerdus ?? 0) > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Annulés', courrier.annules, '', 'amber', 'alert', '', courrier.annules > 0 ? 'text-amber-500' : '') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {# Statuts — doughnut #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Répartition par statut</p>
+            <canvas id="chartCourrierStatuts" height="160"
+                data-values="{{ [
+                    {statut: 'En attente',   total: courrier.enAttente},
+                    {statut: 'En transit',   total: courrier.enTransit},
+                    {statut: 'Réceptionné',  total: courrier.receptionnes},
+                    {statut: 'Livré',        total: courrier.livres},
+                    {statut: 'Perdu',        total: courrier.perdus},
+                    {statut: 'Annulé',       total: courrier.annules}
+                ] | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par jour — barres #}
+        <div class="card p-5 md:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par jour</p>
+            <canvas id="chartCourrierParJour" height="160"
+                data-values="{{ courrier.recettesParJour | map(r => {label: r.label, montant: r.montant, nbcourriers: r.nbcourriers}) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par trajet — barres horizontales #}
+        <div class="card p-5 md:col-span-3">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par trajet</p>
+            <canvas id="chartCourrierParTrajet" height="100"
+                data-values="{{ courrier.recettesParTrajet | map(r => {trajet: r.trajet, montant: r.montant, nbcourriers: r.nbcourriers}) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Colis par tranche de valeur — barres #}
+        <div class="card p-5 md:col-span-3">
+            <p class="text-sm font-medium text-muted-foreground mb-1">Colis par tranche de valeur</p>
+            <p class="text-xs text-muted-foreground mb-4">Répartition des colis selon la grille tarifaire courrier</p>
+            {% if details.parTranche|length > 0 %}
+            <canvas id="chartCourrierTranches" height="90"
+                data-values="{{ details.parTranche | map(t => {libelle: t.libelle, nb: t.nb, recette: t.recette}) | json_encode }}">
+            </canvas>
+            {% else %}
+            <p class="text-sm text-muted-foreground py-6 text-center">Aucun colis sur la période</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

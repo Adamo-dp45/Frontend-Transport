@@ -1,0 +1,160 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Courrier {{ courrier.codecourrier }}{% endblock %}
+
+{% set statutLabels = { EN_ATTENTE: 'En attente', EN_TRANSIT: 'En transit', RECEPTIONNE: 'Réceptionné', LIVRE: 'Livré', ANNULE: 'Annulé', PERDU: 'Perdu' } %}
+{% set statutTones  = { EN_ATTENTE: 'zinc', EN_TRANSIT: 'blue', RECEPTIONNE: 'orange', LIVRE: 'green', ANNULE: 'red', PERDU: 'red' } %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('courrier.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux courriers
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Courrier</p>
+                {{ ui.badge(statutLabels[courrier.statut] ?? courrier.statut, statutTones[courrier.statut] ?? 'zinc') }}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] font-mono break-words">{{ courrier.codecourrier }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">Créé le {{ courrier.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            {% if is_granted('COURRIER_MODIFIER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
+            <a href="{{ path('courrier.edit', { id: courrier.id }) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+            {% endif %}
+            {% if is_granted('COURRIER_MODIFIER') and courrier.statut == 'RECEPTIONNE' and peutAgirArrivee %}
+            <form method="POST" action="{{ path('courrier.livrer', { id: courrier.id }) }}" class="inline">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmer la livraison ?')">Confirmer la livraison</button>
+            </form>
+            {% endif %}
+            {% if is_granted('COURRIER_MODIFIER') and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
+            <form method="POST" action="{{ path('courrier.perdu', { id: courrier.id }) }}" class="inline">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Déclarer ce courrier comme perdu ?')">Déclarer perdu</button>
+            </form>
+            {% endif %}
+            {% if is_granted('COURRIER_MODIFIER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
+            <form method="POST" action="{{ path('courrier.annuler', { id: courrier.id }) }}" class="inline">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Annuler ce courrier ?')">Annuler</button>
+            </form>
+            {% endif %}
+            {# Reçu : gares (départ + arrivée) saisies + gare créatrice (départ) #}
+            {% if is_granted('COURRIER_VOIR') and courrier.garedepart and courrier.garearrivee and peutAgirDepart %}
+            <a href="{{ path('courrier.print', { id: courrier.id }) }}" target="_blank" class="btn btn-secondary">
+                <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#print"></use></svg>
+                Imprimer le reçu
+            </a>
+            {% endif %}
+            {% if is_granted('COURRIER_SUPPRIMER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
+            <form method="POST" action="{{ path('courrier.delete', { id: courrier.id }) }}" class="inline" onsubmit="return confirm('Supprimer ce courrier ?')">
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Montant total</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ courrier.montant|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+        </div>
+        {{ ui.stat('Frais de suivi', courrier.fraissuivi ? courrier.fraissuivi|number_format(0, ',', ' ') : '—', courrier.fraissuivi ? 'FCFA' : null) }}
+        {{ ui.stat('Colis', courrier.detailcourriers|length) }}
+    </div>
+
+    {# Expéditeur / Destinataire / Itinéraire #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="card p-5">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-2">Expéditeur</p>
+            <p class="font-medium">{{ courrier.nomexpediteur }}</p>
+            <p class="text-sm text-muted-foreground">{{ courrier.contactexpediteur }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-2">Destinataire</p>
+            <p class="font-medium">{{ courrier.nomdestinataire }}</p>
+            <p class="text-sm text-muted-foreground">{{ courrier.contactdestinataire }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-2">Itinéraire</p>
+            {% if courrier.garedepart and courrier.garearrivee %}
+            <p class="font-medium">{{ courrier.garedepart.libelle }}</p>
+            <p class="text-xs text-muted-foreground">↓</p>
+            <p class="font-medium">{{ courrier.garearrivee.libelle }}</p>
+            {% else %}
+            <p class="text-sm text-muted-foreground">Non défini — en attente d'affectation à un voyage</p>
+            {% endif %}
+            {% if courrier.voyage %}
+            <p class="text-xs text-muted-foreground mt-2">Voyage : <span class="font-mono">{{ courrier.voyage.codevoyage }}</span></p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Liste des colis #}
+    <div class="card overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Liste des colis</h2>
+            <span class="text-xs text-muted-foreground">{{ courrier.detailcourriers|length }}</span>
+        </div>
+        {% if courrier.detailcourriers is empty %}
+        <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun colis</div>
+        {% else %}
+        {% set typeLabels = { NORMAL: 'Normal', FRAGILE: 'Fragile', VOLUMINEUX: 'Volumineux' } %}
+        {% set typeTones  = { NORMAL: 'zinc', FRAGILE: 'amber', VOLUMINEUX: 'purple' } %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Nature</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Désignation</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Emballage</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Type</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Poids</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Valeur</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Taxe</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Statut</th>
+                        <th class="px-4 py-2.5"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for detail in courrier.detailcourriers %}
+                    <tr class="hover:bg-muted/20 transition-colors {{ detail.statut == 'PERDU' ? 'opacity-60' : '' }}">
+                        <td class="px-4 py-3">{{ detail.nature }}</td>
+                        <td class="px-4 py-3 font-medium">{{ detail.designation }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ detail.emballage ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ ui.badge(typeLabels[detail.type] ?? detail.type, typeTones[detail.type] ?? 'zinc') }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ detail.poids ? detail.poids ~ ' kg' : '—' }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ detail.valeur|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ detail.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3">{{ ui.badge(detail.statut == 'PERDU' ? 'Perdu' : 'Normal', detail.statut == 'PERDU' ? 'red' : 'green') }}</td>
+                        <td class="px-4 py-3 text-right">
+                            {% if is_granted('COURRIER_MODIFIER') and detail.statut == 'NORMAL' and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
+                            <form method="post" action="{{ path('courrier.colis.perdu', { id: detail.id }) }}" class="inline" onsubmit="return confirm('Déclarer ce colis comme perdu ?')">
+                                <input type="hidden" name="courrier_id" value="{{ courrier.id }}">
+                                <button type="submit" class="text-xs text-red-600 hover:text-red-700 hover:underline">Déclarer perdu</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t border-border bg-muted/20">
+                        <td colspan="6" class="px-4 py-3 text-right font-semibold">Total taxe</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ courrier.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block body %}
+{#
+    Accueil personnel des utilisateurs centraux (sans gare, non-admin) : raccourcis vers les modules
+    selon leurs permissions RBAC. Chaque carte n'apparaît que si 'is_granted(ENTITY_VOIR)' (cf. PermissionVoter).
+    La section « Mon espace » est toujours présente → la page n'est jamais vide.
+#}
+{% set sections = [
+    { title: 'Billetterie', tone: 'green', items: [
+        { label: 'Tickets', desc: 'Vendre et consulter les billets', route: 'ticket.index', perm: 'TICKET_VOIR' }
+    ]},
+    { title: 'Exploitation', tone: 'blue', items: [
+        { label: 'Voyages', desc: 'Planifier et suivre les voyages', route: 'voyage.index', perm: 'VOYAGE_VOIR' },
+        { label: 'Lignes', desc: 'Itinéraires et arrêts', route: 'ligne.index', perm: 'LIGNE_VOIR' },
+        { label: 'Tarifs', desc: 'Grille tarifaire des trajets', route: 'tarif.index', perm: 'TARIF_VOIR' },
+        { label: 'Gares', desc: 'Réseau de gares', route: 'gare.index', perm: 'GARE_VOIR' }
+    ]},
+    { title: 'Courrier & Bagage', tone: 'amber', items: [
+        { label: 'Courriers', desc: 'Colis et plis', route: 'courrier.index', perm: 'COURRIER_VOIR' },
+        { label: 'Bagages', desc: 'Bagages des voyageurs', route: 'bagage.index', perm: 'BAGAGE_VOIR' }
+    ]},
+    { title: 'Personnel', tone: 'purple', items: [
+        { label: 'Personnel', desc: 'Employés de la compagnie', route: 'personnel.index', perm: 'PERSONNEL_VOIR' }
+    ]},
+    { title: 'Flotte & Maintenance', tone: 'orange', items: [
+        { label: 'Véhicules', desc: 'Parc de cars', route: 'car.index', perm: 'CAR_VOIR' },
+        { label: 'Dépannages', desc: 'Maintenance des véhicules', route: 'depannage.index', perm: 'DEPANNAGE_VOIR' }
+    ]},
+    { title: 'Stock & Approvisionnement', tone: 'sky', items: [
+        { label: 'Pièces', desc: 'Pièces détachées', route: 'piece.index', perm: 'PIECE_VOIR' },
+        { label: 'Approvisionnements', desc: 'Entrées de stock', route: 'approvisionnement.index', perm: 'APPROVISIONNEMENT_VOIR' },
+        { label: 'Inventaire', desc: 'Mouvements et stock actuel', route: 'inventaire.index', perm: 'INVENTAIRE_VOIR' },
+        { label: 'Fournisseurs', desc: 'Carnet fournisseurs', route: 'fournisseur.index', perm: 'FOURNISSEUR_VOIR' }
+    ]},
+    { title: 'Administration', tone: 'red', items: [
+        { label: 'Utilisateurs', desc: 'Comptes et accès', route: 'admin.user.index', perm: 'USER_VOIR' },
+        { label: 'Rôles & permissions', desc: 'Gestion RBAC', route: 'admin.role.index', perm: 'ROLE_VOIR' }
+    ]}
+] %}
+{% set toneClasses = {
+    green:  'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+    blue:   'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+    amber:  'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+    orange: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+    sky:    'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
+    red:    'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+    zinc:   'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+} %}
+
+<div class="max-w-[1100px] mx-auto">
+    <div class="mb-7">
+        <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Bonjour {{ app.user.prenom }} 👋</h1>
+        <p class="text-sm text-muted-foreground mt-1">Accédez rapidement à vos modules.</p>
+    </div>
+
+    {% for section in sections %}
+        {% set items = section.items|filter(it => is_granted(it.perm)) %}
+        {% if items|length %}
+        <div class="mb-7">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">{{ section.title }}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for it in items %}
+                <a href="{{ path(it.route) }}" class="card p-4 flex items-start gap-3 hover:border-primary/40 hover:shadow-sm transition group">
+                    <span class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center {{ toneClasses[section.tone] ?? toneClasses.zinc }}">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block font-medium text-sm group-hover:text-primary transition-colors">{{ it.label }}</span>
+                        <span class="block text-xs text-muted-foreground mt-0.5">{{ it.desc }}</span>
+                    </span>
+                    <svg class="h-4 w-4 text-muted-foreground ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    {# Toujours disponible → la page n'est jamais vide #}
+    <div class="mb-7">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Mon espace</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <a href="{{ path('profile.index') }}" class="card p-4 flex items-start gap-3 hover:border-primary/40 hover:shadow-sm transition group">
+                <span class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </span>
+                <span class="min-w-0">
+                    <span class="block font-medium text-sm group-hover:text-primary transition-colors">Mon profil</span>
+                    <span class="block text-xs text-muted-foreground mt-0.5">Informations et sécurité</span>
+                </span>
+            </a>
+            <a href="{{ path('aide') }}" class="card p-4 flex items-start gap-3 hover:border-primary/40 hover:shadow-sm transition group">
+                <span class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                <span class="min-w-0">
+                    <span class="block font-medium text-sm group-hover:text-primary transition-colors">Aide</span>
+                    <span class="block text-xs text-muted-foreground mt-0.5">Guide d'utilisation</span>
+                </span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

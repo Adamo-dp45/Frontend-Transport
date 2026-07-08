@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% block title %}Client - {{ client.nom }}{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('client.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux clients
+            </a>
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Client</p>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ client.nom }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">#{{ client.id }} · Créé le {{ client.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            {% if is_granted('CLIENT_MODIFIER') %}
+            <a href="{{ path('client.edit', {id: client.id}) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            {# Informations #}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations générales</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Nom', client.nom) }}
+                    {{ ui.field('Téléphone', client.contact ? '<a href="tel:' ~ client.contact ~ '" class="text-primary hover:underline">' ~ client.contact ~ '</a>' : null, false, true) }}
+                    {{ ui.field('Email', client.email ? '<a href="mailto:' ~ client.email ~ '" class="text-primary hover:underline">' ~ client.email ~ '</a>' : null, false, true) }}
+                </div>
+            </div>
+
+            {# Billets du client #}
+            <div>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Billets du client</h2>
+                <div {{ react_component('Collection/ClientTicketsTable', {
+                        tickets: tickets,
+                        meta: meta,
+                        queryParams: queryParams
+                    }) }} class="mt-3"
+                >
+                    <div class="flex items-center justify-center gap-6">
+                        <twig:Spinner class="size-8" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-4">
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Statistiques</h2>
+                <div class="text-center py-2">
+                    <p class="text-4xl font-semibold tabular-nums text-primary">{{ client.ticketsCount }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">billet(s) au total</p>
+                </div>
+            </div>
+
+            {# Carte de fidélité #}
+            {% if fidelite is not null %}
+            <div class="card p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fidélité</h2>
+                    {% if fidelite.membre %}
+                        <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">Membre</span>
+                    {% else %}
+                        <span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">Non membre</span>
+                    {% endif %}
+                </div>
+
+                {% if fidelite.membre %}
+                    <p class="text-xs text-muted-foreground mb-3">
+                        Carte <span class="font-mono font-medium text-foreground">{{ fidelite.cartefidelite }}</span>
+                        {% if fidelite.dateadhesion %} · depuis le {{ fidelite.dateadhesion|date('d/m/Y') }}{% endif %}
+                    </p>
+
+                    {% if fidelite.recompenseDisponible %}
+                    <div class="rounded-lg border border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20 px-3 py-2.5 mb-3">
+                        <p class="text-sm font-semibold text-green-700 dark:text-green-300">🎉 Récompense disponible</p>
+                        <p class="text-xs text-green-700/80 dark:text-green-300/80 mt-0.5">
+                            {{ fidelite.recompensePourcentage == 100 ? 'Un voyage offert' : 'Une réduction de ' ~ fidelite.recompensePourcentage ~ '%' }} au prochain billet.
+                            {% if fidelite.recompensesGagnees > 1 %}({{ fidelite.recompensesGagnees }} récompenses cumulées){% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% set pct = fidelite.recompenseDisponible ? 100 : (fidelite.seuil > 0 ? (fidelite.progression / fidelite.seuil * 100)|round : 0) %}
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-muted-foreground">Carte en cours</span>
+                        <span class="font-medium tabular-nums">{{ fidelite.recompenseDisponible ? fidelite.seuil : fidelite.progression }} / {{ fidelite.seuil }} voyages</span>
+                    </div>
+                    <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-full rounded-full bg-primary transition-all" style="width: {{ pct }}%"></div>
+                    </div>
+                    <p class="text-xs text-muted-foreground mt-2">{{ fidelite.voyagesEligibles }} voyage(s) cumulé(s) depuis l'adhésion.</p>
+
+                    {% if is_granted('CLIENT_MODIFIER') %}
+                    <form method="POST" action="{{ path('client.resilier', {id: client.id}) }}" class="mt-3"
+                          onsubmit="return confirm('Résilier l\'adhésion fidélité de ce client ?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('resilier_fidelite') }}">
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-700 hover:underline">Résilier l'adhésion</button>
+                    </form>
+                    {% endif %}
+                {% else %}
+                    <p class="text-sm text-muted-foreground mb-3">
+                        Ce client n'est pas encore membre. L'adhésion ouvre une carte à tampons :
+                        {{ fidelite.recompensePourcentage == 100 ? 'un voyage offert' : 'une réduction de ' ~ fidelite.recompensePourcentage ~ '%' }}
+                        tous les {{ fidelite.seuil }} voyages.
+                    </p>
+                    {% if is_granted('CLIENT_MODIFIER') %}
+                    <form method="POST" action="{{ path('client.adherer', {id: client.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('adherer_fidelite') }}">
+                        <button type="submit" class="btn btn-primary w-full justify-center">Faire adhérer</button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

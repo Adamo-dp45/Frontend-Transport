@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La liste des approvisionnements{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des approvisionnements</h1>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('APPROVISIONNEMENT_CREER') %}
+        <a href="{{ path('approvisionnement.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvel approvisionnement
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Stock/ApprovisionnementTable', {
+        approvisionnements: items,
+        meta: meta,
+        queryParams: queryParams,
+        canEdit: is_granted('APPROVISIONNEMENT_MODIFIER'),
+        canDelete: is_granted('APPROVISIONNEMENT_SUPPRIMER'),
+        csrfDelete: csrf_token('delete_approvisionnement'),
+        csrfAnnuler: csrf_token('annuler_approvisionnement')
+    }) }} class="mb-3 mt-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Stock & Approvisionnement{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Stock & Approvisionnement', 'Statistiques', 'owner.stats.stock', debut, fin, 'stats.export.stock') }}
+
+{% set totalAchats = details.achatsParFournisseur|reduce((c, f) => c + f.montant, 0) %}
+
+<section class="mb-10">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+        {{ s.kpi('Valeur du stock', details.valeurStock.valeur|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money', details.valeurStock.unites ~ ' unité(s)') }}
+        {{ s.kpi('Pièces en stock', details.valeurStock.nbPieces, '', 'blue', 'box') }}
+        {{ s.kpi('Pièces critiques', stock.piecesCritiques, '', 'rose', 'alert', '', stock.piecesCritiques > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Consommation', details.consommation.quantiteTotale, 'u', 'amber', 'box', details.consommation.coutTotal|number_format(0, ',', ' ') ~ ' FCFA') }}
+        {{ s.kpi('Rotation', details.consommation.rotation, '%', 'violet', 'chart', 'consommé / stock') }}
+        {{ s.kpi('Achats (période)', totalAchats|number_format(0, ',', ' '), 'FCFA', 'teal', 'money') }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Top pièces consommées #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Top pièces consommées</p>
+            {% if details.consommation.topPieces|length > 0 %}
+            <canvas id="chartStockConso" height="180"
+                data-values="{{ details.consommation.topPieces | map(p => {libelle: p.libelle, quantite: p.quantite, cout: p.cout}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucune consommation sur la période</p>{% endif %}
+        </div>
+
+        {# Achats par fournisseur #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Achats par fournisseur</p>
+            {% if details.achatsParFournisseur|length > 0 %}
+            <canvas id="chartStockAchats" height="180"
+                data-values="{{ details.achatsParFournisseur | map(f => {libelle: f.libelle, montant: f.montant, nbAppros: f.nbAppros}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucun approvisionnement sur la période</p>{% endif %}
+        </div>
+
+        {# Niveau de stock par pièce #}
+        <div class="card p-5 md:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Niveau de stock par pièce</p>
+            {% if stock.stockParPiece|length > 0 %}
+            <canvas id="chartStockNiveau" height="110"
+                data-values="{{ stock.stockParPiece | map(p => {libelle: p.libelle, stockactuel: p.stockactuel, seuilstock: p.seuilstock, critique: p.critique}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucune pièce</p>{% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

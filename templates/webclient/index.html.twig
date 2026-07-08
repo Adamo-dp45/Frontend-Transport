@@ -1,0 +1,11 @@
+{% extends 'webclient/base.html.twig' %}
+
+{% block title %}Réserver un trajet{% endblock %}
+
+{% block body %}
+<div {{ react_component('Public/ReservationWeb', {
+    base: path('webclient.index', { slug: slug })
+}) }}>
+    <div class="flex items-center justify-center py-24"><twig:Spinner class="size-7" /></div>
+</div>
+{% endblock %}
