@@ -1,8 +1,8 @@
 {
-  "build/app.css": "/build/app.css",
-  "build/app.js": "/build/app.js",
-  "build/runtime.js": "/build/runtime.js",
-  "build/assets_controllers_csrf_protection_controller_js.js": "/build/assets_controllers_csrf_protection_controller_js.js",
-  "build/vendors-node_modules_hotwired_turbo_dist_turbo_es2017-esm_js-node_modules_symfony_stimulus-br-c3eff9.js": "/build/vendors-node_modules_hotwired_turbo_dist_turbo_es2017-esm_js-node_modules_symfony_stimulus-br-c3eff9.js",
-  "build/vendors-node_modules_core-js_modules_es_array-buffer_constructor_js-node_modules_core-js_modu-cebe39.js": "/build/vendors-node_modules_core-js_modules_es_array-buffer_constructor_js-node_modules_core-js_modu-cebe39.js"
+  "build/app.css": "/build/app.b3a48f0a.css",
+  "build/app.js": "/build/app.19695106.js",
+  "build/runtime.js": "/build/runtime.aac7bbad.js",
+  "build/436.e831f208.js": "/build/436.e831f208.js",
+  "build/422.b5b36e20.js": "/build/422.b5b36e20.js",
+  "build/0.07ee3006.js": "/build/0.07ee3006.js"
 }
