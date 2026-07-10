@@ -70,5 +70,62 @@
         <p class="py-6 text-center text-sm text-muted-foreground">Aucun membre pour le moment. Faites adhérer vos clients depuis leur fiche.</p>
         {% endif %}
     </div>
+
+    {# Surveillance anti-détournement : récompenses par agent + cartes captées #}
+    {% set recAg = fidelite.recompensesParAgent ?? [] %}
+    {% set captees = fidelite.cartesCaptees ?? [] %}
+    {% if recAg|length > 0 or captees|length > 0 %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        {# Récompenses par agent #}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-1">Récompenses par agent</p>
+            <p class="text-xs text-muted-foreground mb-4">Qui applique les récompenses (période). Un agent qui en encaisse beaucoup mérite un coup d'œil.</p>
+            {% if recAg|length > 0 %}
+            <div class="text-sm space-y-1.5">
+                {% for a in recAg|slice(0, 8) %}
+                <div class="flex justify-between gap-2">
+                    <span class="truncate">{{ a.nom }} <span class="text-muted-foreground text-xs">· {{ a.nb }} récomp.</span></span>
+                    <span class="tabular-nums shrink-0">{{ a.valeur|number_format(0, ',', ' ') }} F</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="py-4 text-center text-xs text-muted-foreground">Aucune récompense sur la période.</p>
+            {% endif %}
+        </div>
+
+        {# Cartes captées #}
+        <div class="card p-5 lg:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-1">Cartes captées — surveillance</p>
+            <p class="text-xs text-muted-foreground mb-4">Membres dont ≥ 80 % des tampons proviennent d'un <strong class="text-foreground">seul vendeur</strong> (farming possible). <span class="text-red-600 dark:text-red-400">Rouge</span> = ce vendeur a aussi appliqué la récompense.</p>
+            {% if captees|length > 0 %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-muted-foreground border-b">
+                            <th class="pb-2 font-medium">Membre</th>
+                            <th class="pb-2 font-medium">Vendeur dominant</th>
+                            <th class="pb-2 font-medium text-right">Tampons</th>
+                            <th class="pb-2 font-medium text-right">Part</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in captees %}
+                        <tr class="border-b last:border-0 {{ c.memeAgent ? 'bg-red-500/5' : '' }}">
+                            <td class="py-2 font-medium">{{ c.nom }}<span class="block text-xs font-normal text-muted-foreground">{{ c.contact ?? '—' }}</span></td>
+                            <td class="py-2">{{ c.vendeur }}{% if c.memeAgent %} <span class="ml-1 px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 text-xs" title="Ce vendeur a aussi appliqué la récompense de la carte">⚠ nourrit + encaisse</span>{% endif %}</td>
+                            <td class="py-2 text-right tabular-nums">{{ c.tampons }}</td>
+                            <td class="py-2 text-right tabular-nums {{ c.memeAgent ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">{{ c.part }} %</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="py-4 text-center text-xs text-muted-foreground">Aucune carte suspecte : les tampons sont répartis sur plusieurs vendeurs.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

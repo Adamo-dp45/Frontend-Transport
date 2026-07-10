@@ -3,58 +3,97 @@
 
 {% block title %}Agents{% endblock %}
 
+{% macro typeBreakdown(nbtickets, recetteTickets, nbcourriers, recetteCourriers, nbbagages, recetteBagages) %}
+    <div class="grid grid-cols-3 gap-2">
+        <div class="rounded-lg border border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-blue-500"></span>
+                <span class="text-[11px] text-muted-foreground">Tickets · {{ nbtickets }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteTickets|number_format(0, ',', ' ') }}</p>
+        </div>
+        <div class="rounded-lg border border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-amber-500"></span>
+                <span class="text-[11px] text-muted-foreground">Courriers · {{ nbcourriers }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteCourriers|number_format(0, ',', ' ') }}</p>
+        </div>
+        <div class="rounded-lg border border-emerald-100 dark:border-emerald-950 bg-emerald-50/50 dark:bg-emerald-950/30 p-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="size-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[11px] text-muted-foreground">Bagages · {{ nbbagages }}</span>
+            </div>
+            <p class="text-sm font-semibold tabular-nums">{{ recetteBagages|number_format(0, ',', ' ') }}</p>
+        </div>
+    </div>
+{% endmacro %}
+{% import _self as agentfx %}
+
 {% block body %}
 {{ s.pageHeader('Agents', 'Performance', 'owner.agent', debut, fin, 'stats.export.agent') }}
 
-<section class="mb-10">
+<section class="mb-8">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {{ s.kpi('Total agents', agents.totalAgents, '', 'blue', 'users') }}
         {{ s.kpi('Actifs sur la période', agents.agentsActifs, '', 'emerald', 'check') }}
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {# Classement par recette — barres horizontales #}
-        <div class="card p-5">
-            <p class="text-sm font-medium text-muted-foreground">Classement par recette <span class="font-normal text-xs">· guichet</span></p>
-            <p class="text-xs text-muted-foreground mb-4">Ventes au comptoir uniquement — les ventes à bord (commercial) et les billets de réservation sont comptés ailleurs.</p>
-            <canvas id="chartAgentsRecette" height="160"
-                data-values="{{ agents.performances | map(a => {
-                    label: a.prenom ~ ' ' ~ a.nom,
-                    recette: a.recette,
-                    nbtickets: a.nbtickets,
-                    actif: a.actif
-                }) | json_encode }}">
-            </canvas>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-medium">Recette encaissée par agent</h2>
+        <span class="text-xs text-muted-foreground">{{ agents.performances|length }}</span>
+    </div>
+    <p class="text-xs text-muted-foreground mb-4">Ce que chaque agent a encaissé au comptoir (billets + courriers + bagages). Les ventes à bord (commercial) et les réservations payées en ligne sont comptées ailleurs.</p>
+
+    {% if agents.performances is empty %}
+        <div class="card p-6 text-center text-sm text-muted-foreground">Aucune vente d'agent sur la période.</div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    {% for a in agents.performances %}
+    <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase">
+                    {{ a.prenom|slice(0,1) }}{{ a.nom|slice(0,1) }}
+                </span>
+                <p class="font-medium truncate">{{ a.prenom }} {{ a.nom }}</p>
+            </div>
+            <span class="shrink-0 font-semibold text-sm tabular-nums">{{ a.recetteTotale | number_format(0, ',', ' ') }} FCFA</span>
         </div>
 
-        {# Tableau performances #}
-        <div class="card p-5">
-            <p class="text-sm font-medium text-muted-foreground mb-4">Détail performances</p>
-            <table class="w-full text-sm">
+        {{ agentfx.typeBreakdown(a.nbtickets, a.recetteTickets, a.nbcourriers, a.recetteCourriers, a.nbbagages, a.recetteBagages) }}
+
+        {% if a.detailParVoyage is not empty %}
+        <details class="group mt-3">
+            <summary class="cursor-pointer list-none text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 select-none">
+                <svg class="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                Détail billetterie par voyage ({{ a.detailParVoyage|length }})
+            </summary>
+            <table class="w-full text-sm mt-2">
                 <thead>
                     <tr class="text-left text-muted-foreground border-b">
-                        <th class="pb-2 font-medium">Agent</th>
+                        <th class="pb-2 font-medium">Voyage</th>
+                        <th class="pb-2 font-medium">Trajet</th>
                         <th class="pb-2 font-medium text-right">Tickets</th>
                         <th class="pb-2 font-medium text-right">Recette</th>
-                        <th class="pb-2 font-medium text-right">Statut</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for a in agents.performances %}
+                    {% for v in a.detailParVoyage %}
                     <tr class="border-b last:border-0">
-                        <td class="py-2">{{ a.prenom }} {{ a.nom }}</td>
-                        <td class="py-2 text-right tabular-nums">{{ a.nbtickets }}</td>
-                        <td class="py-2 text-right tabular-nums">{{ a.recette | number_format(0, ',', ' ') }} FCFA</td>
-                        <td class="py-2 text-right">
-                            <span class="text-xs px-2 py-0.5 rounded-full {{ a.actif ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
-                                {{ a.actif ? 'Actif' : 'Inactif' }}
-                            </span>
-                        </td>
+                        <td class="py-1.5 text-muted-foreground text-xs font-mono">{{ v.codevoyage }}</td>
+                        <td class="py-1.5">{{ v.provenance }} → {{ v.destination }}</td>
+                        <td class="py-1.5 text-right tabular-nums">{{ v.nbtickets }}</td>
+                        <td class="py-1.5 text-right tabular-nums">{{ v.recette | number_format(0, ',', ' ') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+        </details>
+        {% endif %}
+    </div>
+    {% endfor %}
     </div>
 </section>
 {% endblock %}

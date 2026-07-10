@@ -302,6 +302,32 @@
         </table>
     </div>
 
+    {# ── CARGO DÉPOSÉ À CETTE GARE (comptes seuls, hors recette) : aide de réconciliation gare → car ── #}
+    <div class="section-title">
+        Cargo chargé depuis cette gare
+        <span class="right-info">{{ bordereau.nbbagages }} bagage(s) · {{ bordereau.nbcourriers }} courrier(s)</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Type de cargo remis au car</th>
+                    <th class="right" style="width:22%;">Nombre</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Bagages enregistrés depuis {{ bordereau.gare.libelle }}</td>
+                    <td class="right bold">{{ bordereau.nbbagages }}</td>
+                </tr>
+                <tr class="even">
+                    <td>Courriers déposés depuis {{ bordereau.gare.libelle }}</td>
+                    <td class="right bold">{{ bordereau.nbcourriers }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     {# ── LISTE DES PASSAGERS — masquée à la demande (décommenter le bloc ci-dessous pour réafficher) ── #}
     {#
     <div class="section-title">

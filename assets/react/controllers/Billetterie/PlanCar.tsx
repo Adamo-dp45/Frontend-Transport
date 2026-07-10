@@ -191,10 +191,10 @@ export default function PlanCar({
             </div>
 
             {/* Légende */}
-            <div className="mt-3 flex items-center justify-center gap-5 text-xs text-muted-foreground">
-                <LegendItem className="border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950" label={readonly ? "Disponible" : "Libre"} />
-                {!readonly && <LegendItem className="border-blue-600 bg-blue-600" label="Sélectionné" />}
-                <LegendItem className="border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800" label="Occupé" />
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-foreground">
+                <LegendItem className="border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950" label={readonly ? "Disponible" : "Libre"} />
+                {!readonly && <LegendItem className="border-blue-500 bg-blue-500" label="Sélectionné" />}
+                <LegendItem className="border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800" label="Occupé" />
             </div>
         </div>
     )

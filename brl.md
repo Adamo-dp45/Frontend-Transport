@@ -13,5 +13,3 @@
     > php bin/console make:subscriber
     > php bin/console translation:extract --force fr --format=yaml
 - 
-
-apache, show voyage courrier statut

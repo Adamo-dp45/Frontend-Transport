@@ -368,31 +368,34 @@ function PlanCar({
             </div>
 
             {/* Légende */}
-            <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-4 h-4 rounded border-2 border-emerald-300 bg-emerald-50" />
-                    Libre
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-4 h-4 rounded border-2 border-blue-500 bg-blue-500" />
-                    Sélectionné
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="relative inline-block w-4 h-4 rounded border-2 border-gray-200 bg-gray-100">
-                        <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>↻</span>
+            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Légende des sièges</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-foreground">
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-4 shrink-0 rounded border-2 border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950" />
+                        Libre
                     </span>
-                    Occupé — cliquer pour libérer (descente en route)
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-4 h-4 rounded border-2 border-violet-400 bg-violet-100" />
-                    Revendu
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="relative inline-block w-4 h-4 rounded border-2 border-amber-400 bg-amber-100">
-                        <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>R</span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-4 shrink-0 rounded border-2 border-blue-500 bg-blue-500" />
+                        Sélectionné
                     </span>
-                    Réservé (repère, reste vendable)
-                </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="relative inline-block size-4 shrink-0 rounded border-2 border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800">
+                            <span className="absolute -top-1.5 -right-1.5 flex size-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>↻</span>
+                        </span>
+                        <span>Occupé <span className="text-muted-foreground">· cliquer pour libérer en route</span></span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-4 shrink-0 rounded border-2 border-violet-400 bg-violet-100 dark:border-violet-600 dark:bg-violet-950" />
+                        Revendu
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="relative inline-block size-4 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:border-amber-600 dark:bg-amber-950">
+                            <span className="absolute -top-1.5 -right-1.5 flex size-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>R</span>
+                        </span>
+                        <span>Réservé <span className="text-muted-foreground">· repère, reste vendable</span></span>
+                    </span>
+                </div>
             </div>
         </div>
     );

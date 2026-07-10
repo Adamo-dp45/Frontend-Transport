@@ -116,7 +116,7 @@ class EntrepriseFormType extends AbstractType
                     new Range(
                         min: 0,
                         max: 100,
-                        notInRangeMessage: 'Le taux TVA doit être entre {{ min }} et {{ max }}' 
+                        notInRangeMessage: 'Le taux TVA doit être entre {{ min }} et {{ max }}'
                     )
                 ]
             ])

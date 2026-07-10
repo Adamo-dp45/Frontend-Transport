@@ -78,8 +78,18 @@ final class VoyageController extends AbstractController
             }
         }
 
-        // Calcul recette côté Symfony : billets + courriers + bagages (recette TOTALE du voyage)
-        $recetteBillets = array_sum(array_column($tickets, 'prix'));
+        // Calcul recette côté Symfony : billets (hors réservation) + réservations + courriers + bagages.
+        // On scinde les billets déjà chargés : ceux issus d'un bon de réservation (t.reservation non nul)
+        // sont comptés à part (canal réservation), comme dans le manifeste — pas de double-comptage.
+        $recetteBillets = 0;
+        $recetteReservations = 0;
+        foreach ($tickets as $t) {
+            if (empty($t['reservation'])) {
+                $recetteBillets += (int) ($t['prix'] ?? 0);
+            } else {
+                $recetteReservations += (int) ($t['prix'] ?? 0);
+            }
+        }
         $recetteCourriers = 0;
         $recetteBagages = 0;
         try {
@@ -96,7 +106,7 @@ final class VoyageController extends AbstractController
         } catch (ApiException) {
             // pas bloquant : on affiche au moins la recette billets
         }
-        $recette = $recetteBillets + $recetteCourriers + $recetteBagages;
+        $recette = $recetteBillets + $recetteReservations + $recetteCourriers + $recetteBagages;
         $nbrTickets = count($tickets);
         $placestotal = (int)($voyage['placestotal'] ?? 0);
 
@@ -196,6 +206,7 @@ final class VoyageController extends AbstractController
             'voyage' => $voyage,
             'recette' => $recette,
             'recette_billets' => $recetteBillets,
+            'recette_reservations' => $recetteReservations,
             'recette_courriers' => $recetteCourriers,
             'recette_bagages' => $recetteBagages,
             'nbr_tickets' => $nbrTickets,

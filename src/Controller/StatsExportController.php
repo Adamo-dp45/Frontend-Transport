@@ -169,52 +169,6 @@ final class StatsExportController extends AbstractController
         );
     }
 
-    #[Route('/caisse', name: 'caisse', methods: ['GET'])]
-    public function caisse(Request $request): Response
-    {
-        [$qs, $label] = $this->periode($request);
-        $d = $this->fetch('/api/stats/caisse?' . $qs, 'owner.caisse');
-        if ($d instanceof Response) {
-            return $d;
-        }
-
-        $sections = [
-            ['title' => 'Synthèse', 'columns' => ['Type', 'Recette (FCFA)', 'Nombre'], 'rows' => [
-                ['Billets', (float) ($d['recetteTickets'] ?? 0), (int) ($d['totalTickets'] ?? 0)],
-                ['Courriers', (float) ($d['recetteCourriers'] ?? 0), (int) ($d['totalCourriers'] ?? 0)],
-                ['Bagages', (float) ($d['recetteBagages'] ?? 0), (int) ($d['totalBagages'] ?? 0)],
-                ['Total', (float) ($d['recetteTotale'] ?? 0), ''],
-            ]],
-            ['title' => 'Par gare', 'columns' => ['Gare', 'Billets (FCFA)', 'Courriers (FCFA)', 'Bagages (FCFA)', 'Total (FCFA)'],
-                'rows' => array_merge(
-                    array_map(fn ($r) => [
-                        $r['gareLibelle'] ?? '',
-                        (float) ($r['recetteTickets'] ?? 0), (float) ($r['recetteCourriers'] ?? 0),
-                        (float) ($r['recetteBagages'] ?? 0), (float) ($r['recetteTotale'] ?? 0),
-                    ], $d['parGare'] ?? []),
-                    // Ligne de réconciliation : ventes à bord (hors caisse des gares) → gares + cette ligne = total billets
-                    ($d['recetteTicketsCommerciaux'] ?? 0) > 0 ? [[
-                        'Ventes à bord (commerciaux)',
-                        (float) $d['recetteTicketsCommerciaux'], 0.0, 0.0, (float) $d['recetteTicketsCommerciaux'],
-                    ]] : []
-                )],
-            ['title' => 'Par agent', 'columns' => ['Agent', 'Total (FCFA)', 'Nb billets', 'Nb courriers', 'Nb bagages'],
-                'rows' => array_map(fn ($r) => [
-                    trim(($r['prenom'] ?? '') . ' ' . ($r['nom'] ?? '')),
-                    (float) ($r['recetteTotale'] ?? 0), (int) ($r['nbtickets'] ?? 0),
-                    (int) ($r['nbcourriers'] ?? 0), (int) ($r['nbbagages'] ?? 0),
-                ], $d['parAgent'] ?? [])],
-            ['title' => 'Par jour', 'columns' => ['Date', 'Billets (FCFA)', 'Courriers (FCFA)', 'Bagages (FCFA)', 'Total (FCFA)'],
-                'rows' => array_map(fn ($r) => [
-                    $r['jour'] ?? '',
-                    (float) ($r['recetteTickets'] ?? 0), (float) ($r['recetteCourriers'] ?? 0),
-                    (float) ($r['recetteBagages'] ?? 0), (float) ($r['recetteTotale'] ?? 0),
-                ], $d['parJour'] ?? [])],
-        ];
-
-        return $this->exporter->export($this->format($request), 'stats-caisse-' . date('Ymd'), 'Statistiques — Caisse', $label, $sections);
-    }
-
     #[Route('/agents', name: 'agent', methods: ['GET'])]
     public function agent(Request $request): Response
     {
@@ -229,11 +183,12 @@ final class StatsExportController extends AbstractController
                 ['Total agents', (int) ($d['totalAgents'] ?? 0)],
                 ['Agents actifs', (int) ($d['agentsActifs'] ?? 0)],
             ]],
-            ['title' => 'Performances', 'columns' => ['Agent', 'Recette (FCFA)', 'Nb billets', 'Actif'],
+            ['title' => 'Recette encaissée par agent', 'columns' => ['Agent', 'Total (FCFA)', 'Billets (FCFA)', 'Courriers (FCFA)', 'Bagages (FCFA)', 'Nb billets'],
                 'rows' => array_map(fn ($r) => [
                     trim(($r['prenom'] ?? '') . ' ' . ($r['nom'] ?? '')),
-                    (float) ($r['recette'] ?? 0), (int) ($r['nbtickets'] ?? 0),
-                    ($r['actif'] ?? false) ? 'Oui' : 'Non',
+                    (float) ($r['recetteTotale'] ?? 0), (float) ($r['recetteTickets'] ?? 0),
+                    (float) ($r['recetteCourriers'] ?? 0), (float) ($r['recetteBagages'] ?? 0),
+                    (int) ($r['nbtickets'] ?? 0),
                 ], $d['performances'] ?? [])],
         ];
 
@@ -348,10 +303,14 @@ final class StatsExportController extends AbstractController
             ['title' => 'Synthèse', 'columns' => ['Indicateur', 'Valeur'], 'rows' => [
                 ['Total lignes', (int) ($d['totalLignes'] ?? 0)],
             ]],
-            ['title' => 'Performance par ligne', 'columns' => ['Ligne', 'Recette (FCFA)', 'Nb billets', 'Nb voyages'],
+            ['title' => 'Performance par ligne', 'columns' => ['Ligne', 'Recette totale (FCFA)', 'Billets + résa (FCFA)', 'Nb billets+résa', 'Courriers (FCFA)', 'Nb courriers', 'Bagages (FCFA)', 'Nb bagages', 'Nb voyages'],
                 'rows' => array_map(fn ($r) => [
                     $r['libelle'] ?? '',
-                    (float) ($r['recette'] ?? 0), (int) ($r['nbtickets'] ?? 0), (int) ($r['nbvoyages'] ?? 0),
+                    (float) ($r['recette'] ?? 0),
+                    (float) ($r['recetteBillets'] ?? 0), (int) ($r['nbtickets'] ?? 0),
+                    (float) ($r['recetteCourriers'] ?? 0), (int) ($r['nbcourriers'] ?? 0),
+                    (float) ($r['recetteBagages'] ?? 0), (int) ($r['nbbagages'] ?? 0),
+                    (int) ($r['nbvoyages'] ?? 0),
                 ], $d['performances'] ?? [])],
         ];
 

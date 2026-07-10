@@ -34,8 +34,9 @@
         <p class="text-3xl font-semibold tabular-nums">{{ m.totaux.recetteTotale|number_format(0, ',', ' ') }} <span class="text-sm text-muted-foreground">FCFA</span></p>
         <p class="text-xs text-muted-foreground mt-1">
             Billets {{ m.totaux.recetteBillets|number_format(0, ',', ' ') }}{% if m.totaux.recetteBilletsCommerciaux %} <span class="opacity-80">(gares {{ m.totaux.recetteBilletsGares|number_format(0, ',', ' ') }} · commerciaux {{ m.totaux.recetteBilletsCommerciaux|number_format(0, ',', ' ') }})</span>{% endif %}
+            {% if m.totaux.recetteReservations %}· Réservations {{ m.totaux.recetteReservations|number_format(0, ',', ' ') }}{% endif %}
             · Courriers {{ m.totaux.recetteCourriers|number_format(0, ',', ' ') }}
-            · Bagages {{ m.totaux.recetteBagages|number_format(0, ',', ' ') }}
+            · Bagages {{ m.totaux.recetteBagages|number_format(0, ',', ' ') }}{% if m.totaux.recetteBagagesCommerciaux %} <span class="opacity-80">(gares {{ m.totaux.recetteBagagesGares|number_format(0, ',', ' ') }} · commerciaux {{ m.totaux.recetteBagagesCommerciaux|number_format(0, ',', ' ') }})</span>{% endif %}
         </p>
     </div>
 
@@ -61,19 +62,21 @@
         </div>
     </div>
 
-    {# Ventes commerciales (vendeur à bord) : recette attribuée au commercial, détaillée par trajet #}
+    {# Ventes commerciales (vendeur à bord) — DÉTAIL par trajet. Ces recettes sont DÉJÀ comptées dans la
+       « recette gare » de la gare d'affectation de chaque commercial (pas un ajout au total). #}
     {% if m.commerciaux %}
     <div class="card p-5 mb-5">
-        <div class="flex items-center gap-2 mb-3">
+        <div class="flex items-center gap-2 mb-1">
             <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-            <h2 class="text-sm font-semibold">Ventes commerciales (vendeur à bord)</h2>
+            <h2 class="text-sm font-semibold">Ventes à bord — détail par commercial</h2>
         </div>
+        <p class="text-xs text-muted-foreground mb-3">Déjà incluses dans la recette de la gare d'affectation du commercial.</p>
         <div class="space-y-4">
             {% for c in m.commerciaux %}
             <div>
                 <div class="flex items-baseline justify-between gap-3">
                     <span class="font-medium">{{ c.nom }}</span>
-                    <span class="text-sm text-muted-foreground"><span class="font-semibold tabular-nums text-foreground">{{ c.recette|number_format(0, ',', ' ') }}</span> F · {{ c.nb }} billet{{ c.nb > 1 ? 's' }}</span>
+                    <span class="text-sm text-muted-foreground"><span class="font-semibold tabular-nums text-foreground">{{ c.recette|number_format(0, ',', ' ') }}</span> F · {{ c.nb }} billet{{ c.nb > 1 ? 's' }}{% if (c.recetteBagages ?? 0) > 0 %} · {{ c.recetteBagages|number_format(0, ',', ' ') }} F bagages{% endif %}</span>
                 </div>
                 <div class="mt-1.5 divide-y divide-border/60 rounded-md border border-border/60">
                     {% for t in c.trajets %}
@@ -130,7 +133,7 @@
                     {% if g.courriersDeposes or g.courriersArrivee %}<span class="text-muted-foreground">✉ {{ g.courriersDeposes }} déposé{{ g.courriersDeposes > 1 ? 's' }}{% if g.recetteCourriers %} · {{ g.recetteCourriers|number_format(0, ',', ' ') }} F{% endif %}{% if g.courriersArrivee %} · {{ g.courriersArrivee }} à destination{% endif %}</span>{% endif %}
                     {% if g.bagagesCharges or g.bagagesArrivee %}<span class="text-muted-foreground">🧳 {{ g.bagagesCharges }} chargé{{ g.bagagesCharges > 1 ? 's' }}{% if g.recetteBagages %} · {{ g.recetteBagages|number_format(0, ',', ' ') }} F{% endif %}{% if g.bagagesArrivee %} · {{ g.bagagesArrivee }} déchargé{{ g.bagagesArrivee > 1 ? 's' }}{% endif %}</span>{% endif %}
                     {% if g.recetteTotale %}<span class="font-medium">recette gare {{ g.recetteTotale|number_format(0, ',', ' ') }} F</span>{% endif %}
-                    {% if not (g.montees or g.descentes or g.courriersDeposes or g.courriersArrivee or g.bagagesCharges or g.bagagesArrivee) %}<span class="text-muted-foreground italic">aucun mouvement</span>{% endif %}
+                    {% if not (g.montees or g.descentes or g.courriersDeposes or g.courriersArrivee or g.bagagesCharges or g.bagagesArrivee or g.recetteTotale) %}<span class="text-muted-foreground italic">aucun mouvement</span>{% endif %}
                 </div>
             </div>
         </div>

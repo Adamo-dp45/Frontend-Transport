@@ -6,7 +6,11 @@
 {% block body %}
 {{ s.pageHeader('Billetterie', 'Statistiques', 'owner.billetterie', debut, fin, 'stats.export.billetterie') }}
 
-{% set panier = billetterie.totalTickets > 0 ? (billetterie.recetteTotale / billetterie.totalTickets)|round : 0 %}
+{% set rG = billetterie.recetteGuichet ?? 0 %}
+{% set rC = billetterie.recetteCommercial ?? 0 %}
+{% set rR = billetterie.recetteReservation ?? 0 %}
+{# Panier moyen sur les ventes DIRECTES (guichet + commercial), la réservation étant un canal à part #}
+{% set panier = billetterie.totalTickets > 0 ? ((rG + rC) / billetterie.totalTickets)|round : 0 %}
 
 <section class="mb-10">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -16,17 +20,15 @@
         {{ s.kpi('Désistements', details.desistements.total ?? 0, (details.desistements.taux ?? 0) ~ ' %', 'rose', 'alert') }}
     </div>
 
-    {# Ventilation de la recette par canal de vente (guichet gare / à bord commercial / réservation compte admin) #}
-    {% if billetterie.recetteTotale > 0 %}
-    {% set rG = billetterie.recetteGuichet ?? 0 %}
-    {% set rC = billetterie.recetteCommercial ?? 0 %}
-    {% set rR = billetterie.recetteReservation ?? 0 %}
+    {# Ventilation de la recette billets par canal : guichet / commercial (à bord) / réservation (payée) #}
+    {% set cTot = rG + rC + rR %}
+    {% if cTot > 0 %}
     <div class="card p-4 mb-6">
         <p class="text-xs text-muted-foreground mb-2.5">Recette par canal de vente</p>
         <div class="flex h-2.5 w-full overflow-hidden rounded-full bg-muted mb-3">
-            <div class="bg-emerald-500" style="width: {{ rG / billetterie.recetteTotale * 100 }}%"></div>
-            <div class="bg-indigo-500" style="width: {{ rC / billetterie.recetteTotale * 100 }}%"></div>
-            <div class="bg-violet-500" style="width: {{ rR / billetterie.recetteTotale * 100 }}%"></div>
+            <div class="bg-emerald-500" style="width: {{ rG / cTot * 100 }}%"></div>
+            <div class="bg-indigo-500" style="width: {{ rC / cTot * 100 }}%"></div>
+            <div class="bg-violet-500" style="width: {{ rR / cTot * 100 }}%"></div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div>
@@ -38,7 +40,7 @@
                 <p class="font-semibold tabular-nums mt-0.5">{{ rC|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
             </div>
             <div>
-                <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><span class="size-2 rounded-full bg-violet-500"></span> Réservation (compte admin)</p>
+                <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><span class="size-2 rounded-full bg-violet-500"></span> Réservation (payée)</p>
                 <p class="font-semibold tabular-nums mt-0.5">{{ rR|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
             </div>
         </div>
@@ -78,11 +80,37 @@
             <div><p class="text-2xl font-semibold tabular-nums">{{ ds.valide ?? 0 }}</p><p class="text-xs text-muted-foreground">Validés</p></div>
         </div>
         <p class="text-xs text-muted-foreground mt-4 pt-3 border-t border-border">Taux de désistement : <strong class="text-foreground">{{ ds.taux ?? 0 }} %</strong> des billets émis sur la période</p>
+        {% set annulAg = ds.parAgent ?? [] %}
+        {% if annulAg|length > 0 %}
+        <p class="text-xs text-muted-foreground mt-3 mb-1">Annulations par agent <span class="opacity-70">· montant remboursé</span></p>
+        <div class="text-xs space-y-1">
+            {% for a in annulAg|slice(0, 6) %}
+            <div class="flex justify-between gap-2">
+                <span class="truncate">{{ a.nom }} <span class="text-muted-foreground">· {{ a.nb }}</span>{% if (a.nbself ?? 0) > 0 %} <span class="ml-1 px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400" title="Billets vendus ET annulés par le même agent">⚠ {{ a.nbself }} auto-annulé{{ a.nbself > 1 ? 's' : '' }}</span>{% endif %}</span>
+                <span class="tabular-nums shrink-0">{{ a.montant|number_format(0, ',', ' ') }} F</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% set supprAg = ds.suppressions ?? [] %}
+        {% if supprAg|length > 0 %}
+        <p class="text-xs text-muted-foreground mt-3 mb-1">Suppressions par agent <span class="opacity-70">· billets retirés du livre</span></p>
+        <div class="text-xs space-y-1">
+            {% for a in supprAg|slice(0, 6) %}
+            <div class="flex justify-between gap-2">
+                <span class="truncate">{{ a.nom }} <span class="text-muted-foreground">· {{ a.nb }}</span>{% if (a.nbapresdepart ?? 0) > 0 %} <span class="ml-1 px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400" title="Billets supprimés APRÈS le départ du car (le passager avait voyagé)">⚠ {{ a.nbapresdepart }} après départ</span>{% endif %}</span>
+                <span class="tabular-nums shrink-0">{{ a.montant|number_format(0, ',', ' ') }} F</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <div class="card p-5">
         <p class="text-sm font-medium text-muted-foreground mb-1">Remises accordées</p>
-        <p class="text-2xl font-semibold tabular-nums mb-4">{{ (details.remises.total ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span> <span class="text-xs text-muted-foreground">· {{ details.remises.nb ?? 0 }} billet(s)</span></p>
+        <p class="text-2xl font-semibold tabular-nums">{{ (details.remises.total ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
+        <p class="text-xs text-muted-foreground mb-4">{{ details.remises.nb ?? 0 }} billet(s) remisé(s) · moyenne {{ (details.remises.remiseMoyenne ?? 0)|number_format(0, ',', ' ') }} F · <strong class="text-foreground">{{ details.remises.tauxBillets ?? 0 }} %</strong> des billets · <strong class="text-foreground">{{ details.remises.tauxMontant ?? 0 }} %</strong> du chiffre brut</p>
+        {% if (details.remises.nb ?? 0) > 0 %}
         {% set cats = details.remises.parCategorie ?? [] %}
         {% if cats|length > 0 %}
         {% set maxCat = cats|first.total %}
@@ -95,12 +123,31 @@
             </div>
             {% endfor %}
         </div>
+        {% endif %}
         {% set benefs = details.remises.parBeneficiaire ?? [] %}
         {% if benefs|length > 0 %}
         <p class="text-xs text-muted-foreground mb-1">Top bénéficiaires</p>
         <div class="text-xs space-y-1">
             {% for b in benefs|slice(0, 5) %}
             <div class="flex justify-between gap-2"><span class="truncate">{{ b.nom }}{% if b.categorie %} <span class="text-muted-foreground">· {{ b.categorie }}</span>{% endif %}</span><span class="tabular-nums shrink-0">{{ b.total|number_format(0, ',', ' ') }} F</span></div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% set ags = details.remises.parAgent ?? [] %}
+        {% if ags|length > 0 %}
+        <p class="text-xs text-muted-foreground mt-3 mb-1">Par agent <span class="opacity-70">· guichet</span></p>
+        <div class="text-xs space-y-1">
+            {% for a in ags|slice(0, 5) %}
+            <div class="flex justify-between gap-2"><span class="truncate">{{ a.nom }} <span class="text-muted-foreground">· {{ a.nb }}</span></span><span class="tabular-nums shrink-0">{{ a.total|number_format(0, ',', ' ') }} F</span></div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% set coms = details.remises.parCommercial ?? [] %}
+        {% if coms|length > 0 %}
+        <p class="text-xs text-muted-foreground mt-3 mb-1">Par commercial <span class="opacity-70">· à bord</span></p>
+        <div class="text-xs space-y-1">
+            {% for c in coms|slice(0, 5) %}
+            <div class="flex justify-between gap-2"><span class="truncate">{{ c.nom }} <span class="text-muted-foreground">· {{ c.nb }}</span></span><span class="tabular-nums shrink-0">{{ c.total|number_format(0, ',', ' ') }} F</span></div>
             {% endfor %}
         </div>
         {% endif %}

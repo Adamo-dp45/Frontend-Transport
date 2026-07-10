@@ -381,7 +381,8 @@ final class CourrierController extends AbstractController
             'gareArrivee' => !empty($data['gareArrivee']) ? (int) $data['gareArrivee'] : null,
             'voyage' => !empty($data['voyage']) ? (int) $data['voyage'] : null,
             'fraissuivi' => !empty($data['fraissuivi']) ? (int) $data['fraissuivi'] : null,
-            'modepaiement' => $data['modepaiement'] ?? 'ENVOI',
+            // Paiement courrier désactivé (champs commentés côté entité Courrier) : ne plus l'envoyer
+            // 'modepaiement' => $data['modepaiement'] ?? 'ENVOI',
             'details' => $details,
         ];
     }

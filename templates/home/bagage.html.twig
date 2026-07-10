@@ -7,11 +7,16 @@
 {{ s.pageHeader('Bagages', 'Statistiques', 'owner.stats.bagage', debut, fin, 'stats.export.bagage') }}
 
 <section class="mb-10">
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    {% set base = bagage.totalBagages - bagage.annules %}
+    {% set tauxPA = bagage.totalBagages > 0 ? ((bagage.perdus + bagage.annules) / bagage.totalBagages * 100)|round : 0 %}
+    {% set tauxPerte = base > 0 ? (bagage.perdus / base * 100)|round(1) : 0 %}
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         {{ s.kpi('Total bagages', bagage.totalBagages, '', 'blue', 'bag') }}
         {{ s.kpi('Recette totale', bagage.recetteTotale|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money') }}
         {{ s.kpi('Poids total', bagage.poidsTotal, 'kg', 'teal', 'scale') }}
-        {{ s.kpi('Perdus', bagage.perdus, '', 'rose', 'alert', '', bagage.perdus > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Taux perte + annul.', tauxPA, '%', 'rose', 'alert', '', tauxPA > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Perdus', bagage.perdus, '', 'rose', 'alert', tauxPerte ~ '% des bagages transportés', bagage.perdus > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Annulés', bagage.annules, '', 'amber', 'alert', '', bagage.annules > 0 ? 'text-amber-500' : '') }}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -37,5 +42,45 @@
             </canvas>
         </div>
     </div>
+
+    {# Montants forcés — surveillance anti sous-déclaration #}
+    {% set forcages = bagage.forcages ?? [] %}
+    {% if forcages|length > 0 %}
+    {% set manqueTotal = forcages|reduce((acc, f) => acc + f.manque, 0) %}
+    {% set nbForces = forcages|reduce((acc, f) => acc + f.nb, 0) %}
+    <div class="card p-5 mt-4">
+        <div class="flex items-start justify-between gap-3 mb-1">
+            <p class="text-sm font-medium text-muted-foreground">Montants forcés — surveillance</p>
+            {% if manqueTotal > 0 %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 shrink-0" title="Somme des écarts quand le montant facturé est inférieur au tarif">Manque à gagner : {{ manqueTotal|number_format(0, ',', ' ') }} F</span>
+            {% endif %}
+        </div>
+        <p class="text-xs text-muted-foreground mb-4">{{ nbForces }} bagage(s) à montant forcé (≠ grille) sur la période. Le forçage vers le haut (surdimensionné/fragile) est normal ; surveiller les montants <strong class="text-foreground">sous le tarif</strong>.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Agent</th>
+                        <th class="pb-2 font-medium text-right">Forcés</th>
+                        <th class="pb-2 font-medium text-right">Sous tarif</th>
+                        <th class="pb-2 font-medium text-right">Hors grille</th>
+                        <th class="pb-2 font-medium text-right">Manque à gagner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in forcages %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2 font-medium">{{ f.nom }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ f.nb }}</td>
+                        <td class="py-2 text-right tabular-nums">{% if f.nbsoustarif > 0 %}<span class="text-red-600 dark:text-red-400 font-semibold">{{ f.nbsoustarif }}</span>{% else %}<span class="text-muted-foreground">0</span>{% endif %}</td>
+                        <td class="py-2 text-right tabular-nums">{% if f.nbhorsgrille > 0 %}<span class="text-amber-600 dark:text-amber-400">{{ f.nbhorsgrille }}</span>{% else %}<span class="text-muted-foreground">0</span>{% endif %}</td>
+                        <td class="py-2 text-right tabular-nums {{ f.manque > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground' }}">{{ f.manque|number_format(0, ',', ' ') }} F</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

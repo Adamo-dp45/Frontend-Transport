@@ -9,59 +9,26 @@
 {# ── KPIs ─────────────────────────────────────────────────────────── #}
 <section class="mb-10">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        {{ s.kpi('Recette commerciale', (commercial.recetteCommerciale ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Ventes réalisées à bord') }}
+        {{ s.kpi('Recette commerciale', (commercial.recetteCommercialeTotale ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Billets + bagages à bord') }}
         {{ s.kpi('Ventes à bord', commercial.ventes ?? 0, 'billet(s)', 'blue', 'ticket', 'Panier moyen ' ~ (commercial.panierMoyen ?? 0)|number_format(0, ',', ' ') ~ ' FCFA') }}
         {{ s.kpi('Commerciaux actifs', commercial.nbCommerciaux ?? 0, '', 'teal', 'users', 'Sur la période') }}
         {{ s.kpi('Part de la recette billets', commercial.partCommerciale ?? 0, '%', 'emerald', 'chart', 'Reste : guichet + réservation') }}
     </div>
 
-    {# ── Répartition par canal (guichet / commercial / réservation) ──────── #}
-    {% set recBillets = commercial.recetteBillets ?? 0 %}
-    {% set recCom = commercial.recetteCommerciale ?? 0 %}
-    {% set recGuichet = commercial.recetteGuichet ?? 0 %}
-    {% set recResa = commercial.recetteReservation ?? 0 %}
-    <div class="card p-5">
-        <p class="text-sm font-medium text-muted-foreground mb-4">Répartition de la recette billets</p>
-        {% if recBillets > 0 %}
-        <div class="flex h-4 w-full overflow-hidden rounded-full bg-muted">
-            <div class="h-full bg-emerald-500" style="width: {{ (recGuichet / recBillets * 100)|round(1) }}%" title="Guichet"></div>
-            <div class="h-full bg-violet-500" style="width: {{ (recCom / recBillets * 100)|round(1) }}%" title="Commercial"></div>
-            <div class="h-full bg-sky-500" style="width: {{ (recResa / recBillets * 100)|round(1) }}%" title="Réservation"></div>
+    {% if (commercial.recetteBagagesCommerciale ?? 0) > 0 %}
+    <div class="card p-4 border-l-[3px] border-sky-500 flex items-center justify-between gap-3">
+        <div>
+            <p class="font-medium leading-tight">Bagages enregistrés à bord</p>
+            <p class="text-xs text-muted-foreground mt-0.5">Recette bagage captée par les commerciaux (hors caisse des gares) — incluse dans la recette commerciale ci-dessus</p>
         </div>
-        <div class="flex flex-wrap gap-6 mt-4">
-            <div class="flex items-center gap-2">
-                <span class="size-3 rounded-sm bg-emerald-500"></span>
-                <div>
-                    <p class="text-sm font-semibold tabular-nums">{{ recGuichet|number_format(0, ',', ' ') }} FCFA</p>
-                    <p class="text-xs text-muted-foreground">Guichet ({{ recBillets > 0 ? (recGuichet / recBillets * 100)|round : 0 }} %)</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="size-3 rounded-sm bg-violet-500"></span>
-                <div>
-                    <p class="text-sm font-semibold tabular-nums">{{ recCom|number_format(0, ',', ' ') }} FCFA</p>
-                    <p class="text-xs text-muted-foreground">Commercial ({{ commercial.partCommerciale ?? 0 }} %)</p>
-                </div>
-            </div>
-            {% if recResa > 0 %}
-            <div class="flex items-center gap-2">
-                <span class="size-3 rounded-sm bg-sky-500"></span>
-                <div>
-                    <p class="text-sm font-semibold tabular-nums">{{ recResa|number_format(0, ',', ' ') }} FCFA</p>
-                    <p class="text-xs text-muted-foreground">Réservation ({{ recBillets > 0 ? (recResa / recBillets * 100)|round : 0 }} %)</p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% else %}
-        <p class="text-sm text-muted-foreground">Aucune recette billets sur la période.</p>
-        {% endif %}
+        <p class="text-xl font-semibold tabular-nums shrink-0">{{ commercial.recetteBagagesCommerciale|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span></p>
     </div>
+    {% endif %}
 </section>
 
 {# ── Classement des commerciaux ───────────────────────────────────── #}
 <section class="mb-8">
-    {{ s.sectionTitle('Classement des commerciaux', 'Par recette générée') }}
+    {{ s.sectionTitle('Classement des commerciaux', 'Recette à bord : billets + bagages') }}
     <div class="card p-5">
         {% set classement = commercial.classement ?? [] %}
         {% if classement|length > 0 %}
@@ -78,7 +45,9 @@
                 <div class="h-2 rounded-full bg-muted overflow-hidden">
                     <div class="h-full rounded-full bg-violet-500" style="width: {{ maxRec > 0 ? (c.recette / maxRec * 100)|round : 0 }}%"></div>
                 </div>
-                <p class="text-xs text-muted-foreground mt-1">{{ c.nbtickets }} vente(s) à bord</p>
+                <p class="text-xs text-muted-foreground mt-1">
+                    {{ c.nbtickets }} billet(s){% if (c.recetteBagages ?? 0) > 0 %} · {{ c.nbbagages ?? 0 }} bagage(s) ({{ c.recetteBagages|number_format(0, ',', ' ') }} F){% endif %}
+                </p>
             </div>
             {% endfor %}
         </div>

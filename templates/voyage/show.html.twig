@@ -84,6 +84,7 @@
             <p class="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">{{ recette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
             <p class="text-[11px] text-muted-foreground mt-1 leading-snug">
                 Billets {{ recette_billets|number_format(0, ',', ' ') }}
+                {% if (recette_reservations ?? 0) > 0 %}· Réservations {{ recette_reservations|number_format(0, ',', ' ') }}{% endif %}
                 · Courriers {{ recette_courriers|number_format(0, ',', ' ') }}
                 · Bagages {{ recette_bagages|number_format(0, ',', ' ') }}
             </p>
@@ -454,10 +455,13 @@
                         <th class="text-left px-4 py-2.5 font-medium">Expéditeur</th>
                         <th class="text-left px-4 py-2.5 font-medium">Destinataire</th>
                         <th class="text-right px-4 py-2.5 font-medium">Montant</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Statut</th>
                         <th class="px-4 py-2.5"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
+                    {% set courrierStatutTones  = { EN_ATTENTE: 'zinc', EN_TRANSIT: 'blue', RECEPTIONNE: 'amber', LIVRE: 'green', ANNULE: 'red', PERDU: 'orange' } %}
+                    {% set courrierStatutLabels = { EN_ATTENTE: 'En attente', EN_TRANSIT: 'En transit', RECEPTIONNE: 'Réceptionné', LIVRE: 'Livré', ANNULE: 'Annulé', PERDU: 'Perdu' } %}
                     {% for courrier in voyage.courriers %}
                     <tr class="hover:bg-muted/20 transition-colors">
                         <td class="px-4 py-3 font-mono text-xs font-semibold">{{ courrier.codecourrier }}</td>
@@ -470,6 +474,7 @@
                             <p class="text-xs text-muted-foreground">{{ courrier.contactdestinataire }}</p>
                         </td>
                         <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ courrier.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3">{{ ui.badge(courrierStatutLabels[courrier.statut] ?? courrier.statut, courrierStatutTones[courrier.statut] ?? 'zinc') }}</td>
                         <td class="px-4 py-3 text-right"><a href="{{ path('courrier.show', { id: courrier.id }) }}" class="text-xs text-primary hover:underline">Voir</a></td>
                     </tr>
                     {% endfor %}

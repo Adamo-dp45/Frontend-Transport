@@ -84,12 +84,22 @@ final class GareController extends AbstractController
             }
         }
 
+        // Cet agent est-il AUSSI commercial d'un voyage en cours ? → on lui propose son espace commercial.
+        $commercialVoyages = 0;
+        try {
+            $mc = $this->api->item('/api/voyages/me/commercial');
+            $commercialVoyages = count($mc['voyages'] ?? []);
+        } catch(ApiException) {
+            // non bloquant
+        }
+
         return $this->render('gare/me.html.twig', [
             'gare' => $gare,
             'users' => $users,
             'stats' => $stats,
             'suivi' => $suivi,
             'periode' => $periode,
+            'commercialVoyages' => $commercialVoyages,
         ]);
     }
 

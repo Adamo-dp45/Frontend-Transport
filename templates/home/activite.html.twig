@@ -10,15 +10,32 @@
             Espace propriétaire
         </a>
         <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Activité</h1>
-        <p class="text-sm text-muted-foreground mt-1">Qui a fait quoi dans l'application — {{ total }} événement(s).</p>
+        <p class="text-sm text-muted-foreground mt-1">Qui a fait quoi dans l'application — {{ total }} événement(s){% if debut or fin %} sur la période{% endif %}.</p>
     </div>
+
+    {# Filtre de période #}
+    <form method="get" action="{{ path('owner.activite') }}" class="mb-5 flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm sm:flex-row sm:items-center sm:gap-1.5 sm:p-1.5">
+        <div class="flex items-center gap-1.5 min-w-0">
+            <input type="date" name="debut" value="{{ debut }}" aria-label="Date de début" class="input input-sm border-0 bg-transparent shadow-none w-full min-w-0" />
+            <span class="text-muted-foreground text-sm shrink-0">→</span>
+            <input type="date" name="fin" value="{{ fin }}" aria-label="Date de fin" class="input input-sm border-0 bg-transparent shadow-none w-full min-w-0" />
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button type="submit" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition max-sm:flex-1">
+                <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-13.5 6h10.5m-7.5 6h4.5" /></svg>
+                Filtrer
+            </button>
+            {% if debut or fin %}<a href="{{ path('owner.activite') }}" class="inline-flex items-center justify-center rounded-lg border bg-card px-3 py-2 text-sm font-medium hover:bg-muted transition max-sm:flex-1">Tout</a>{% endif %}
+        </div>
+    </form>
 
     {% set tones = {
         VOYAGE_CAR: 'bg-blue-500', VOYAGE_COMMERCIAL: 'bg-violet-500', VOYAGE_POSITION: 'bg-emerald-500',
         VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500',
-        TICKET_ANNULE: 'bg-red-500', TICKET_REPORTE: 'bg-amber-500', TICKET_SUPPRIME: 'bg-rose-600',
+        TICKET_ANNULE: 'bg-red-500', TICKET_REPORTE: 'bg-amber-500', TICKET_SUPPRIME: 'bg-rose-600', TICKET_REMISE: 'bg-fuchsia-500',
         COURRIER_ANNULE: 'bg-red-500', COURRIER_LIVRE: 'bg-green-500', COURRIER_PERDU: 'bg-orange-500',
-        COLIS_PERDU: 'bg-orange-500', BAGAGE_PERDU: 'bg-orange-500'
+        COLIS_PERDU: 'bg-orange-500', BAGAGE_PERDU: 'bg-orange-500', BAGAGE_ANNULE: 'bg-red-500',
+        BAGAGE_MONTANT_FORCE: 'bg-fuchsia-600'
     } %}
 
     <div class="card overflow-hidden">
@@ -35,6 +52,10 @@
                         {{ a.auteur ? (a.auteur.prenom ~ ' ' ~ a.auteur.nom) : 'Système' }}
                         {% if a.cibletype == 'Voyage' and a.cibleid %}
                         · <a href="{{ path('voyage.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Voyage #{{ a.cibleid }}</a>
+                        {% elseif a.cibletype == 'Ticket' and a.cibleid %}
+                        · <a href="{{ path('ticket.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Billet #{{ a.cibleid }}</a>
+                        {% elseif a.cibletype == 'Bagage' and a.cibleid %}
+                        · <a href="{{ path('bagage.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Bagage #{{ a.cibleid }}</a>
                         {% elseif a.cibletype %}· {{ a.cibletype }} #{{ a.cibleid }}{% endif %}
                     </p>
                 </div>
@@ -49,8 +70,8 @@
     <div class="flex items-center justify-between mt-4 text-sm">
         <span class="text-muted-foreground">Page {{ page }} / {{ totalPages }}</span>
         <div class="flex gap-2">
-            {% if page > 1 %}<a href="{{ path('owner.activite', { page: page - 1 }) }}" class="btn btn-secondary btn-sm">Précédent</a>{% endif %}
-            {% if page < totalPages %}<a href="{{ path('owner.activite', { page: page + 1 }) }}" class="btn btn-secondary btn-sm">Suivant</a>{% endif %}
+            {% if page > 1 %}<a href="{{ path('owner.activite', { page: page - 1, debut: debut, fin: fin }) }}" class="btn btn-secondary btn-sm">Précédent</a>{% endif %}
+            {% if page < totalPages %}<a href="{{ path('owner.activite', { page: page + 1, debut: debut, fin: fin }) }}" class="btn btn-secondary btn-sm">Suivant</a>{% endif %}
         </div>
     </div>
     {% endif %}

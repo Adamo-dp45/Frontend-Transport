@@ -244,6 +244,9 @@
                                 <a href="{{ path('reser.config') }}" class="sub-link {{ app.current_route == 'reser.config' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Paramètres réservation
                                 </a>
+                                <a href="{{ path('admin.remise.config') }}" class="sub-link {{ app.current_route starts with 'admin.remise.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Paramètres remise
+                                </a>
                                 {% endif %}
                             </div>
                         </div>

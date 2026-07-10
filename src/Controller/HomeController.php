@@ -30,11 +30,23 @@ final class HomeController extends AbstractController
         }
 
         // Seul l'admin d'entreprise voit le tableau de bord global.
+        // - Commercial à bord d'un voyage actif → son espace commercial (sa tâche du moment).
         // - Agent / admin de gare (rattaché à une gare) → « Ma gare ».
         // - Utilisateur central sans gare → sa page d'accueil personnelle (raccourcis par permissions).
         if(!$this->isGranted('ROLE_ADMIN')) {
             /** @var ApiUser $user */
             $user = $this->getUser();
+
+            // Priorité : s'il accompagne un car en ce moment, on l'amène direct sur son espace de vente.
+            try {
+                $mesVoyages = $this->api->item('/api/voyages/me/commercial');
+                if(!empty($mesVoyages['voyages'])) {
+                    return $this->redirectToRoute('commercial.me');
+                }
+            } catch(ApiException) {
+                // non bloquant : on retombe sur le routage par défaut
+            }
+
             $gare = $user->getGare();
             if($gare && !empty($gare['id'])) {
                 return $this->redirectToRoute('gare.me');
@@ -69,6 +81,7 @@ final class HomeController extends AbstractController
         $financiere = [
             'recettesTotales' => $financiere['recettesTotales'] ?? 0,
             'recettesTickets' => $financiere['recettesTickets'] ?? 0,
+            'recettesReservations' => $financiere['recettesReservations'] ?? 0,
             'recettesCourriers' => $financiere['recettesCourriers'] ?? 0,
             'recettesBagages' => $financiere['recettesBagages'] ?? 0,
             'coutDepannages' => $financiere['coutDepannages'] ?? 0,
@@ -102,6 +115,41 @@ final class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/recettes', name: 'owner.recettes', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function recettes(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $financiere = [];
+        try {
+            $financiere = $this->api->item('/api/stats/financiere?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        // Synthèse RECETTES (vue d'ensemble entreprise) : total + par type + par canal + courbe par jour.
+        // Le détail (par gare / commercial / départ / ligne / caisse) vit sur ses pages, liées depuis ici.
+        $financiere = [
+            'recettesTotales' => $financiere['recettesTotales'] ?? 0,
+            'recettesTickets' => $financiere['recettesTickets'] ?? 0,
+            'recettesReservations' => $financiere['recettesReservations'] ?? 0,
+            'recettesCourriers' => $financiere['recettesCourriers'] ?? 0,
+            'recettesBagages' => $financiere['recettesBagages'] ?? 0,
+            'beneficeNet' => $financiere['beneficeNet'] ?? 0,
+            'recettesParJour' => $financiere['recettesParJour'] ?? [],
+        ];
+
+        return $this->render('home/recettes.html.twig', [
+            'financiere' => $financiere,
+            'debut' => $debut,
+            'fin' => $fin,
+        ]);
+    }
+
     #[Route('/proprietaire', name: 'owner', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function owner(): Response
@@ -131,7 +179,11 @@ final class HomeController extends AbstractController
             'recetteTotale' => $billetterie['recetteTotale'] ?? 0,
             'recettesParJour' => $billetterie['recettesParJour'] ?? [],
             'recettesParTrajet' => $billetterie['recettesParTrajet'] ?? [],
-            'recettesParCar' => $billetterie['recettesParCar'] ?? []
+            'recettesParCar' => $billetterie['recettesParCar'] ?? [],
+            // Ventilation par canal (guichet / commercial / réservation) — sinon 0F partout côté vue
+            'recetteGuichet' => $billetterie['recetteGuichet'] ?? 0,
+            'recetteCommercial' => $billetterie['recetteCommercial'] ?? 0,
+            'recetteReservation' => $billetterie['recetteReservation'] ?? 0
         ];
 
         return $this->render('home/billetterie.html.twig', [
@@ -402,41 +454,6 @@ final class HomeController extends AbstractController
         ]);
     }
 
-    #[Route('/caisse', name: 'owner.caisse', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function caisse(Request $request): Response
-    {
-        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
-
-        try {
-            $caisse = $this->api->item('/api/stats/caisse?' . $periode);
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e);
-            if($response) {
-                return $response;
-            }
-        }
-
-        $caisse = [
-            'totalTickets' => $caisse['totalTickets'] ?? 0,
-            'recetteTickets' => $caisse['recetteTickets'] ?? 0,
-            'totalCourriers' => $caisse['totalCourriers'] ?? 0,
-            'recetteCourriers' => $caisse['recetteCourriers'] ?? 0,
-            'totalBagages' => $caisse['totalBagages'] ?? 0,
-            'recetteBagages' => $caisse['recetteBagages'] ?? 0,
-            'recetteTotale' => $caisse['recetteTotale'] ?? 0,
-            'parAgent' => $caisse['parAgent'] ?? [],
-            'parJour' => $caisse['parJour'] ?? [],
-            'parGare' => $caisse['parGare'] ?? []
-        ];
-
-        return $this->render('home/caisse.html.twig', [
-            'caisse' => $caisse,
-            'debut' => $debut,
-            'fin' => $fin
-        ]);
-    }
-
     #[Route('/stats/gares', name: 'owner.stats.gares', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function statsGares(Request $request): Response
@@ -534,7 +551,8 @@ final class HomeController extends AbstractController
             'annules' => $bagage['annules'] ?? 0,
             'recetteTotale' => $bagage['recetteTotale'] ?? 0,
             'poidsTotal' => $bagage['poidsTotal'] ?? 0,
-            'recettesParJour' => $bagage['recettesParJour'] ?? []
+            'recettesParJour' => $bagage['recettesParJour'] ?? [],
+            'forcages' => $bagage['forcages'] ?? []
         ];
 
         return $this->render('home/bagage.html.twig', [
@@ -563,9 +581,20 @@ final class HomeController extends AbstractController
     public function activite(Request $request): Response
     {
         $page = max(1, $request->query->getInt('page', 1));
+        $debut = trim((string) $request->query->get('debut', ''));
+        $fin = trim((string) $request->query->get('fin', ''));
+
+        $params = ['page' => $page, 'order[createdAt]' => 'desc'];
+        if ($debut !== '') {
+            $params['createdAt[after]'] = $debut; // >= début de journée
+        }
+        if ($fin !== '') {
+            $params['createdAt[before]'] = $fin . ' 23:59:59'; // <= fin de journée (inclusif)
+        }
+
         $data = [];
         try {
-            $data = $this->api->get('/api/activites', ['page' => $page, 'order[createdAt]' => 'desc']);
+            $data = $this->api->get('/api/activites', $params);
         } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if ($response) {
@@ -582,6 +611,8 @@ final class HomeController extends AbstractController
             'page' => $page,
             'totalPages' => (int) ceil($total / max(1, $perPage)),
             'total' => $total,
+            'debut' => $debut,
+            'fin' => $fin,
         ]);
     }
 

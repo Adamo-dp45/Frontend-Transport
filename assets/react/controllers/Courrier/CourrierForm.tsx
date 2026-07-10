@@ -78,7 +78,7 @@ interface CourrierInitial {
     voyage?: { id: number } | null
     garedepart?: { id: number } | null
     garearrivee?: { id: number } | null
-    modepaiement: string
+    // modepaiement: string // paiement courrier désactivé (champ commenté côté entité Courrier)
     fraissuivi?: number | null
     detailcourriers?: DetailInitial[]
 }
@@ -139,9 +139,9 @@ export default function CourrierForm({ voyages, tarifcourriers, gares, courrier,
     const [gareArriveeId, setGareArriveeId] = useState<string>(courrier?.garearrivee?.id ? String(courrier.garearrivee.id) : "")
     const [arrets, setArrets] = useState<ArretRef[]>([]) // arrêts de la ligne du voyage choisi (contrôle de compatibilité)
 
-    // modepaiement désactivé (paiement toujours à l'envoi dans ce déploiement) — valeur figée, envoyée telle quelle :
+    // modepaiement désactivé (paiement commenté côté entité Courrier) — n'est plus lu ni envoyé :
     // const [modepaiement, setModepaiement] = useState(courrier?.modepaiement ?? "ENVOI")
-    const modepaiement = courrier?.modepaiement ?? "ENVOI"
+    // const modepaiement = courrier?.modepaiement ?? "ENVOI"
     const [fraissuivi, setFraissuivi] = useState(courrier?.fraissuivi != null ? String(courrier.fraissuivi) : "")
 
     const [colis, setColis] = useState<Colis[]>(() => {
@@ -291,7 +291,7 @@ export default function CourrierForm({ voyages, tarifcourriers, gares, courrier,
             voyage: voyageId || null,
             gareDepart: gareDepartId || null,
             gareArrivee: gareArriveeId || null,
-            modepaiement,
+            // modepaiement, // paiement courrier désactivé (champ commenté côté entité Courrier)
             fraissuivi: fraissuivi ? Number(fraissuivi) : null,
             details: validColis.map((c) => ({
                 id: c.id ?? null, // renvoyé pour les colis existants → réconciliation par id (conserve le statut, ex. PERDU)

@@ -106,6 +106,12 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
             }
         }
 
+        // Annulation = remboursement : le motif est obligatoire (traçabilité anti-détournement).
+        if (mode === "ANNULATION" && !motif.trim()) {
+            setError("Le motif est obligatoire pour annuler un billet (remboursement).")
+            return
+        }
+
         const body: Record<string, unknown> = { mode, motif: motif.trim() || null }
         if (mode === "REPORT") {
             body.voyage = `/api/voyages/${voyageCibleId}`
@@ -278,7 +284,11 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
             <Card>
                 <CardContent className="space-y-4 pt-6">
                     <div className="space-y-1.5">
-                        <Label htmlFor="motif">Motif <span className="font-normal text-muted-foreground">(optionnel)</span></Label>
+                        <Label htmlFor="motif">
+                            Motif {mode === "ANNULATION"
+                                ? <span className="font-normal text-red-600">(obligatoire)</span>
+                                : <span className="font-normal text-muted-foreground">(optionnel)</span>}
+                        </Label>
                         <Input
                             id="motif"
                             value={motif}

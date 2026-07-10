@@ -26,7 +26,8 @@ export interface Courrier {
     fraissuivi: number | null
     statut: string
     detailcourriers: Detailcourrier[]
-    modepaiement: string
-    etatpaiement: string
+    // Paiement courrier désactivé (champs commentés côté entité Courrier) :
+    // modepaiement: string
+    // etatpaiement: string
     createdAt: string
 }

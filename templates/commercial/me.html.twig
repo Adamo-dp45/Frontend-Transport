@@ -1,0 +1,126 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon espace commercial{% endblock %}
+
+{% block body %}
+<div class="mb-6">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-600 mb-1.5">Vendeur à bord</p>
+    <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.1]">Mon espace commercial</h1>
+    <p class="text-muted-foreground mt-2 text-sm">Vos voyages en cours — avancez la position du car et vendez sans passer par la page du voyage.</p>
+</div>
+
+{% if voyages is empty %}
+<div class="card p-10 text-center">
+    <div class="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <svg class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+    </div>
+    <p class="font-medium">Aucun voyage en cours</p>
+    <p class="text-sm text-muted-foreground mt-1">Vous n'êtes commercial d'aucun voyage actif pour le moment.</p>
+</div>
+{% else %}
+
+<div class="space-y-4">
+    {% for v in voyages %}
+    {% set courant = (v.arrets|filter(a => a.id == v.garecouranteId)|first) %}
+    {% set ordreCourant = courant.ordre ?? -1 %}
+    {% set avals = v.arrets|filter(a => a.ordre > ordreCourant) %}
+    <div class="card p-5">
+        {# En-tête voyage #}
+        <div class="flex items-start justify-between gap-3 mb-4">
+            <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-medium truncate">{{ v.provenance }} → {{ v.destination }}</h2>
+                </div>
+                <p class="text-xs text-muted-foreground font-mono mt-0.5">{{ v.codevoyage }}</p>
+            </div>
+            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full {{ v.demarre ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' }}">
+                {{ v.demarre ? 'En route' : 'En attente' }}
+            </span>
+        </div>
+
+        {# Ma recette PROPRE sur ce voyage (motivation du vendeur) #}
+        <div class="mb-4 rounded-xl border border-violet-100 bg-violet-50 dark:border-violet-900 dark:bg-violet-950/40 p-4">
+            <div class="flex items-end justify-between gap-3">
+                <div>
+                    <p class="text-[11px] font-medium uppercase tracking-wide text-violet-600 dark:text-violet-300">Ma recette sur ce voyage</p>
+                    <p class="text-2xl font-semibold tabular-nums text-violet-800 dark:text-violet-100 leading-tight mt-0.5">{{ (v.maRecette ?? 0)|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-violet-600 dark:text-violet-300">FCFA</span></p>
+                </div>
+                <div class="text-right text-xs text-violet-700/80 dark:text-violet-300/80 shrink-0">
+                    <p><strong class="tabular-nums">{{ v.mesTickets ?? 0 }}</strong> billet{{ (v.mesTickets ?? 0) > 1 ? 's' : '' }} vendu{{ (v.mesTickets ?? 0) > 1 ? 's' : '' }}</p>
+                    <p><strong class="tabular-nums">{{ v.mesBagages ?? 0 }}</strong> bagage{{ (v.mesBagages ?? 0) > 1 ? 's' : '' }}</p>
+                </div>
+            </div>
+        </div>
+
+        {# Occupation #}
+        <div class="flex items-center gap-3 mb-4 text-sm">
+            <span class="text-muted-foreground">Occupation</span>
+            <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div class="h-2 rounded-full bg-violet-500" style="width: {{ v.placestotal > 0 ? (v.placesoccupees / v.placestotal * 100)|round : 0 }}%"></div>
+            </div>
+            <span class="tabular-nums font-medium shrink-0">{{ v.placesoccupees }}/{{ v.placestotal }}</span>
+        </div>
+
+        {# Progression du car (position courante en évidence) #}
+        {% if v.arrets is not empty %}
+        <div class="mb-4">
+            <p class="text-xs text-muted-foreground mb-2">Position du car</p>
+            <div class="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+                {% for a in v.arrets %}
+                {% set etat = a.ordre < ordreCourant ? 'passe' : (a.ordre == ordreCourant ? 'courant' : 'avenir') %}
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium
+                    {{ etat == 'courant' ? 'bg-violet-600 text-white'
+                       : (etat == 'passe' ? 'bg-muted text-muted-foreground line-through' : 'border border-border text-muted-foreground') }}">
+                    {% if etat == 'courant' %}<svg class="size-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>{% endif %}
+                    {{ a.libelle }}
+                </span>
+                {% if not loop.last %}<svg class="size-3 text-muted-foreground/50 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Avancer — pastilles des gares en aval (la prochaine est mise en avant) #}
+        <div class="pt-4 border-t border-border">
+            {% if avals is not empty %}
+            <p class="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                Le car est arrivé à ? <span class="opacity-70">— touchez la gare</span>
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                {% for a in avals %}
+                <form method="post" action="{{ path('commercial.avancer', { id: v.id }) }}"
+                      onsubmit="return confirm('Confirmer : le car est arrivé à {{ a.libelle|e('js') }} ?\n\nL\'avancement est définitif (on ne recule pas).')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('commercial_avancer') }}">
+                    <input type="hidden" name="gare" value="{{ a.id }}">
+                    <button type="submit" class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition hover:-translate-y-0.5 hover:shadow active:translate-y-0 active:scale-95
+                        {{ loop.first
+                           ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                           : 'border-border bg-card text-foreground hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
+                        {# Icône repère (indique un lieu tappable) #}
+                        <svg class="size-3.5 {{ loop.first ? 'text-white/90' : 'text-emerald-500' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                        <span>{{ a.libelle }}</span>
+                        {% if loop.first %}<span class="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">prochaine</span>{% endif %}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
+                <svg class="size-3.5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                Le car est au terminus — plus d'avancement possible.
+            </p>
+            {% endif %}
+
+            <a href="{{ path('ticket.new', { voyage: v.id }) }}" class="btn btn-primary w-full justify-center">
+                <svg class="size-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Vendre un billet
+            </a>
+        </div>
+
+        <p class="text-[11px] text-muted-foreground mt-3">Vous vendez depuis <strong class="text-foreground">{{ v.garecouranteLibelle ?? v.provenance }}</strong> — la vente est automatiquement rattachée à cette position.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

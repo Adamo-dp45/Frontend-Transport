@@ -11,13 +11,16 @@
 {% set recetteReservation = stats.recetteReservation ?? 0 %}
 {% set maxRecette = parGare|length > 0 ? parGare|first.recetteTotale : 0 %}
 {% set totalAnnules = parGare|reduce((c, g) => c + (g.ticketsAnnules ?? 0), 0) %}
+{% set canalGuichet = parGare|reduce((c, g) => c + (g.canalGuichet ?? 0), 0) %}
+{% set canalCommercial = parGare|reduce((c, g) => c + (g.canalCommercial ?? 0), 0) %}
+{% set canalReservation = parGare|reduce((c, g) => c + (g.canalReservation ?? 0), 0) %}
 
 {# ── En-tête ─────────────────────────────────────────────────────── #}
 <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
     <div>
-        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+        <a href="{{ path('owner.recettes') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            Espace propriétaire
+            Espace recettes
         </a>
         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Tableau de bord</p>
         <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Statistiques par gare</h1>
@@ -34,8 +37,7 @@
     <div class="card p-4">
         <p class="text-xs text-muted-foreground">Recette des gares</p>
         <p class="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">{{ totalRecette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
-        {% if totalCommercial > 0 %}<p class="text-[11px] text-muted-foreground mt-1">+ {{ totalCommercial|number_format(0, ',', ' ') }} F à bord (commerciaux)</p>{% endif %}
-        {% if recetteReservation > 0 %}<p class="text-[11px] text-muted-foreground mt-0.5">+ {{ recetteReservation|number_format(0, ',', ' ') }} F réservations (compte admin)</p>{% endif %}
+        <p class="text-[11px] text-muted-foreground mt-1">Guichet {{ canalGuichet|number_format(0, ',', ' ') }} · commercial {{ canalCommercial|number_format(0, ',', ' ') }}{% if canalReservation > 0 %} · réservation {{ canalReservation|number_format(0, ',', ' ') }}{% endif %}</p>
     </div>
     <div class="card p-4">
         <p class="text-xs text-muted-foreground">Gares actives</p>
@@ -94,7 +96,28 @@
                     <span>Bagages <strong class="text-foreground tabular-nums">{{ g.recetteBagages|number_format(0, ',', ' ') }}</strong></span>
                     <span>Annulés <strong class="tabular-nums {{ (g.ticketsAnnules ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground' }}">{{ g.ticketsAnnules ?? 0 }}</strong></span>
                     <span>Reportés <strong class="tabular-nums {{ (g.ticketsReportes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground' }}">{{ g.ticketsReportes ?? 0 }}</strong></span>
+                    <span>Remises <strong class="tabular-nums {{ (g.remiseTotale ?? 0) > 0 ? 'text-fuchsia-600 dark:text-fuchsia-400' : 'text-foreground' }}">{{ (g.remiseTotale ?? 0)|number_format(0, ',', ' ') }} F</strong>{% if (g.remiseNb ?? 0) > 0 %} <span class="text-muted-foreground">· {{ g.remiseNb }}</span>{% endif %}</span>
                 </div>
+
+                {# Détail par CANAL de vente (guichet / commercial rattaché à sa gare / réservation payée) #}
+                {% set gcg = g.canalGuichet ?? 0 %}
+                {% set gcc = g.canalCommercial ?? 0 %}
+                {% set gcr = g.canalReservation ?? 0 %}
+                {% set gct = gcg + gcc + gcr %}
+                {% if gct > 0 %}
+                <div class="mb-3">
+                    <div class="flex h-1.5 w-full overflow-hidden rounded-full bg-muted mb-1.5">
+                        <div class="bg-emerald-500" style="width: {{ gcg / gct * 100 }}%"></div>
+                        <div class="bg-indigo-500" style="width: {{ gcc / gct * 100 }}%"></div>
+                        <div class="bg-violet-500" style="width: {{ gcr / gct * 100 }}%"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500"></span>Guichet {{ gcg|number_format(0, ',', ' ') }}</span>
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-indigo-500"></span>Commercial {{ gcc|number_format(0, ',', ' ') }}</span>
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-violet-500"></span>Réservation {{ gcr|number_format(0, ',', ' ') }}</span>
+                    </div>
+                </div>
+                {% endif %}
 
                 {# Sparkline évolution (× jour) #}
                 {% set sj = g.serieJour ?? [] %}
@@ -139,12 +162,12 @@
 </div>
 {% endif %}
 
-{# ── Recette par commercial (ventes à bord) ──────────────────────── #}
+{# ── Recette par commercial (ventes à bord : billets + bagages) ───── #}
 {% if commerciaux|length > 0 %}
-{% set maxComm = commerciaux|first.recetteBillets %}
+{% set maxComm = commerciaux|first.recette %}
 <div class="mt-8 mb-3">
     <h2 class="text-lg font-medium">Recette par commercial</h2>
-    <p class="text-sm text-muted-foreground">Ventes réalisées à bord (vendeur en route) — complément de la recette des gares</p>
+    <p class="text-sm text-muted-foreground">Ventes réalisées à bord (vendeur en route) : billets + bagages — complément de la recette des gares</p>
 </div>
 <div class="card p-5">
     <div class="space-y-2.5">
@@ -152,10 +175,10 @@
         <div>
             <div class="flex items-baseline justify-between gap-2 mb-1 text-sm">
                 <span class="truncate min-w-0 font-medium">{{ c.nom }}</span>
-                <span class="text-xs text-muted-foreground shrink-0 tabular-nums">{{ c.nbtickets }} billets · {{ c.recetteBillets|number_format(0, ',', ' ') }} F</span>
+                <span class="text-xs text-muted-foreground shrink-0 tabular-nums">{{ c.nbtickets }} billet(s){% if (c.recetteBagages ?? 0) > 0 %} · {{ c.nbbagages ?? 0 }} bagage(s){% endif %} · {{ c.recette|number_format(0, ',', ' ') }} F</span>
             </div>
             <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ maxComm > 0 ? (c.recetteBillets / maxComm * 100) : 0 }}%"></div>
+                <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ maxComm > 0 ? (c.recette / maxComm * 100) : 0 }}%"></div>
             </div>
         </div>
         {% endfor %}
@@ -268,7 +291,7 @@
 {% if courG|length > 0 %}
 <div class="mt-7 mb-3">
     <h2 class="text-lg font-medium">Courriers par gare</h2>
-    <p class="text-sm text-muted-foreground">Émis (au départ) · reçus (à destination) · en attente de récupération</p>
+    <p class="text-sm text-muted-foreground">Émis (au départ) · reçus (à destination) · en attente · annulés / perdus (émis depuis la gare)</p>
 </div>
 <div class="card overflow-hidden">
     <table class="w-full text-sm">
@@ -278,6 +301,8 @@
                 <th class="text-right px-4 py-2.5 font-medium">Émis</th>
                 <th class="text-right px-4 py-2.5 font-medium">Reçus</th>
                 <th class="text-right px-4 py-2.5 font-medium">En attente</th>
+                <th class="text-right px-4 py-2.5 font-medium">Annulés</th>
+                <th class="text-right px-4 py-2.5 font-medium">Perdus</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-border">
@@ -287,6 +312,8 @@
                 <td class="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{{ g.emis }}</td>
                 <td class="px-4 py-2.5 text-right tabular-nums text-blue-600 dark:text-blue-400">{{ g.recus }}</td>
                 <td class="px-4 py-2.5 text-right tabular-nums {{ g.enAttente > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground' }}">{{ g.enAttente }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums {{ (g.annules ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground' }}">{{ g.annules ?? 0 }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums {{ (g.perdus ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-muted-foreground' }}">{{ g.perdus ?? 0 }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -299,7 +326,7 @@
 {% if bagG|length > 0 %}
 <div class="mt-7 mb-3">
     <h2 class="text-lg font-medium">Bagages par gare</h2>
-    <p class="text-sm text-muted-foreground">Émis (au départ, avec poids total expédié) · livrés (à destination)</p>
+    <p class="text-sm text-muted-foreground">Émis (au départ, avec poids total expédié) · livrés (à destination) · annulés / perdus (émis depuis la gare)</p>
 </div>
 <div class="card overflow-hidden">
     <table class="w-full text-sm">
@@ -308,6 +335,8 @@
                 <th class="text-left px-4 py-2.5 font-medium">Gare</th>
                 <th class="text-right px-4 py-2.5 font-medium">Émis</th>
                 <th class="text-right px-4 py-2.5 font-medium">Livrés</th>
+                <th class="text-right px-4 py-2.5 font-medium">Annulés</th>
+                <th class="text-right px-4 py-2.5 font-medium">Perdus</th>
                 <th class="text-right px-4 py-2.5 font-medium">Poids expédié</th>
             </tr>
         </thead>
@@ -317,6 +346,8 @@
                 <td class="px-4 py-2.5 font-medium">{{ g.libelle }}</td>
                 <td class="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{{ g.emis }}</td>
                 <td class="px-4 py-2.5 text-right tabular-nums text-blue-600 dark:text-blue-400">{{ g.livres }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums {{ (g.annules ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground' }}">{{ g.annules ?? 0 }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums {{ (g.perdus ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-muted-foreground' }}">{{ g.perdus ?? 0 }}</td>
                 <td class="px-4 py-2.5 text-right tabular-nums">{{ g.poids|number_format(0, ',', ' ') }} kg</td>
             </tr>
             {% endfor %}
