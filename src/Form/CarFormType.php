@@ -6,6 +6,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -98,6 +99,12 @@ class CarFormType extends AbstractType
             ->add('siegesDroite', IntegerType::class, [
                 'label' => 'Sièges par rangée (côté droit)',
                 'help' => 'Nombre de sièges par rangée du côté droit ; le nombre de rangées est déduit du nombre total de sièges'
+            ])
+            ->add('plansieges', TextareaType::class, [
+                'label' => 'Plan de sièges',
+                'required' => false,
+                'help' => 'Une rangée par ligne, numéros séparés par des espaces, « . » pour une allée ou un vide. Ex : « 3 4 5 . 2 1 ». Laissé vide, un plan standard est généré depuis les colonnes gauche/droite. Le nombre de sièges est déduit du plan.',
+                'attr' => ['rows' => 6, 'class' => 'font-mono', 'placeholder' => "3 4 5 . 2 1\n8 9 10 . 7 6\n. . . . . 11\n14 15 . . 13 12\n16 17 18 19 20 21"],
             ])
         ;
     }

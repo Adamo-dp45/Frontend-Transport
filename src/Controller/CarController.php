@@ -134,7 +134,8 @@ final class CarController extends AbstractController
                 'datearrivee' => $form->get('datearrivee')->getData()?->format('Y-m-d\TH:i:s.v\Z'),
                 'etat' => $form->get('etat')->getData(),
                 'sieges_gauche' => $form->get('siegesGauche')->getData(),
-                'sieges_droite' => $form->get('siegesDroite')->getData()
+                'sieges_droite' => $form->get('siegesDroite')->getData(),
+                'plansieges' => $this->gridFromText($form->get('plansieges')->getData())
             ];
 
             $marque = $form->get('marque')->getData();
@@ -190,7 +191,8 @@ final class CarController extends AbstractController
             'typevehicule' => isset($car['typevehicule']) ? (int)$car['typevehicule']['id'] : null,
             'datearrivee' => isset($car['datearrivee']) ? new \DateTime($car['datearrivee']) : null,
             'siegesGauche' => $car['sieges_gauche'] ?? null,
-            'siegesDroite' => $car['sieges_droite'] ?? null
+            'siegesDroite' => $car['sieges_droite'] ?? null,
+            'plansieges' => $this->textFromGrid($car['plansieges'] ?? null)
         ]);
 
         $form = $this->createForm(CarFormType::class, $data, [
@@ -207,7 +209,8 @@ final class CarController extends AbstractController
                 'datearrivee' => $form->get('datearrivee')->getData()?->format('Y-m-d\TH:i:s.v\Z'),
                 'etat' => $form->get('etat')->getData(),
                 'sieges_gauche' => $form->get('siegesGauche')->getData(),
-                'sieges_droite' => $form->get('siegesDroite')->getData()
+                'sieges_droite' => $form->get('siegesDroite')->getData(),
+                'plansieges' => $this->gridFromText($form->get('plansieges')->getData())
             ];
 
             $marque = $form->get('marque')->getData();
@@ -257,5 +260,50 @@ final class CarController extends AbstractController
             }
         }
         return $this->redirectToRoute('car.index');
+    }
+
+    /**
+     * Convertit le texte du plan explicite en grille (rangées de cellules : numéro ou null pour un trou).
+     * Une rangée par ligne ; numéros séparés par des espaces ; « . » / « 0 » / vide = trou/allée.
+     * @return array<int, array<int, ?int>>|null
+     */
+    private function gridFromText(?string $text): ?array
+    {
+        if ($text === null || trim($text) === '') {
+            return null;
+        }
+        $grid = [];
+        foreach (preg_split('/\r\n|\r|\n/', trim($text)) as $ligne) {
+            if (trim($ligne) === '') {
+                continue;
+            }
+            $cellules = [];
+            foreach (preg_split('/\s+/', trim($ligne)) as $cellule) {
+                $cellules[] = ($cellule === '.' || $cellule === '0' || $cellule === '') ? null : (int) $cellule;
+            }
+            $grid[] = $cellules;
+        }
+
+        return $grid ?: null;
+    }
+
+    /** Convertit une grille (depuis l'API) en texte éditable pour le formulaire. */
+    private function textFromGrid(mixed $grid): string
+    {
+        if (!is_array($grid) || $grid === []) {
+            return '';
+        }
+        $lignes = [];
+        foreach ($grid as $rangee) {
+            if (!is_array($rangee)) {
+                continue;
+            }
+            $lignes[] = implode(' ', array_map(
+                static fn ($c) => ($c === null || (int) $c <= 0) ? '.' : (string) (int) $c,
+                $rangee
+            ));
+        }
+
+        return implode("\n", $lignes);
     }
 }

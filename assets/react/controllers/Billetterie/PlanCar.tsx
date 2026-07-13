@@ -13,7 +13,7 @@ export interface SiegePlan {
     numero: number
     rangee: number
     colonne: number
-    cote: "GAUCHE" | "DROITE"
+    cote: "GAUCHE" | "DROITE" | "ARRIERE" | "GRILLE"
     statut: "LIBRE" | "OCCUPE"
 }
 
@@ -29,11 +29,6 @@ interface PlanCarProps {
 // Dimensions (px)
 const SEAT = 40
 const GAP = 6
-const AISLE = 30
-
-function colLabel(index: number): string {
-    return String.fromCharCode(65 + index) // 0 -> A, 1 -> B, ...
-}
 
 // ─── Siège ──────────────────────────────────────────────────────────────────
 function Seat({
@@ -80,35 +75,6 @@ function Seat({
     )
 }
 
-// Cale une rangée (gauche|droite) à la largeur attendue avec des emplacements vides
-function rowSide(
-    seats: SiegePlan[],
-    count: number,
-    selectedIds: Set<number>,
-    readonly: boolean,
-    onToggle?: (s: SiegePlan) => void,
-    keyPrefix = "",
-) {
-    const cells = []
-    for (let col = 1; col <= count; col++) {
-        const siege = seats.find((s) => s.colonne === col)
-        cells.push(
-            siege ? (
-                <Seat
-                    key={siege.id}
-                    siege={siege}
-                    selected={selectedIds.has(siege.id)}
-                    readonly={readonly}
-                    onToggle={onToggle}
-                />
-            ) : (
-                <div key={`${keyPrefix}-empty-${col}`} style={{ width: SEAT, height: SEAT }} />
-            ),
-        )
-    }
-    return cells
-}
-
 function LegendItem({ className, label }: { className: string; label: string }) {
     return (
         <span className="flex items-center gap-1.5">
@@ -134,6 +100,12 @@ export default function PlanCar({
     }, {})
     const rangees = Object.keys(byRangee).map(Number).sort((a, b) => a - b)
 
+    // Rendu UNIFIÉ en grille : chaque siège à sa colonne ABSOLUE. Les plans sont désormais des grilles
+    // (cote 'GRILLE', colonne déjà absolue) ; on gère aussi les anciens sièges GAUCHE/DROITE (colonne par
+    // côté) via une colonne absolue calculée — pas besoin de re-générer les cars existants.
+    const absCol = (s: SiegePlan) => (s.cote === "DROITE" ? (siegesGauche || 0) + 1 + s.colonne : s.colonne)
+    const maxCol = Math.max(1, ...sieges.map(absCol))
+
     return (
         <div className="w-full overflow-x-auto text-center">
             <div className="mx-auto inline-block min-w-min rounded-2xl border bg-card p-4 text-left text-card-foreground shadow-sm">
@@ -145,39 +117,22 @@ export default function PlanCar({
                     </span>
                 </div>
 
-                {/* En-tête colonnes */}
-                <div className="mb-1.5 flex items-center" style={{ gap: GAP }}>
-                    <div className="w-6" />
-                    {Array.from({ length: siegesGauche }, (_, i) => (
-                        <div key={`hl-${i}`} className="text-center text-[10px] font-semibold uppercase text-muted-foreground" style={{ width: SEAT }}>
-                            {colLabel(i)}
-                        </div>
-                    ))}
-                    <div style={{ width: AISLE }} />
-                    {Array.from({ length: siegesDroite }, (_, i) => (
-                        <div key={`hr-${i}`} className="text-center text-[10px] font-semibold uppercase text-muted-foreground" style={{ width: SEAT }}>
-                            {colLabel(siegesGauche + i)}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Rangées */}
+                {/* Rangées — grille unifiée (chaque siège à sa colonne absolue, trous = vides) */}
                 <div className="flex flex-col" style={{ gap: GAP }}>
                     {rangees.map((rangee) => {
                         const seats = byRangee[rangee]
-                        const gauche = seats.filter((s) => s.cote === "GAUCHE")
-                        const droite = seats.filter((s) => s.cote === "DROITE")
                         return (
                             <div key={rangee} className="flex items-center" style={{ gap: GAP }}>
                                 <div className="w-6 text-right text-[10px] font-semibold text-muted-foreground">{rangee}</div>
                                 <div className="flex" style={{ gap: GAP }}>
-                                    {rowSide(gauche, siegesGauche, selectedIds, readonly, onToggle, `g${rangee}`)}
-                                </div>
-                                <div className="flex items-center justify-center" style={{ width: AISLE, height: SEAT }}>
-                                    <span className="h-full w-px bg-border" />
-                                </div>
-                                <div className="flex" style={{ gap: GAP }}>
-                                    {rowSide(droite, siegesDroite, selectedIds, readonly, onToggle, `d${rangee}`)}
+                                    {Array.from({ length: maxCol }, (_, i) => {
+                                        const s = seats.find((x) => absCol(x) === i + 1)
+                                        return s ? (
+                                            <Seat key={s.id} siege={s} selected={selectedIds.has(s.id)} readonly={readonly} onToggle={onToggle} />
+                                        ) : (
+                                            <div key={`e-${rangee}-${i}`} style={{ width: SEAT, height: SEAT }} />
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )

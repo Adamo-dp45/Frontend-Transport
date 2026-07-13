@@ -29,10 +29,11 @@ final class HomeController extends AbstractController
             return $this->redirectToRoute('admin.user.index');
         }
 
-        // Seul l'admin d'entreprise voit le tableau de bord global.
+        // Routage du tableau de bord global.
         // - Commercial à bord d'un voyage actif → son espace commercial (sa tâche du moment).
         // - Agent / admin de gare (rattaché à une gare) → « Ma gare ».
-        // - Utilisateur central sans gare → sa page d'accueil personnelle (raccourcis par permissions).
+        // - Utilisateur central sans gare → le tableau de bord global SANS la partie financière (réservée
+        //   à l'admin d'entreprise) : il tombe sur le rendu ci-dessous.
         if(!$this->isGranted('ROLE_ADMIN')) {
             /** @var ApiUser $user */
             $user = $this->getUser();
@@ -51,14 +52,20 @@ final class HomeController extends AbstractController
             if($gare && !empty($gare['id'])) {
                 return $this->redirectToRoute('gare.me');
             }
-            return $this->redirectToRoute('accueil');
+            // sinon (central sans gare) : on continue vers le dashboard global (financier masqué plus bas)
         }
+
+        // La partie financière est réservée à l'admin d'entreprise.
+        $estAdmin = $this->isGranted('ROLE_ADMIN');
 
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
+        $financiere = null;
         try {
             $exploitation = $this->api->item('/api/stats/exploitation?' . $periode);
-            $financiere = $this->api->item('/api/stats/financiere?' . $periode);
+            if($estAdmin) {
+                $financiere = $this->api->item('/api/stats/financiere?' . $periode);
+            }
             $stock = $this->api->item('/api/stats/stock?' . $periode);
             $flotte = $this->api->item('/api/stats/flotte?' . $periode);
         } catch(ApiException $e) {
@@ -78,18 +85,20 @@ final class HomeController extends AbstractController
             'voyagesParStatut'  => $exploitation['voyagesParStatut'] ?? []
         ];
 
-        $financiere = [
-            'recettesTotales' => $financiere['recettesTotales'] ?? 0,
-            'recettesTickets' => $financiere['recettesTickets'] ?? 0,
-            'recettesReservations' => $financiere['recettesReservations'] ?? 0,
-            'recettesCourriers' => $financiere['recettesCourriers'] ?? 0,
-            'recettesBagages' => $financiere['recettesBagages'] ?? 0,
-            'coutDepannages' => $financiere['coutDepannages'] ?? 0,
-            'coutApprovisionnements' => $financiere['coutApprovisionnements'] ?? 0,
-            'beneficeNet' => $financiere['beneficeNet'] ?? 0,
-            'recettesParJour' => $financiere['recettesParJour'] ?? [],
-            'coutsParJour' => $financiere['coutsParJour'] ?? []
-        ];
+        if($estAdmin) {
+            $financiere = [
+                'recettesTotales' => $financiere['recettesTotales'] ?? 0,
+                'recettesTickets' => $financiere['recettesTickets'] ?? 0,
+                'recettesReservations' => $financiere['recettesReservations'] ?? 0,
+                'recettesCourriers' => $financiere['recettesCourriers'] ?? 0,
+                'recettesBagages' => $financiere['recettesBagages'] ?? 0,
+                'coutDepannages' => $financiere['coutDepannages'] ?? 0,
+                'coutApprovisionnements' => $financiere['coutApprovisionnements'] ?? 0,
+                'beneficeNet' => $financiere['beneficeNet'] ?? 0,
+                'recettesParJour' => $financiere['recettesParJour'] ?? [],
+                'coutsParJour' => $financiere['coutsParJour'] ?? []
+            ];
+        }
 
         $stock = [
             'totalPieces' => $stock['totalPieces'] ?? 0,
@@ -327,7 +336,8 @@ final class HomeController extends AbstractController
         $agents = [
             'totalAgents' => $agents['totalAgents'] ?? 0,
             'agentsActifs' => $agents['agentsActifs'] ?? 0,
-            'performances' => $agents['performances'] ?? []
+            'performances' => $agents['performances'] ?? [],
+            'actionsCritiques' => $agents['actionsCritiques'] ?? []
         ];
 
         return $this->render('home/agent.html.twig', [
@@ -560,17 +570,6 @@ final class HomeController extends AbstractController
             'debut' => $debut,
             'fin' => $fin
         ]);
-    }
-
-    /**
-     * Page d'accueil personnelle pour les utilisateurs centraux (sans gare, non-admin) :
-     * raccourcis vers les modules selon leurs permissions. Les admins voient le dashboard global,
-     * les agents de gare « Ma gare » — mais la page reste accessible directement à tout ROLE_USER.
-     */
-    #[Route('/accueil', name: 'accueil', methods: ['GET'])]
-    public function accueil(): Response
-    {
-        return $this->render('home/accueil.html.twig');
     }
 
     /**

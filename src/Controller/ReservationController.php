@@ -79,9 +79,9 @@ final class ReservationController extends AbstractController
                     'fenetreRegularisationJours' => (int) $form->get('fenetreRegularisationJours')->getData(),
                 ]);
                 $this->addFlash('success', 'Les paramètres de réservation ont été mis à jour');
-                return $this->redirectToRoute('reservation.config');
+                return $this->redirectToRoute('reser.config');
             } catch(ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e, $form, 'reservation.config');
+                $response = $this->apiExceptionHandler->handle($e, $form, 'reser.config');
                 if($response) {
                     return $response;
                 }

@@ -75,6 +75,11 @@ class ApiClientService
         ]);
 
         $user = $userResponse->toArray(false);
+        // Garde-fou : si /api/me n'a pas répondu 200 (ex. 503 en maintenance, indispo…), le corps ne contient
+        // pas le profil (pas de 'roles') → on lève un message clair plutôt qu'un warning PHP à la construction.
+        if ($userResponse->getStatusCode() !== 200 || !isset($user['roles'])) {
+            throw new \RuntimeException($user['detail'] ?? $user['message'] ?? 'Application momentanément indisponible. Réessayez plus tard.');
+        }
         $session->set(self::USER_KEY, $user);
 
         return [

@@ -34,8 +34,8 @@
         VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500',
         TICKET_ANNULE: 'bg-red-500', TICKET_REPORTE: 'bg-amber-500', TICKET_SUPPRIME: 'bg-rose-600', TICKET_REMISE: 'bg-fuchsia-500',
         COURRIER_ANNULE: 'bg-red-500', COURRIER_LIVRE: 'bg-green-500', COURRIER_PERDU: 'bg-orange-500',
-        COLIS_PERDU: 'bg-orange-500', BAGAGE_PERDU: 'bg-orange-500', BAGAGE_ANNULE: 'bg-red-500',
-        BAGAGE_MONTANT_FORCE: 'bg-fuchsia-600'
+        COURRIER_SUPPRIME: 'bg-rose-600', COLIS_PERDU: 'bg-orange-500', BAGAGE_PERDU: 'bg-orange-500',
+        BAGAGE_ANNULE: 'bg-red-500', BAGAGE_SUPPRIME: 'bg-rose-600', BAGAGE_MONTANT_FORCE: 'bg-fuchsia-600'
     } %}
 
     <div class="card overflow-hidden">
@@ -56,6 +56,8 @@
                         · <a href="{{ path('ticket.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Billet #{{ a.cibleid }}</a>
                         {% elseif a.cibletype == 'Bagage' and a.cibleid %}
                         · <a href="{{ path('bagage.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Bagage #{{ a.cibleid }}</a>
+                        {% elseif a.cibletype == 'Courrier' and a.cibleid %}
+                        · <a href="{{ path('courrier.show', { id: a.cibleid }) }}" class="text-primary hover:underline">Courrier #{{ a.cibleid }}</a>
                         {% elseif a.cibletype %}· {{ a.cibletype }} #{{ a.cibleid }}{% endif %}
                     </p>
                 </div>

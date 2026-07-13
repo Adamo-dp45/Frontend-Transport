@@ -7,7 +7,6 @@ interface Props {
 }
 
 export default function PlanCarReadonly({ sieges, siegesGauche, siegesDroite }: Props) {
-    console.log("dd")
     return <>
         <PlanCar
             sieges={sieges}

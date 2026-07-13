@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Configuration de la recette{% endblock %}
+
+{% block body %}
+<div class="max-w-[700px] mx-auto">
+    <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Configuration de la recette</h1>
+    </div>
+    <p class="text-sm text-muted-foreground mb-5">
+        {% if (config.courriershorsca ?? false) %}
+        Les revenus des <strong>courriers</strong> sont <strong>exclus</strong> du chiffre d'affaires (CA, bénéfice, recettes par gare/ligne). Les statistiques courrier restent consultables.
+        {% else %}
+        Les revenus des <strong>courriers</strong> sont <strong>inclus</strong> dans le chiffre d'affaires (comportement par défaut).
+        {% endif %}
+    </p>
+
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        {{ form_start(form) }}
+            <div class="mb-3">{{ form_row(form.courriershorsca) }}</div>
+            <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+                <button class="btn btn-primary">Enregistrer</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

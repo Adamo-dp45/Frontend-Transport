@@ -34,7 +34,8 @@
     </div>
 </section>
 
-{# ── Financier ────────────────────────────────────────────────────── #}
+{# ── Financier (réservé à l'admin d'entreprise) ───────────────────── #}
+{% if financiere %}
 <section class="mb-10">
     {{ s.sectionTitle('Financier') }}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -75,6 +76,7 @@
         </div>
     </div>
 </section>
+{% endif %}
 
 {# ── Stock ────────────────────────────────────────────────────────── #}
 <section class="mb-10">

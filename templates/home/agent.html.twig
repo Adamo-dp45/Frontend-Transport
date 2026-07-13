@@ -96,4 +96,52 @@
     {% endfor %}
     </div>
 </section>
+
+{# ── Actions critiques par agent (traçabilité anti-fraude) ───────────── #}
+{% set crit = agents.actionsCritiques ?? [] %}
+{% if crit|length > 0 %}
+<section class="mb-8">
+    <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-medium">Actions critiques par agent</h2>
+        <span class="text-xs text-muted-foreground">{{ crit|length }}</span>
+    </div>
+    <p class="text-xs text-muted-foreground mb-4">Traçabilité : taux d'annulation des ventes, annulations et suppressions effectuées (<strong class="text-foreground">T</strong> billets · <strong class="text-foreground">B</strong> bagages · <strong class="text-foreground">C</strong> courriers). Un taux élevé ou des suppressions méritent une revue.</p>
+    <div class="card p-0 overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-muted-foreground border-b">
+                    <th class="p-3 font-medium">Agent</th>
+                    <th class="p-3 font-medium text-right">Ventes billets</th>
+                    <th class="p-3 font-medium text-right">Taux annul.</th>
+                    <th class="p-3 font-medium text-center">Annulations (T/B/C)</th>
+                    <th class="p-3 font-medium text-center">Suppressions (T/B/C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in crit %}
+                {% set totalSuppr = c.supprTickets + c.supprBagages + c.supprCourriers %}
+                <tr class="border-b last:border-0 {{ totalSuppr > 0 ? 'bg-red-500/5' : '' }}">
+                    <td class="p-3 font-medium">{{ c.prenom }} {{ c.nom }}</td>
+                    <td class="p-3 text-right tabular-nums">{{ c.ventesBillets }}</td>
+                    <td class="p-3 text-right tabular-nums {{ c.tauxAnnulation >= 20 ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
+                        {{ c.tauxAnnulation }} %
+                        <span class="block text-[11px] font-normal text-muted-foreground">{{ c.ventesAnnulees }}/{{ c.ventesBillets }}</span>
+                    </td>
+                    <td class="p-3 text-center tabular-nums text-xs space-x-2">
+                        <span class="{{ c.annulTickets > 0 ? '' : 'text-muted-foreground/40' }}">T·{{ c.annulTickets }}</span>
+                        <span class="{{ c.annulBagages > 0 ? '' : 'text-muted-foreground/40' }}">B·{{ c.annulBagages }}</span>
+                        <span class="{{ c.annulCourriers > 0 ? '' : 'text-muted-foreground/40' }}">C·{{ c.annulCourriers }}</span>
+                    </td>
+                    <td class="p-3 text-center tabular-nums text-xs space-x-2 {{ totalSuppr > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
+                        <span class="{{ c.supprTickets > 0 ? '' : 'text-muted-foreground/40 font-normal' }}">T·{{ c.supprTickets }}</span>
+                        <span class="{{ c.supprBagages > 0 ? '' : 'text-muted-foreground/40 font-normal' }}">B·{{ c.supprBagages }}</span>
+                        <span class="{{ c.supprCourriers > 0 ? '' : 'text-muted-foreground/40 font-normal' }}">C·{{ c.supprCourriers }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

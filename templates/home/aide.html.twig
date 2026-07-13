@@ -31,6 +31,7 @@
                     {{ h.toc('suivi', 'Suivre les cars') }}
                     {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('systeme', 'Système & maintenance') }}{% endif %}
                     {{ h.toc('compte', 'Mon compte') }}
                 </ul>
             </nav>
@@ -189,7 +190,21 @@
                     {{ h.step(1, '<strong>Utilisateurs & rôles</strong> : créez des comptes et déléguez des droits. Un acteur de gare ne délègue que sur le périmètre de sa gare.') }}
                     {{ h.step(2, '<strong>Gares & lignes</strong> : les lignes (suite ordonnée d\'arrêts) servent de base aux voyages et aux tarifs.') }}
                     {{ h.step(3, '<strong>Flotte & stock</strong> : véhicules, dépannages, pièces, approvisionnements ; chaque mouvement de stock est tracé avec son auteur.') }}
-                    {{ h.step(4, 'Le <strong>journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, pertes, livraisons, changements sur les voyages.') }}
+                    {{ h.step(4, '<strong>Paramètres de l\'entreprise</strong> : réglez la <strong>remise</strong> maximale, la <strong>fidélité</strong> (seuil / récompense), la <strong>réservation</strong> (pénalité de no-show) et la <strong>recette</strong> (inclure ou non les courriers dans le chiffre d\'affaires).') }}
+                    {{ h.step(5, 'Le <strong>journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, pertes, livraisons, remises, changements sur les voyages.') }}
+                    {{ h.step(6, 'La page <strong>Agents</strong> résume les <strong>actions critiques par agent</strong> (taux d\'annulation, annulations/suppressions, montants forcés) pour repérer les anomalies.') }}
+                </ol>
+            {{ h.close() }}
+            {% endif %}
+
+            {# Système — super admin uniquement #}
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            {{ h.open('systeme', 'shield', 'Système & maintenance', 'Réservé au super administrateur') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Système</strong> dans le menu pour activer le <strong>mode maintenance</strong> et saisir un message.') }}
+                    {{ h.step(2, 'Quand la maintenance est <strong>active</strong>, seul le super admin accède à l\'application (interface et API) ; tous les autres voient une page de maintenance. Un bandeau vous le rappelle.') }}
+                    {{ h.step(3, 'La connexion et la déconnexion restent possibles pour tous : un utilisateur bloqué peut se connecter mais tombe directement sur la page de maintenance.') }}
+                    {{ h.step(4, 'Pensez à <strong>désactiver</strong> la maintenance une fois l\'intervention terminée.') }}
                 </ol>
             {{ h.close() }}
             {% endif %}

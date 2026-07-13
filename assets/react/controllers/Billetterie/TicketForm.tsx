@@ -69,7 +69,7 @@ interface Siege {
     numero: number;
     rangee: number;
     colonne: number;
-    cote: "GAUCHE" | "DROITE";
+    cote: "GAUCHE" | "DROITE" | "ARRIERE" | "GRILLE";
     statut: "LIBRE" | "OCCUPE";
     // Occupant bloquant (si OCCUPE) → permet de « libérer » le siège pour le revendre
     occupantTicketId?: number | null;
@@ -141,7 +141,6 @@ interface TicketFormProps {
 const SIEGE_W = 44;
 const SIEGE_H = 44;
 const GAP = 6;
-const AISLE = 28;
 
 // ─── Siège individuel ─────────────────────────────────────────────────────────
 function SiegeCell({
@@ -255,112 +254,38 @@ function PlanCar({
         .map(Number)
         .sort((a, b) => a - b);
 
+    // Rendu UNIFIÉ en grille : chaque siège à sa colonne ABSOLUE. Grilles (cote 'GRILLE') + anciens sièges
+    // GAUCHE/DROITE (colonne par côté → colonne absolue calculée) rendus par le même chemin.
+    const absCol = (s: Siege) => (s.cote === "DROITE" ? (siegesGauche || 0) + 1 + s.colonne : s.colonne);
+    const maxCol = Math.max(1, ...sieges.map(absCol));
+
     return (
         <div className="overflow-x-auto pb-2">
-            {/* En-tête colonnes */}
-            <div
-                className="flex items-center mb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider"
-                style={{ paddingLeft: 32, gap: GAP }}
-            >
-                {Array.from({ length: siegesGauche }, (_, i) => (
-                    <div
-                        key={i}
-                        className="flex items-center justify-center"
-                        style={{ width: SIEGE_W }}
-                    >
-                        {String.fromCharCode(65 + i)}
-                    </div>
-                ))}
-                <div style={{ width: AISLE + GAP * 2 }} />
-                {Array.from({ length: siegesDroite }, (_, i) => (
-                    <div
-                        key={i}
-                        className="flex items-center justify-center"
-                        style={{ width: SIEGE_W }}
-                    >
-                        {String.fromCharCode(65 + siegesGauche + i)}
-                    </div>
-                ))}
-            </div>
-
-            {/* Rangées */}
+            {/* Rangées — grille unifiée (chaque siège à sa colonne absolue, trous = vides) */}
             <div className="flex flex-col" style={{ gap: GAP }}>
                 {rangees.map((rangee) => {
-                    const siègesDeLaRangee = byRangee[rangee].sort((a, b) => {
-                        if (a.cote !== b.cote) return a.cote === "GAUCHE" ? -1 : 1;
-                        return a.colonne - b.colonne;
-                    });
-
-                    const gauche = siègesDeLaRangee.filter(
-                        (s) => s.cote === "GAUCHE"
-                    );
-                    const droite = siègesDeLaRangee.filter(
-                        (s) => s.cote === "DROITE"
-                    );
-
+                    const seats = byRangee[rangee];
                     return (
-                        <div
-                            key={rangee}
-                            className="flex items-center"
-                            style={{ gap: GAP }}
-                        >
-                            {/* Numéro rangée */}
+                        <div key={rangee} className="flex items-center" style={{ gap: GAP }}>
                             <div className="w-7 text-right text-[10px] font-semibold text-gray-400">
                                 {rangee}
                             </div>
-
-                            {/* Gauche */}
                             <div className="flex" style={{ gap: GAP }}>
-                                {gauche.map((s) => (
-                                    <SiegeCell
-                                        key={s.id}
-                                        siege={s}
-                                        selected={selectedIds.has(s.id)}
-                                        reserve={reservedIds.has(s.id)}
-                                        onClick={() => onToggle(s)}
-                                        onLiberer={onLiberer}
-                                    />
-                                ))}
-                                {Array.from(
-                                    { length: siegesGauche - gauche.length },
-                                    (_, i) => (
-                                        <div
-                                            key={`eg-${i}`}
-                                            style={{ width: SIEGE_W, height: SIEGE_H }}
+                                {Array.from({ length: maxCol }, (_, i) => {
+                                    const s = seats.find((x) => absCol(x) === i + 1);
+                                    return s ? (
+                                        <SiegeCell
+                                            key={s.id}
+                                            siege={s}
+                                            selected={selectedIds.has(s.id)}
+                                            reserve={reservedIds.has(s.id)}
+                                            onClick={() => onToggle(s)}
+                                            onLiberer={onLiberer}
                                         />
-                                    )
-                                )}
-                            </div>
-
-                            {/* Allée */}
-                            <div
-                                className="flex items-center justify-center text-[9px] text-gray-300 font-medium"
-                                style={{ width: AISLE, height: SIEGE_H }}
-                            >
-                                {rangee === 1 ? "≡" : ""}
-                            </div>
-
-                            {/* Droite */}
-                            <div className="flex" style={{ gap: GAP }}>
-                                {droite.map((s) => (
-                                    <SiegeCell
-                                        key={s.id}
-                                        siege={s}
-                                        selected={selectedIds.has(s.id)}
-                                        reserve={reservedIds.has(s.id)}
-                                        onClick={() => onToggle(s)}
-                                        onLiberer={onLiberer}
-                                    />
-                                ))}
-                                {Array.from(
-                                    { length: siegesDroite - droite.length },
-                                    (_, i) => (
-                                        <div
-                                            key={`ed-${i}`}
-                                            style={{ width: SIEGE_W, height: SIEGE_H }}
-                                        />
-                                    )
-                                )}
+                                    ) : (
+                                        <div key={`e-${rangee}-${i}`} style={{ width: SIEGE_W, height: SIEGE_H }} />
+                                    );
+                                })}
                             </div>
                         </div>
                     );
@@ -1251,8 +1176,9 @@ export default function TicketForm({
                                                         <span className="text-sm font-medium text-gray-700">
                                                             Siège {siege.numero}
                                                             <span className="ml-1.5 text-xs font-normal text-gray-400">
-                                                                Rangée {siege.rangee} ·{" "}
-                                                                {siege.cote === "GAUCHE" ? "Gauche" : "Droite"}
+                                                                Rangée {siege.rangee}
+                                                                {siege.cote === "GAUCHE" && " · Gauche"}
+                                                                {siege.cote === "DROITE" && " · Droite"}
                                                             </span>
                                                         </span>
                                                     </div>

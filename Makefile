@@ -4,6 +4,7 @@
 #	ssh .. 'cd sites/sf.koalapp.com && git pull origin main && make install'
 
 install: # vendor/autoload.php .. '-n' pour qu'il fait de manière silencieuse
+	git pull origin main
 	composer install --no-dev --optimize-autoloader
 	php bin/console cache:clear --env=prod
 	php bin/console cache:warmup --env=prod

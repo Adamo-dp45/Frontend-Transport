@@ -237,17 +237,6 @@
                                     <span class="sub-dot"></span>Bénéficiaires
                                 </a>
                                 {% endif %}
-                                {% if is_granted('ROLE_ADMIN') %}
-                                <a href="{{ path('admin.fidelite.config') }}" class="sub-link {{ app.current_route starts with 'admin.fidelite.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Programme fidélité
-                                </a>
-                                <a href="{{ path('reser.config') }}" class="sub-link {{ app.current_route == 'reser.config' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Paramètres réservation
-                                </a>
-                                <a href="{{ path('admin.remise.config') }}" class="sub-link {{ app.current_route starts with 'admin.remise.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Paramètres remise
-                                </a>
-                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -272,6 +261,32 @@
                                     <span class="sub-dot"></span>Courrier
                                 </a>
                                 {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if is_granted('ROLE_ADMIN') %}
+                        <button class="nav-link" data-submenu="sub-parametre" title="Paramètre">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#parametre"></use>
+                            </svg>
+                            <span class="sb-text">Paramètre</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-parametre">
+                            <div class="submenu-inner">
+                                <a href="{{ path('admin.fidelite.config') }}" class="sub-link {{ app.current_route starts with 'admin.fidelite.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Programme fidélité
+                                </a>
+                                <a href="{{ path('reser.config') }}" class="sub-link {{ app.current_route == 'reser.config' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Paramètres réservation
+                                </a>
+                                <a href="{{ path('admin.remise.config') }}" class="sub-link {{ app.current_route starts with 'admin.remise.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Paramètres remise
+                                </a>
+                                <a href="{{ path('admin.recette.config') }}" class="sub-link {{ app.current_route starts with 'admin.recette.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Paramètres recette
+                                </a>
                             </div>
                         </div>
                         {% endif %}
@@ -344,6 +359,9 @@
                                 {% if is_granted('ROLE_SUPER_ADMIN') %}
                                 <a href="{{ path('admin.entreprise.index') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Entreprises
+                                </a>
+                                <a href="{{ path('admin.systeme.index') }}" class="sub-link {{ app.current_route starts with 'admin.systeme.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Système
                                 </a>
                                 {% elseif is_granted('ROLE_ADMIN') %}
                                 <a href="{{ path('admin.entreprise.me') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
@@ -529,6 +547,13 @@
 
                 <div class="content">
                     <div class="content-inner">
+                        {% if is_granted('ROLE_SUPER_ADMIN') and maintenance_etat().actif %}
+                        <div class="mb-4 flex items-center gap-2 rounded-lg border border-orange-300 bg-orange-50 px-4 py-2.5 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-300">
+                            <span>🛠️</span>
+                            <span><strong>Mode maintenance actif</strong> — seul le super admin accède à l'application.</span>
+                            <a href="{{ path('admin.systeme.index') }}" class="ml-auto shrink-0 font-medium underline hover:no-underline">Gérer</a>
+                        </div>
+                        {% endif %}
                         {% include 'partials/flash.html.twig' %}
                         {% block body %}{% endblock %}
                     </div>

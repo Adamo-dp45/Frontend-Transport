@@ -12,6 +12,77 @@
             <div>{{ form_row(form.siegesGauche) }}</div>
             <div>{{ form_row(form.siegesDroite) }}</div>
         </div>
+
+        {# Générateur de plan (aide de saisie — NON enregistré) : remplit le plan ci-dessous. #}
+        <div class="mb-3 rounded-lg border border-dashed border-border p-4">
+            <p class="text-sm font-medium">Générer un plan standard</p>
+            <p class="text-xs text-muted-foreground mb-3">À partir du total et des colonnes gauche/droite ci-dessus. Vous pourrez ensuite retoucher le plan à la main.</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <label class="text-xs text-muted-foreground">Sens de numérotation
+                    <select data-gen-sens class="mt-1 block rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground">
+                        <option value="STANDARD">Gauche d'abord (1 2 | 3 4)</option>
+                        <option value="DROITE_DABORD">Droite d'abord (… | 2 1)</option>
+                    </select>
+                </label>
+                <label class="text-xs text-muted-foreground">Banquette arrière (places)
+                    <input data-gen-banquette type="number" min="0" value="0" class="mt-1 block w-24 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground">
+                </label>
+                <button type="button" data-gen-plan class="btn btn-secondary">Générer</button>
+            </div>
+        </div>
+
+        <div class="mb-3">{{ form_row(form.plansieges) }}</div>
+
+        <script>
+        (function () {
+            function q(sfx) { return document.querySelector('[id$="' + sfx + '"]'); }
+            function genererGrille(total, g, d, sens, banquette) {
+                total = Math.max(0, total | 0); g = Math.max(0, g | 0); d = Math.max(0, d | 0);
+                banquette = Math.max(0, Math.min(banquette | 0, total));
+                if (total <= 0) return '';
+                var nbGrille = total - banquette, rows = [], num = 1;
+                if (g + d > 0) {
+                    while (num <= nbGrille) {
+                        var gauche = [], droite = [];
+                        if (sens === 'DROITE_DABORD') {
+                            for (var i = 0; i < d && num <= nbGrille; i++) droite.unshift(num++);
+                            for (var j = 0; j < g && num <= nbGrille; j++) gauche.push(num++);
+                        } else {
+                            for (var k = 0; k < g && num <= nbGrille; k++) gauche.push(num++);
+                            for (var l = 0; l < d && num <= nbGrille; l++) droite.push(num++);
+                        }
+                        var row = gauche.slice();
+                        if (g > 0 && d > 0) row.push('.');
+                        row = row.concat(droite);
+                        rows.push(row.join(' '));
+                    }
+                }
+                if (banquette > 0) {
+                    var bench = [];
+                    for (var m = 0; m < banquette && num <= total; m++) bench.push(num++);
+                    rows.push(bench.join(' '));
+                }
+                return rows.join('\n');
+            }
+            function init() {
+                var btn = document.querySelector('[data-gen-plan]');
+                if (!btn || btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', function () {
+                    var total = +(q('_nbrsiege') || {}).value || 0;
+                    var g = +(q('_siegesGauche') || {}).value || 0;
+                    var d = +(q('_siegesDroite') || {}).value || 0;
+                    var sens = (document.querySelector('[data-gen-sens]') || {}).value || 'STANDARD';
+                    var banquette = +(document.querySelector('[data-gen-banquette]') || {}).value || 0;
+                    var plan = q('_plansieges');
+                    if (plan) plan.value = genererGrille(total, g, d, sens, banquette);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', init);
+            document.addEventListener('turbo:load', init);
+            init();
+        })();
+        </script>
         <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
             <a href="{{ path('car.index') }}" class="btn btn-secondary">Annuler</a>
             <button class="btn btn-primary">
