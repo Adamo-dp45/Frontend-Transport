@@ -4,7 +4,7 @@
 {% block title %}Lignes{% endblock %}
 
 {% block body %}
-{{ s.pageHeader('Performance par ligne', 'Exploitation', 'owner.trajets', debut, fin, 'stats.export.trajet') }}
+{{ s.pageHeader('Performance par ligne', 'Exploitation', 'owner.trajets', debut, fin, 'stats.export.trajet', 'owner.recettes', 'Espace recettes') }}
 
 {% set perfs = lignes.performances ?? [] %}
 {% set plusActive = perfs|length > 0 ? (perfs[0].libelle ?? perfs[0].codeligne) : '—' %}

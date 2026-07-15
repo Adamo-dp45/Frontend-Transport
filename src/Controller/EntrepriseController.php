@@ -102,17 +102,16 @@ final class EntrepriseController extends AbstractController
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
-            // Gestion de l'image — on garde l'ancienne si pas de nouvelle
-            $mediaObjectIri = $entreprise['image']['@id'] ?? null;
+            // Image : 'EntrepriseInput::$image' attend l'ID (int) du média, pas son IRI.
+            // On n'envoie donc QUE la nouvelle image ; à null le backend conserve
+            // l'ancienne (cf. MeEntrepriseProcessor : 'if($data->image)').
+            $mediaObjectId = null;
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
             if($file) {
                 try {
                     $mediaObject = $this->api->postMediaObject($file);
-                    // $mediaObjectIri = $mediaObject['@id'] ?? null;
-                    $mediaObjectIri = $mediaObject['id']; /*
-                        - Vu que dans le backend on a utilisé un 'input'
-                    */
+                    $mediaObjectId = $mediaObject['id'];
                 } catch(ApiException $e) {
                     $response = $this->apiExceptionHandler->handle($e, $form, 'admin.entreprise.edit');
                     if($response) {
@@ -135,7 +134,7 @@ final class EntrepriseController extends AbstractController
                 'type' => $form->get('type')->getData(),
                 'centreimpot' => $form->get('centreimpot')->getData(),
                 'tauxtva' => $form->get('tauxtva')->getData(),
-                'image' => $mediaObjectIri
+                'image' => $mediaObjectId
             ];
 
             try {

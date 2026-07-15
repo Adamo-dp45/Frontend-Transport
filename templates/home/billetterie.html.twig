@@ -4,7 +4,7 @@
 {% block title %}Billetterie{% endblock %}
 
 {% block body %}
-{{ s.pageHeader('Billetterie', 'Statistiques', 'owner.billetterie', debut, fin, 'stats.export.billetterie') }}
+{{ s.pageHeader('Billetterie', 'Statistiques', 'owner.billetterie', debut, fin, 'stats.export.billetterie', 'owner.recettes', 'Espace recettes') }}
 
 {% set rG = billetterie.recetteGuichet ?? 0 %}
 {% set rC = billetterie.recetteCommercial ?? 0 %}

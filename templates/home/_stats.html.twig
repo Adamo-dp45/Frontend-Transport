@@ -3,13 +3,19 @@
     Usage : {% import 'home/_stats.html.twig' as s %}
 #}
 
-{# ── En-tête de page avec filtre période (+ export optionnel) ──────── #}
-{% macro pageHeader(title, eyebrow, route, debut, fin, exportRoute) %}
+{#
+    En-tête de page avec filtre période (+ export optionnel).
+    'backRoute'/'backLabel' : hub de rattachement de la page (défaut = espace
+    propriétaire). Les pages d'un axe de recette remontent vers 'owner.recettes'.
+#}
+{% macro pageHeader(title, eyebrow, route, debut, fin, exportRoute, backRoute, backLabel) %}
+{% set backRoute = backRoute|default('owner') %}
+{% set backLabel = backLabel|default('Espace propriétaire') %}
 <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
     <div>
-        <a href="{{ path('owner') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+        <a href="{{ path(backRoute) }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            Espace propriétaire
+            {{ backLabel }}
         </a>
         {% if eyebrow %}<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">{{ eyebrow }}</p>{% endif %}
         <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">{{ title }}</h1>
