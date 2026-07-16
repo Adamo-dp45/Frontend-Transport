@@ -1,12 +1,14 @@
 /* ═══ TOPBAR (Dashboard 2) ═══ */
 .topbar{
   height:var(--header-h);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--topbar-border); /* --border */
   display:flex;align-items:center;
   padding:0 1rem;gap:.5rem;
-  flex-shrink:0;background:var(--sidebar);
+  flex-shrink:0;background:var(--topbar-bg);color:var(--topbar-text);
+  /* flex-shrink:0;background:var(--sidebar); */
   position:relative;z-index:100;
 }
+
 .topbar-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0;}
 
 .topbar-search{
@@ -49,26 +51,27 @@ kbd{
 }
 
 .topbar-right{display:flex;align-items:center;gap:.25rem;flex-shrink:0;}
-.topbar-divider{width:1px;height:1.25rem;background:var(--border);margin:0 .25rem;}
+.topbar-divider{width:1px;height:1.25rem;background:var(--topbar-border);margin:0 .25rem;} /* --border */
 
 .icon-btn{
   display:flex;align-items:center;justify-content:center;
   width:2rem;height:2rem;
   border-radius:var(--radius);
   border:none;background:transparent;
-  color:var(--muted-foreground);
+  color:var(--topbar-text-muted); /* --muted-foreground */
   transition:background .12s,color .12s;cursor:pointer;
   position:relative;flex-shrink:0;
 }
+
 .icon-btn:hover{background:var(--accent);color:var(--foreground);}
 
 .theme-btn{
   display:flex;align-items:center;gap:.375rem;
   height:2rem;padding:0 .625rem;
   border-radius:var(--radius);
-  border:1px solid var(--border);background:transparent;
+  border:1px solid var(--topbar-border);background:transparent; /* --border */
   font-size:.8125rem;font-weight:500;font-family:'Geist',sans-serif;
-  color:var(--muted-foreground);
+  color:var(--topbar-text-muted); /* --muted-foreground */
   transition:background .12s,color .12s;cursor:pointer;
 }
 .theme-btn:hover{background:var(--accent);color:var(--foreground);}

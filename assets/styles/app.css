@@ -59,6 +59,18 @@
     --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
     --tracking-normal: 0em;
     --spacing: 0.25rem;
+
+
+    --sidebar-text: oklch(0.98 0 0);
+    --sidebar-text-muted: color-mix(in srgb, var(--sidebar-text) 62%, transparent);
+    --sidebar-chip-bg: color-mix(in srgb, var(--sidebar-text) 16%, transparent);
+    --sidebar-border: color-mix(in srgb, var(--sidebar-text) 20%, transparent);
+    --sidebar-bg: linear-gradient(180deg, color-mix(in oklch, var(--primary), black 25%) 0%, color-mix(in oklch, var(--primary), black 60%) 100%);
+
+    --topbar-bg: oklch(0.45 0 0);
+    --topbar-text: oklch(0.97 0 0);
+    --topbar-text-muted: color-mix(in srgb, var(--topbar-text) 65%, transparent);
+    --topbar-border: color-mix(in srgb, var(--topbar-text) 15%, transparent);
 }
 
 .dark {
@@ -112,6 +124,10 @@
     --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
     --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
     --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
+
+
+    --sidebar-bg: linear-gradient(180deg, color-mix(in oklch, var(--primary), black 45%) 0%, color-mix(in oklch, var(--primary), black 75%) 100%);
+    --topbar-bg: oklch(0.28 0 0);
 }
 
 @theme inline {
