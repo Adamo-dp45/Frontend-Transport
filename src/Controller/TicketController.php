@@ -39,6 +39,9 @@ final class TicketController extends AbstractController
     private ?array $entrepriseCache = null;
     private bool $entrepriseFetched = false;
 
+    /** @var array<int, array> détail voyage (pour le car) mémorisé pour l'impression en lot */
+    private array $voyageDetailCache = [];
+
     /**
      * Ajoute au tableau d'un ticket un QR code (data-URI PNG). Consommé par le
      * template (clé `qrcode`).
@@ -107,6 +110,39 @@ final class TicketController extends AbstractController
         }
 
         return $this->entrepriseCache = $entreprise;
+    }
+
+    /**
+     * Enrichit un ticket pour l'impression avec le `vehicule` (matricule du car),
+     * absent du read:Ticket : un seul appel par voyage (mémorisé pour le lot).
+     * Dégrade proprement (null) si indisponible — l'impression ne casse jamais.
+     */
+    private function enrichForPrint(?array $ticket): ?array
+    {
+        if (!$ticket) {
+            return $ticket;
+        }
+
+        $ticket['vehicule'] = null;
+
+        $voyageId = isset($ticket['voyage']['id']) ? (int) $ticket['voyage']['id'] : null;
+        if (!$voyageId) {
+            return $ticket;
+        }
+
+        $voyage = $this->voyageDetailCache[$voyageId] ??= $this->fetchVoyageDetail($voyageId);
+        $ticket['vehicule'] = $voyage['car']['matricule'] ?? null;
+
+        return $ticket;
+    }
+
+    private function fetchVoyageDetail(int $voyageId): array
+    {
+        try {
+            return $this->api->item('/api/voyages/' . $voyageId) ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -600,7 +636,7 @@ final class TicketController extends AbstractController
         return $this->pdfService->generateThermalAutofit(
             'mails/ticket/thermalpdf.html.twig',
             [
-                'ticket' => $this->withQrcode($ticket),
+                'ticket' => $this->withQrcode($this->enrichForPrint($ticket)),
                 'entreprise' => $this->getEntreprise(),
             ],
             'ticket-' . ($ticket['codeticket'] ?? $id) . '.pdf',
@@ -625,7 +661,7 @@ final class TicketController extends AbstractController
         $tickets = [];
         foreach ($ids as $id) {
             try {
-                $tickets[] = $this->withQrcode($this->api->item('/api/tickets/' . (int)$id));
+                $tickets[] = $this->withQrcode($this->enrichForPrint($this->api->item('/api/tickets/' . (int)$id)));
             } catch (ApiException) {
                 // On ignore les tickets inaccessibles
             }
