@@ -55,14 +55,30 @@
                 Feuille de route
             </a>
             <a href="{{ path('bordereau.chauffeur', {voyageId: voyage.id}) }}" target="_blank" class="btn btn-secondary">Bordereau chauffeur</a>
-            {# Réception : ni la PROVENANCE effective, ni le terminus, ni une gare en amont de la provenance. #}
+            {# État du passage du car À MA GARE : arrivée / départ déjà horodatés ? (pilote la disparition des boutons) #}
+            {% set monPassage = app.user.gare ? (voyage.passages ?? [])|filter(p => (p.gare.id ?? null) == app.user.gare.id)|first : null %}
+            {% set arriveMarque = monPassage and monPassage.arriveeReelle %}
+            {% set departMarque = monPassage and monPassage.departReelle %}
+            {# Réception : gare intermédiaire, car PAS encore réceptionné ici (le bouton disparaît une fois réceptionné). #}
             {% if app.user.gare and voyage.datearriveereelle is null
                   and not gareEnAmont
                   and origineEffId != app.user.gare.id
-                  and voyage.ligne.gareterminus.id != app.user.gare.id %}
+                  and voyage.ligne.gareterminus.id != app.user.gare.id
+                  and not arriveMarque %}
             <form method="POST" action="{{ path('voyage.receptionner', { id: voyage.id }) }}" onsubmit="return confirm('Confirmer la réception de ce voyage à votre gare ({{ app.user.gare.libelle }}) ? Les courriers et bagages qui y descendent seront mis à jour.')">
                 <input type="hidden" name="_token" value="{{ csrf_token('receptionner_voyage') }}">
                 <button type="submit" class="btn btn-primary">Réceptionner à ma gare</button>
+            </form>
+            {% endif %}
+            {# Le car REPART de ma gare : arrivée marquée, pas encore reparti (le bouton disparaît une fois le départ enregistré). #}
+            {% if app.user.gare and voyage.datedepartreelle and voyage.datearriveereelle is null
+                  and voyage.garecourante and voyage.garecourante.id == app.user.gare.id
+                  and origineEffId != app.user.gare.id
+                  and voyage.ligne.gareterminus.id != app.user.gare.id
+                  and arriveMarque and not departMarque %}
+            <form method="POST" action="{{ path('voyage.repartir', { id: voyage.id }) }}" onsubmit="return confirm('Confirmer : le car repart de votre gare ({{ app.user.gare.libelle }}) ?\n\nCela enregistre son heure de départ.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('repartir_voyage') }}">
+                <button type="submit" class="btn btn-primary">Le car repart de ma gare</button>
             </form>
             {% endif %}
             {% if voyage.car and voyage.datedepartreelle is null and voyage.datearriveereelle is null and is_granted('VOYAGE_MODIFIER') and peutPlanifierVoyage %}
@@ -93,9 +109,17 @@
         <div class="card p-4">
             <p class="text-xs text-muted-foreground">Remplissage</p>
             <p class="text-2xl font-semibold tabular-nums mt-0.5">{{ taux_remplissage }} %</p>
+            {# Le pic d'occupation peut DÉPASSER la capacité : le surbooking amont est assumé (l'amont
+               sert avant l'aval). On borne la barre à 100 %, sinon elle déborde, et on nomme le
+               dépassement — c'est une information d'exploitation : des passagers ne monteront pas. #}
             <div class="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div class="h-1.5 rounded-full {{ taux_remplissage >= 90 ? 'bg-red-500' : (taux_remplissage >= 60 ? 'bg-amber-400' : 'bg-emerald-500') }}" style="width: {{ taux_remplissage }}%"></div>
+                <div class="h-1.5 rounded-full {{ taux_remplissage >= 90 ? 'bg-red-500' : (taux_remplissage >= 60 ? 'bg-amber-400' : 'bg-emerald-500') }}" style="width: {{ min(taux_remplissage, 100) }}%"></div>
             </div>
+            {% if voyage.placestotal and places_occupees > voyage.placestotal %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-1.5">
+                    Surbooking : {{ places_occupees - voyage.placestotal }} place(s) au-delà de la capacité
+                </p>
+            {% endif %}
         </div>
         <div class="card p-4">
             <p class="text-xs text-muted-foreground">Places restantes</p>

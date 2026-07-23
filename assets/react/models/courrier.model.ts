@@ -25,7 +25,10 @@ export interface Courrier {
     montant: number
     fraissuivi: number | null
     statut: string
-    detailcourriers: Detailcourrier[]
+    // Liste des colis : uniquement sur la FICHE (/api/courriers/{id}, groupe 'read:Courrier:item').
+    // La LISTE reçoit seulement le compteur ci-dessous (COUNT SQL, sans hydratation).
+    detailcourriers?: Detailcourrier[]
+    detailcourriersCount: number
     // Paiement courrier désactivé (champs commentés côté entité Courrier) :
     // modepaiement: string
     // etatpaiement: string

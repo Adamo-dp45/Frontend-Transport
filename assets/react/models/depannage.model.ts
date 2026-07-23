@@ -14,8 +14,13 @@ export interface Depannage {
     datedepannage: string
     lieudepannage: string
     description: string
-    detaildepannages: Detaildepannage[]
-    detailpersonnels: Detailpersonnel[]
+    // Listes complètes : uniquement sur la FICHE (groupe 'read:Depannage:item').
+    detaildepannages?: Detaildepannage[]
+    detailpersonnels?: Detailpersonnel[]
+    // Agrégats fournis par l'API pour la LISTE (COUNT + SUM côté base) — le client n'additionne plus rien.
+    detailpersonnelsCount: number
+    detaildepannagesCount: number
+    piecesQuantiteTotale: number
     car: Car
     typepanne: Libelle
     couttotal: number

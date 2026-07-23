@@ -85,7 +85,7 @@ final class EntrepriseController extends AbstractController
         ]);
     } // Combiner le 'me_entreprise' et 'show'
 
-    #[Route('/modifier', name: 'edit', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[Route('/modifier', name: 'edit', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
     public function edit(Request $request): Response
     {

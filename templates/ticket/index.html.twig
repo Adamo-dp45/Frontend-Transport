@@ -29,7 +29,8 @@
         canDelete: is_granted('TICKET_SUPPRIMER'),
         csrfDelete: csrf_token('delete_ticket'),
         userGareId: app.user.gare ? app.user.gare.id : null,
-        isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN')
+        isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN'),
+        currentUserId: app.user.id
     }) }}
 >
     <div class="flex items-center justify-center gap-6">

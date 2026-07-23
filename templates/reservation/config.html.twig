@@ -11,12 +11,15 @@
         <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Paramètres de réservation</h1>
     </div>
     <p class="text-sm text-muted-foreground mb-5 ml-11">
-        Une place réservée est tenue jusqu'à <strong>{{ parametre.delaiExpirationMinutes }} min</strong> avant le départ, puis libérée si non confirmée.
+        Une réservation <strong>payée</strong> tient sa place jusqu'à <strong>{{ parametre.delaiPresentationMinutes }} min</strong> avant le départ.
+        Une réservation <strong>non payée</strong> ne tient aucune place : le client dispose de
+        <strong>{{ parametre.delaiPaiementMinutes }} min</strong> pour régler, sans quoi elle est perdue.
     </p>
 
     <div class="rounded-xl border bg-card shadow-sm p-6">
         {{ form_start(form) }}
-            <div class="mb-5">{{ form_row(form.delaiExpirationMinutes) }}</div>
+            <div class="mb-5">{{ form_row(form.delaiPresentationMinutes) }}</div>
+            <div class="mb-5">{{ form_row(form.delaiPaiementMinutes) }}</div>
 
             <div class="pt-4 border-t border-border">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">Régularisation (no-show)</h2>

@@ -13,7 +13,7 @@
             background: #fff;
             width: 190mm;
             margin: 0 auto;
-            padding: 10mm 0;
+            padding: 10mm 0 12mm; /* bas : réserve la place du numéro de page (élément fixed) */
         }
 
         /* ── HEADER ── */
@@ -195,9 +195,36 @@
         .footer table { width: 100%; border-collapse: collapse; }
         .footer td { border: none; padding: 0; vertical-align: bottom; }
         .footer .td-right { text-align: right; }
+
+        /* ── IMPRESSION / PAGINATION (Dompdf) ──
+           Ce bordereau liste TOUT ce que le chauffeur transporte : il passe volontiers sur plusieurs
+           pages, donc il doit rester lisible page après page.
+           - thead répété en haut de chaque page ;
+           - une ligne de tableau ne se coupe jamais en deux ;
+           - un titre de section ne reste jamais orphelin en bas de page ;
+           - blocs d'en-tête / résumé / signatures insécables ;
+           - numéro de page : un élément 'fixed' est rejoué par Dompdf sur chaque page. */
+        thead { display: table-header-group; }
+        .data-table tr { page-break-inside: avoid; }
+        .section-title { page-break-after: avoid; }
+        .header, .recette-banner, .summary-wrap, .sig-wrap { page-break-inside: avoid; }
+
+        .page-num {
+            position: fixed;
+            bottom: 3mm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            color: #aaa;
+        }
+        .page-num:before { content: "Page " counter(page); }
     </style>
 </head>
 <body>
+
+    {# Numéro de page (rejoué sur chaque page par Dompdf) #}
+    <div class="page-num"></div>
 
     {# ── CALCULS ── #}
     {% set stTickets = 0 %}

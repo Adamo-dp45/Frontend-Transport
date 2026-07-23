@@ -73,7 +73,8 @@ final class ReservationController extends AbstractController
         if($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->api->patch('/api/me/parametre-reservation', [
-                    'delaiExpirationMinutes' => (int) $form->get('delaiExpirationMinutes')->getData(),
+                    'delaiPresentationMinutes' => (int) $form->get('delaiPresentationMinutes')->getData(),
+                    'delaiPaiementMinutes' => (int) $form->get('delaiPaiementMinutes')->getData(),
                     'penaliteType' => $form->get('penaliteType')->getData(),
                     'penaliteValeur' => (int) $form->get('penaliteValeur')->getData(),
                     'fenetreRegularisationJours' => (int) $form->get('fenetreRegularisationJours')->getData(),
@@ -99,7 +100,17 @@ final class ReservationController extends AbstractController
     public function new(Request $request): Response
     {
         try {
-            $voyages = $this->api->collection('/api/voyages?exists[datearriveereelle]=false');
+            /*
+                La RÉSERVABILITÉ est décidée par le back-end (/voyages/reservables) : elle dépend de la
+                gare de l'agent, de l'avancement réel du car et des durées de trajet par arrêt.
+
+                Elle était reconstituée ici avec des filtres ('datedepartprevue[after]',
+                'exists[datedepartreelle]'). Cette copie de la règle est devenue fausse dès que les
+                deux se sont affinées : un car parti d'Abidjan reste réservable au départ de Bouaké, où
+                il n'est pas encore passé, et l'échéance de Bouaké est bien plus tardive que celle de
+                l'origine. Le formulaire masquait donc des départs que l'API accepte.
+            */
+            $voyages = $this->api->collection('/api/voyages/reservables');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'reservation.index');
             if($response) {
@@ -111,7 +122,6 @@ final class ReservationController extends AbstractController
 
         return $this->render('reservation/new.html.twig', [
             'voyages' => $voyages,
-            'preselect_voyage' => $request->query->getInt('voyage'),
             'userGareId' => $userGare['id'] ?? null,
             'userGareLibelle' => $userGare['libelle'] ?? null,
         ]);
@@ -159,31 +169,27 @@ final class ReservationController extends AbstractController
             }
         }
 
-        // Réservation no-show à régulariser : proposer les départs FUTURS de la même ligne (report)
+        /*
+            Départs de report : la liste vient du BACK-END, qui soumet chaque départ au calcul de
+            régularisation lui-même — elle ne peut donc pas proposer ce que le report refusera.
+
+            Elle était reconstituée ici, et divergeait dans les deux sens : filtrée sur la ligne
+            d'origine (or n'importe quelle ligne desservant le tronçon convient) et sur l'heure de
+            départ du voyage (or c'est le passage à la gare du client qui compte, bien plus tardif
+            pour une montée en aval).
+        */
         $reportVoyages = [];
-        if (($reservation['statut'] ?? null) === 'A_REGULARISER' && !empty($reservation['voyage']['id'])) {
-            $origVoyageId = $reservation['voyage']['id'];
+        if (($reservation['statut'] ?? null) === 'A_REGULARISER') {
             try {
-                // voyage.ligne n'est pas exposé dans read:Reservation → détail du voyage pour la ligne
-                $origVoyage = $this->api->item('/api/voyages/' . $origVoyageId);
-                $ligneId = $origVoyage['ligne']['id'] ?? null;
-                $now = new \DateTimeImmutable();
-                if ($ligneId) {
-                    foreach ($this->api->collection('/api/voyages', [
-                        'ligne.id' => $ligneId,
-                        'exists[datearriveereelle]' => 'false',
-                    ]) as $v) {
-                        $dep = !empty($v['datedepartprevue']) ? new \DateTimeImmutable($v['datedepartprevue']) : null;
-                        if ($v['id'] === $origVoyageId || $dep === null || $dep <= $now) {
-                            continue;
-                        }
-                        $reportVoyages[] = [
-                            'id' => $v['id'],
-                            'codevoyage' => $v['codevoyage'] ?? ('#' . $v['id']),
-                            'datedepartprevue' => $dep->format('d/m/Y H:i'),
-                            'car' => $v['car']['matricule'] ?? null,
-                        ];
-                    }
+                foreach ($this->api->collection('/api/reservations/' . $id . '/reports') as $v) {
+                    $heure = $v['heurepassage'] ?? $v['datedepartprevue'] ?? null;
+                    $reportVoyages[] = [
+                        'id' => $v['voyageId'],
+                        'codevoyage' => $v['codevoyage'] ?? ('#' . $v['voyageId']),
+                        'datedepartprevue' => $heure ? (new \DateTimeImmutable($heure))->format('d/m/Y H:i') : '—',
+                        'car' => $v['car'] ?? null,
+                        'enRoute' => $v['enRoute'] ?? false,
+                    ];
                 }
             } catch (ApiException) {
                 // liste des reports optionnelle : on n'échoue pas la page si l'appel plante

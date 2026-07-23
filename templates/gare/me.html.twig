@@ -286,7 +286,8 @@
             {% if incTot > 0 %}
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {{ t.incident('Billets annulés', inc.ticketsAnnules ?? 0, 'text-red-600 dark:text-red-400') }}
-                {{ t.incident('Billets reportés', inc.ticketsReportes ?? 0, 'text-amber-600 dark:text-amber-400') }}
+                {# « dont N éviction » = relogements d'évincés (imputables à la compagnie), pas des désistements client #}
+                {{ t.incident((inc.ticketsReportesEviction ?? 0) > 0 ? 'Billets reportés · dont ' ~ inc.ticketsReportesEviction ~ ' éviction' : 'Billets reportés', inc.ticketsReportes ?? 0, 'text-amber-600 dark:text-amber-400') }}
                 {{ t.incident('Bagages annulés', inc.bagagesAnnules ?? 0, 'text-red-600 dark:text-red-400') }}
                 {{ t.incident('Bagages perdus', inc.bagagesPerdus ?? 0, 'text-rose-600 dark:text-rose-400') }}
                 {{ t.incident('Courriers annulés', inc.courriersAnnules ?? 0, 'text-red-600 dark:text-red-400') }}
@@ -311,7 +312,7 @@
             {{ t.infoCard('calendar', 'Date de création', gare.datecreation|date('d/m/Y')) }}
             {% endif %}
         </div>
-        {% if gare.description %}
+        {% if gare.description is defined and gare.description %}
         <div class="card mt-3 flex gap-3 p-4">
             <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>

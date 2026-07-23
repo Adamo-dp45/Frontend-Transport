@@ -61,10 +61,12 @@ final class HomeController extends AbstractController
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
         $financiere = null;
+        $ponctualite = null;
         try {
             $exploitation = $this->api->item('/api/stats/exploitation?' . $periode);
             if($estAdmin) {
                 $financiere = $this->api->item('/api/stats/financiere?' . $periode);
+                $ponctualite = $this->api->item('/api/stats/ponctualite?' . $periode);
             }
             $stock = $this->api->item('/api/stats/stock?' . $periode);
             $flotte = $this->api->item('/api/stats/flotte?' . $periode);
@@ -98,6 +100,13 @@ final class HomeController extends AbstractController
                 'recettesParJour' => $financiere['recettesParJour'] ?? [],
                 'coutsParJour' => $financiere['coutsParJour'] ?? []
             ];
+            $ponctualite = [
+                'global' => $ponctualite['global'] ?? [],
+                'parGare' => $ponctualite['parGare'] ?? [],
+                'parLigne' => $ponctualite['parLigne'] ?? [],
+                'evolution' => $ponctualite['evolution'] ?? [],
+                'seuilALheureMinutes' => $ponctualite['seuilALheureMinutes'] ?? 10,
+            ];
         }
 
         $stock = [
@@ -117,6 +126,7 @@ final class HomeController extends AbstractController
         return $this->render('home/index.html.twig', [
             'exploitation' => $exploitation,
             'financiere' => $financiere,
+            'ponctualite' => $ponctualite,
             'stock' => $stock,
             'flotte' => $flotte,
             'debut' => $debut,

@@ -1,6 +1,7 @@
 export interface Entreprise {
     id: number
     libelle: string
+    slug?: string
     contact1: string
     contact2?: string
     adresse?: string

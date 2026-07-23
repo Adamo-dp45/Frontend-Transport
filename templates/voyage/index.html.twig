@@ -30,6 +30,7 @@
         isAdmin: is_granted('ROLE_ADMIN'),
         csrfReceptionner: csrf_token('receptionner_voyage'),
         csrfDemarrer: csrf_token('demarrer_voyage'),
+        csrfRepartir: csrf_token('repartir_voyage'),
         canSellTicket: is_granted('TICKET_CREER'),
         canAddCourrier: is_granted('COURRIER_CREER'),
         canAddBagage: is_granted('BAGAGE_CREER')

@@ -188,24 +188,54 @@ document.addEventListener('turbo:load', () => {
     const chartRecettes = document.getElementById('chartRecettes')
     if(chartRecettes) {
         const data = JSON.parse(chartRecettes.dataset.values)
+        /*
+            - Barres EMPILÉES par canal : on voit d'où vient la recette du jour, pas seulement son total.
+            - On n'empile que les canaux réellement alimentés sur la période : une entreprise qui exclut
+              les courriers du CA (ou ne fait pas de bagages) n'aura pas de série vide dans la légende.
+            - Repli sur le total si la répartition n'est pas transmise (ancien payload) ou si tout est à 0.
+        */
+        const series = [
+            { key: 'tickets',      label: 'Billets',      color: 'rgba(99,153,34,0.85)' },
+            { key: 'reservations', label: 'Réservations', color: 'rgba(20,140,120,0.85)' },
+            { key: 'courriers',    label: 'Courriers',    color: 'rgba(224,168,40,0.85)' },
+            { key: 'bagages',      label: 'Bagages',      color: 'rgba(124,110,205,0.85)' },
+        ].filter(s => data.some(r => (r[s.key] ?? 0) > 0))
+
+        const empile = series.length > 0
+        const datasets = empile
+            ? series.map(s => ({
+                label: s.label,
+                data: data.map(r => r[s.key] ?? 0),
+                color: s.color,
+                borderRadius: 3,
+                stack: 'recettes'
+            }))
+            : [{
+                label: 'Recettes',
+                data: data.map(r => r.montant),
+                color: ['rgba(99,153,34,0.2)'],
+                borderRadius: 4
+            }]
+
         createChart({
             element: chartRecettes,
             type: 'bar',
             labels: data.map(r => r.label),
-            datasets: [
-                {
-                    label: 'Recettes',
-                    data: data.map(r => r.montant),
-                    color: ['rgba(99,153,34,0.2)'],
-                    borderRadius: 4
-                }
-            ],
+            datasets: datasets,
             options: {
                 plugins: {
-                    legend: { display: false } },
+                    legend: empile
+                        ? { display: true, position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } }
+                        : { display: false },
+                    tooltip: empile ? {
+                        callbacks: { // total du jour en pied d'infobulle : l'empilement ne le donne pas d'un coup d'œil
+                            footer: items => 'Total : ' + items.reduce((s, i) => s + (i.raw || 0), 0).toLocaleString()
+                        }
+                    } : {}
+                },
                 scales: {
-                    y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } },
-                    x: { grid: { display: false } }
+                    y: { stacked: empile, beginAtZero: true, ticks: { callback: v => v.toLocaleString() } },
+                    x: { stacked: empile, grid: { display: false } }
                 }
             }
         })

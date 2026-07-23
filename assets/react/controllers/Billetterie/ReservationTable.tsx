@@ -116,12 +116,33 @@ function buildColumns(
         },
         {
             accessorKey: "dateexpiration",
-            header: "Expire le",
-            cell: ({ row }) => (
-                row.original.statut === "EN_ATTENTE"
-                    ? <span className="text-sm tabular-nums">{formatDate(row.original.dateexpiration)}</span>
-                    : <span className="text-muted-foreground">—</span>
-            )
+            header: "Échéance",
+            /*
+                L'échéance change de NATURE au paiement (cf. ReservationConfirmationService) :
+                 - EN_ATTENTE : limite de PAIEMENT (passé ce délai, la réservation est perdue) ;
+                 - CONFIRMEE  : limite de PRÉSENTATION au guichet (au-delà → no-show à régulariser).
+                Elle était masquée pour les payées, alors que c'est justement l'heure à laquelle le
+                client perd sa place tenue : on l'affiche avec sa signification.
+            */
+            cell: ({ row }) => {
+                const { statut, dateexpiration, ticket } = row.original
+                /*
+                    Billet émis = réservation terminée : plus aucune échéance ne court. On l'affichait
+                    quand même, et après une régularisation (report sur un autre départ) 'dateexpiration'
+                    pointe encore sur l'ANCIEN départ → on aurait montré une date passée trompeuse.
+                */
+                if (ticket || !dateexpiration || (statut !== "EN_ATTENTE" && statut !== "CONFIRMEE")) {
+                    return <span className="text-muted-foreground">—</span>
+                }
+                return (
+                    <div className="leading-tight">
+                        <span className="text-sm tabular-nums">{formatDate(dateexpiration)}</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                            {statut === "EN_ATTENTE" ? "paiement" : "présentation"}
+                        </span>
+                    </div>
+                )
+            }
         },
         {
             id: "actions",

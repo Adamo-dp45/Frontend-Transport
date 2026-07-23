@@ -51,7 +51,7 @@
     {# Recette par jour #}
     <div class="card p-5">
         <p class="text-sm font-medium text-muted-foreground mb-4">Recette par jour</p>
-        <canvas id="chartRecettes" height="90" data-values="{{ financiere.recettesParJour | map(r => {label: r.label, montant: r.montant}) | json_encode }}"></canvas>
+        <canvas id="chartRecettes" height="90" data-values="{{ financiere.recettesParJour | map(r => {label: r.label, montant: r.montant, tickets: r.tickets, reservations: r.reservations, courriers: r.courriers, bagages: r.bagages}) | json_encode }}"></canvas>
     </div>
 </section>
 

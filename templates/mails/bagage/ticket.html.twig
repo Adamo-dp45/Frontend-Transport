@@ -2,186 +2,190 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    {#
+        Reçu BAGAGE — même charte que le reçu courrier (format thermique 80 mm).
+        IMPORTANT : Dompdf ne supporte PAS flexbox → les lignes « libellé / valeur » sont des <table>,
+        sinon la valeur ne se cale pas à droite.
+    #}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', sans-serif;
-            font-size: 10px;
+            font-size: 11px;
             color: #000;
             width: 72mm;
             padding: 4mm;
         }
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .large { font-size: 14px; }
-        .xlarge { font-size: 18px; }
-        .separator {
-            border-top: 1px dashed #000;
-            margin: 4px 0;
-        }
-        .separator-solid {
-            border-top: 1px solid #000;
-            margin: 4px 0;
-        }
-        .row {
-            display: flex;
-            justify-content: space-between;
-            margin: 2px 0;
-        }
-        .label { color: #444; }
-        .value { font-weight: bold; }
-        .code-block {
+
+        /* ── En-tête : sigle + gare à gauche, téléphones + date à droite ── */
+        .hdr { width: 100%; border-collapse: collapse; }
+        .hdr td { vertical-align: top; padding: 0; }
+        .hdr .r { text-align: right; }
+        .sigle { font-size: 20px; font-weight: bold; letter-spacing: 1px; line-height: 1.1; }
+        .gare { font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+        .tels { font-size: 11px; font-weight: bold; }
+        .date { font-size: 12px; font-weight: bold; margin-top: 2px; }
+
+        /* ── Titre ── */
+        .title {
             text-align: center;
-            font-size: 16px;
+            font-size: 21px;
             font-weight: bold;
             letter-spacing: 2px;
-            margin: 6px 0;
-            padding: 4px;
-            border: 1px solid #000;
+            margin: 10px 0 8px;
         }
-        .montant-block {
-            text-align: center;
-            margin: 6px 0;
-        }
-        .footer {
-            font-size: 8px;
-            color: #555;
-            text-align: center;
-            margin-top: 8px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 1px 6px;
-            border: 1px solid #000;
-            font-size: 9px;
-        }
+
         .statut-banner {
             background: #000;
             color: #fff;
-            border: 2px solid #000;
             text-align: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            text-transform: uppercase;
             letter-spacing: 2px;
-            padding: 3px 2px;
-            margin: 4px 0;
+            padding: 4px 2px;
+            margin: 6px 0;
         }
+
+        /* ── Code du bagage ── */
+        .code {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border: 1px solid #000;
+            padding: 5px 2px;
+            margin: 8px 0;
+        }
+
+        /* ── Lignes libellé / valeur ── */
+        .rows { width: 100%; border-collapse: collapse; margin: 6px 0; }
+        .rows td { font-size: 12px; padding: 2px 0; vertical-align: top; }
+        .rows .k { font-weight: bold; letter-spacing: 1px; }
+        .rows .v { text-align: right; font-weight: bold; }
+
+        .sep { border-top: 1px solid #000; margin: 6px 0; }
+
+        /* ── Montant ── */
+        .montant { text-align: center; margin: 8px 0; }
+        .montant .lbl { font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+        .montant .val { font-size: 22px; font-weight: bold; letter-spacing: 1px; margin-top: 2px; }
+        .montant .note { font-size: 9px; font-weight: bold; margin-top: 2px; }
+
+        /* ── Pied ── */
+        .footer { font-size: 8.5px; text-align: center; font-weight: bold; margin-top: 10px; }
+        .footer p { margin-top: 2px; }
     </style>
 </head>
 <body>
 
-    {#
-    <div class="center">
-        <div class="bold large">{{ entreprise.libelle }}</div>
-        {% if entreprise.sigle %}
-            <div>{{ entreprise.sigle }}</div>
-        {% endif %}
-        {% if entreprise.contact1 %}
-            <div>{{ entreprise.contact1 }}</div>
-        {% endif %}
-    </div>
-    #}
+    {# Accès défensifs : entreprise / gares / billet peuvent manquer selon la réponse API (strict_variables). #}
+    {% set ent = entreprise|default({}) %}
+    {% set marque = ent.sigle|default(ent.libelle|default('')) %}
+    {% set garedepart = bagage.garedepart|default(null) %}
+    {% set garedescente = bagage.garedescente|default(null) %}
+    {% set billet = bagage.ticket|default(null) %}
+    {% set voyage = bagage.voyage|default(null) %}
 
-    <div class="separator-solid"></div>
+    {# ── En-tête ── #}
+    <table class="hdr">
+        <tr>
+            <td>
+                <div class="sigle">{{ marque|upper }}</div>
+                <div class="gare">{{ garedepart ? garedepart.libelle|upper : '' }}</div>
+            </td>
+            <td class="r">
+                {% set tels = [ent.contact1|default(''), ent.contact2|default('')]|filter(t => t is not empty) %}
+                {% if tels|length %}<div class="tels">{{ tels|join('/') }}</div>{% endif %}
+                <div class="date">{{ (bagage.createdAt|default(null) ? bagage.createdAt : "now")|date("d/m/Y") }}</div>
+            </td>
+        </tr>
+    </table>
 
-    <div class="center bold large">TICKET DE PESÉE</div>
-    <div class="center" style="font-size:8px; margin-bottom: 4px;">
-        {{ "now"|date("d/m/Y H:i") }}
-    </div>
+    {# ── Titre ── #}
+    <div class="title">REÇU BAGAGE</div>
 
     {% if bagage.statut in ['PERDU', 'ANNULE'] %}
-    <div class="statut-banner">{{ bagage.statut == 'PERDU' ? 'Bagage perdu' : 'Bagage annulé' }}</div>
+    <div class="statut-banner">{{ bagage.statut == 'PERDU' ? 'BAGAGE PERDU' : 'BAGAGE ANNULÉ' }}</div>
     {% endif %}
 
-    <div class="separator"></div>
+    {# ── Code ── #}
+    <div class="code">{{ bagage.codebagage }}</div>
 
-    <div class="code-block">{{ bagage.codebagage }}</div>
+    {# ── Propriétaire (identité issue du billet rattaché) ── #}
+    <table class="rows">
+        <tr>
+            <td class="k">CLIENT</td>
+            <td class="v">{{ billet ? billet.nomclient|default('—')|upper : '—' }}</td>
+        </tr>
+        <tr>
+            <td class="k">CONTACT</td>
+            <td class="v">{{ billet ? billet.contactclient|default('—') : '—' }}</td>
+        </tr>
+        {% if billet %}
+        <tr>
+            <td class="k">BILLET</td>
+            <td class="v">{{ billet.codeticket|default('—') }}</td>
+        </tr>
+        {% endif %}
+    </table>
 
-    <div class="separator"></div>
+    <div class="sep"></div>
 
-    <div class="row">
-        <span class="label">Client</span>
-        <span class="value">{{ bagage.ticket.nomclient ?? '—' }}</span>
-    </div>
-    <div class="row">
-        <span class="label">Contact</span>
-        <span class="value">{{ bagage.ticket.contactclient ?? '—' }}</span>
-    </div>
-    {% if bagage.ticket %}
-    <div class="row">
-        <span class="label">Billet</span>
-        <span class="value">{{ bagage.ticket.codeticket }}</span>
-    </div>
-    {% endif %}
+    {# ── Voyage & trajet ── #}
+    <table class="rows">
+        <tr>
+            <td class="k">VOYAGE</td>
+            <td class="v">{{ voyage ? voyage.codevoyage|default('—') : '—' }}</td>
+        </tr>
+        {% if garedepart %}
+        <tr>
+            <td class="k">DÉPART</td>
+            <td class="v">{{ garedepart.libelle|upper }}</td>
+        </tr>
+        {% endif %}
+        {% if garedescente %}
+        <tr>
+            <td class="k">DESCENTE</td>
+            <td class="v">{{ garedescente.libelle|upper }}</td>
+        </tr>
+        {% endif %}
+    </table>
 
-    <div class="separator"></div>
+    <div class="sep"></div>
 
-    <div class="row">
-        <span class="label">Voyage</span>
-        <span class="value">{{ bagage.voyage.codevoyage }}</span>
-    </div>
-    <div class="row">
-        <span class="label">Trajet</span>
-        <span class="value">{{ bagage.voyage.provenance }} → {{ bagage.voyage.destination }}</span>
-    </div>
-    {% if bagage.garedepart %}
-    <div class="row">
-        <span class="label">Départ</span>
-        <span class="value">{{ bagage.garedepart.libelle }}</span>
-    </div>
-    {% endif %}
-    {% if bagage.garedescente %}
-    <div class="row">
-        <span class="label">Descente</span>
-        <span class="value">{{ bagage.garedescente.libelle }}</span>
-    </div>
-    {% endif %}
+    {# ── Caractéristiques ── #}
+    {% set typeMap = { LEGER: 'Léger', LOURD: 'Lourd', VOLUMINEUX: 'Volumineux', FRAGILE: 'Fragile' } %}
+    <table class="rows">
+        <tr>
+            <td class="k">NATURE</td>
+            <td class="v">{{ bagage.nature|upper }}</td>
+        </tr>
+        {% if bagage.type %}
+        <tr>
+            <td class="k">TYPE</td>
+            <td class="v">{{ (typeMap[bagage.type] ?? bagage.type)|upper }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td class="k">POIDS</td>
+            <td class="v">{{ bagage.poids }} KG</td>
+        </tr>
+    </table>
 
-    <div class="separator"></div>
-
-    <div class="row">
-        <span class="label">Nature</span>
-        <span class="value">{{ bagage.nature }}</span>
-    </div>
-    <div class="row">
-        <span class="label">Type</span>
-        <span class="value">
-            {% set typeMap = { LEGER: 'Léger', LOURD: 'Lourd', VOLUMINEUX: 'Volumineux', FRAGILE: 'Fragile' } %}
-            {{ typeMap[bagage.type] ?? bagage.type }}
-        </span>
-    </div>
-    <div class="row">
-        <span class="label">Poids</span>
-        <span class="value">{{ bagage.poids }} kg</span>
-    </div>
-    {% if bagage.tarifbagage %}
-    <div class="row">
-        <span class="label">Tarif appliqué</span>
-        <span class="value">{{ bagage.tarifbagage.libelle }}</span>
-    </div>
-    {% endif %}
-
-    <div class="separator-solid"></div>
-
-    <div class="montant-block">
-        <div class="label" style="font-size:9px;">MONTANT PAYÉ</div>
-        <div class="xlarge bold">{{ bagage.montant|number_format(0, ',', ' ') }} FCFA</div>
+    {# ── Montant ── #}
+    <div class="montant">
+        <div class="lbl">MONTANT PAYÉ</div>
+        <div class="val">{{ bagage.montant|number_format(0, ',', ' ') }} FCFA</div>
         {% if bagage.montantforce %}
-            <div style="font-size: 8px; color: #555;">(montant ajusté)</div>
+        <div class="note">(MONTANT AJUSTÉ)</div>
         {% endif %}
     </div>
 
-    <div class="separator-solid"></div>
-
-    {#
+    {# ── Pied ── #}
     <div class="footer">
-        <p>NB : Ce ticket est non remboursable</p>
-        <p>Conservez ce ticket jusqu'à destination</p>
-        {% if entreprise.contact1 %}
-            <p>{{ entreprise.contact1 }}</p>
-        {% endif %}
+        <p>NB : CONSERVEZ CE REÇU JUSQU'À LA REMISE DU BAGAGE</p>
+        <p>PAS DE REMBOURSEMENT APRÈS ENCAISSEMENT</p>
     </div>
-    #}
+
 </body>
 </html>

@@ -86,6 +86,13 @@ function buildColumns(
             )
         },
         {
+            accessorKey: "bagagesCount",
+            header: 'Bagages',
+            cell: ({ row }) => (
+                <span className="tabular-nums font-medium">{row.original.bagagesCount ?? 0}</span>
+            )
+        },
+        {
             accessorKey: "fidelite",
             header: 'Fidélité',
             cell: ({ row }) => (

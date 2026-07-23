@@ -92,21 +92,21 @@ function buildColumns(
             id: "nbcourriers",
             header: "Nbre de courriers",
             cell: ({ row }) => {
-                return <span className="tabular-nums font-medium">{row.original.courriers.length}</span>
+                return <span className="tabular-nums font-medium">{row.original.courriersCount ?? 0}</span>
             }
         },
         {
             id: "nbbagages",
             header: "Nbre de bagages",
             cell: ({ row }) => {
-                return <span className="tabular-nums font-medium">{row.original.bagages.length}</span>
+                return <span className="tabular-nums font-medium">{row.original.bagagesCount ?? 0}</span>
             }
         },
         {
             id: "nbpersonnels",
             header: "Personnels affectés",
             cell: ({ row }) => {
-                return <span className="tabular-nums font-medium">{row.original.detailpersonnels.length}</span>
+                return <span className="tabular-nums font-medium">{row.original.detailpersonnelsCount ?? 0}</span>
             }
         },
         {

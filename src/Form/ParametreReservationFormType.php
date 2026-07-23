@@ -7,6 +7,7 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotNull;
@@ -16,12 +17,21 @@ class ParametreReservationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('delaiExpirationMinutes', IntegerType::class, [
-                'label' => 'Délai d\'expiration (minutes avant le départ)',
-                'help' => 'Une place réservée est tenue jusqu\'à ce délai avant le départ, puis libérée. 0 = jusqu\'au départ. (120 = 2 h)',
+            ->add('delaiPresentationMinutes', IntegerType::class, [
+                'label' => 'Délai de présentation (minutes avant le départ)',
+                'help' => 'Dernière limite pour se présenter au guichet et retirer son billet — et limite au-delà de laquelle un départ n\'est plus réservable. Passé ce délai, une réservation payée devient un no-show à régulariser. 0 = jusqu\'au départ.',
                 'constraints' => [
                     new NotNull(),
                     new GreaterThanOrEqual(value: 0, message: 'Le délai ne peut pas être négatif'),
+                    new LessThanOrEqual(value: 10080, message: 'Le délai ne peut pas dépasser 7 jours (10080 min)')
+                ]
+            ])
+            ->add('delaiPaiementMinutes', IntegerType::class, [
+                'label' => 'Délai de paiement (minutes après la réservation)',
+                'help' => 'Temps laissé au client pour payer, décompté dès la réservation (et jamais au-delà du délai de présentation). Non payée à l\'échéance, la réservation est perdue.',
+                'constraints' => [
+                    new NotNull(),
+                    new GreaterThan(value: 0, message: 'Le délai de paiement doit être d\'au moins 1 minute'),
                     new LessThanOrEqual(value: 10080, message: 'Le délai ne peut pas dépasser 7 jours (10080 min)')
                 ]
             ])

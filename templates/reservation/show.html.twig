@@ -64,11 +64,19 @@
             {% if reservation.statut == 'A_REGULARISER' and is_granted('RESERVATION_MODIFIER') and peutAgir %}
             <div class="card p-6 border-amber-300 dark:border-amber-800">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-2">Régularisation (client absent au départ)</h2>
-                <p class="text-sm text-muted-foreground mb-4">
-                    Cette réservation payée n'a pas été utilisée à temps. Elle n'est <strong>pas perdue</strong> :
-                    reportez-la sur un départ ultérieur. Une <strong>pénalité</strong> (et un <strong>complément</strong> si le tarif a augmenté)
-                    seront encaissés avant l'émission du billet.
-                </p>
+                {% if reservation.penaliteexoneree is defined and reservation.penaliteexoneree %}
+                    <p class="text-sm text-muted-foreground mb-4">
+                        Cette réservation payée n'a pas été utilisée à temps, mais <strong>le départ avait été avancé</strong> après son paiement :
+                        l'absence ne lui est pas imputable, elle est reportée <strong>sans pénalité</strong>. Seul un <strong>complément</strong>
+                        reste dû si le tarif a augmenté.
+                    </p>
+                {% else %}
+                    <p class="text-sm text-muted-foreground mb-4">
+                        Cette réservation payée n'a pas été utilisée à temps. Elle n'est <strong>pas perdue</strong> :
+                        reportez-la sur un départ ultérieur. Une <strong>pénalité</strong> (et un <strong>complément</strong> si le tarif a augmenté)
+                        seront encaissés avant l'émission du billet.
+                    </p>
+                {% endif %}
 
                 {% if reportVoyages is empty %}
                     <p class="text-sm text-amber-700 dark:text-amber-400">Aucun départ futur disponible sur cette ligne pour le report. Créez un nouveau départ, puis revenez ici.</p>
@@ -76,9 +84,11 @@
                     <label for="report-voyage" class="block text-sm font-medium mb-1">Reporter sur le départ</label>
                     <select id="report-voyage" class="w-full rounded-lg border bg-background px-3 py-2 text-sm mb-3">
                         <option value="">— Choisir un départ —</option>
+                        {# L'heure affichée est celle du passage à la gare de MONTÉE du client, pas
+                           le départ du voyage : c'est à celle-là qu'il devra se présenter. #}
                         {% for v in reportVoyages %}
                             <option value="{{ v.id }}" data-car="{{ v.car ? '1' : '0' }}">
-                                {{ v.codevoyage }} · {{ v.datedepartprevue }}{{ v.car ? ' · car ' ~ v.car : ' · (pas de car)' }}
+                                {{ v.codevoyage }} · {{ v.datedepartprevue }}{{ v.enRoute ? ' · en route' : '' }}{{ v.car ? ' · car ' ~ v.car : ' · (pas de car)' }}
                             </option>
                         {% endfor %}
                     </select>
@@ -156,13 +166,16 @@
                     apercu.innerHTML = '<span class="text-rose-600">' + (d.message || 'Report impossible.') + '</span>';
                     return;
                 }
+                /* Pénalité exonérée : l'agent doit voir que le 0 est voulu (départ avancé par la
+                   compagnie), pas un calcul qui a échoué. Le libellé vient de l'API (d.message). */
+                var penalite = d.exoneree
+                    ? '<strong class="text-emerald-600 dark:text-emerald-400">0 FCFA <span class="font-normal text-xs">(exonérée)</span></strong>'
+                    : '<strong>' + fmt(d.penalite) + ' FCFA</strong>';
                 var html = ''
-                    + '<div class="flex justify-between"><span class="text-muted-foreground">Pénalité</span><strong>' + fmt(d.penalite) + ' FCFA</strong></div>'
+                    + '<div class="flex justify-between"><span class="text-muted-foreground">Pénalité</span>' + penalite + '</div>'
                     + '<div class="flex justify-between"><span class="text-muted-foreground">Complément tarifaire</span><strong>' + fmt(d.complement) + ' FCFA</strong></div>'
                     + '<div class="flex justify-between border-t border-border pt-1 mt-1"><span>À encaisser</span><strong class="text-base">' + fmt(d.total) + ' FCFA</strong></div>';
-                if (!hasCar) {
-                    html += '<div class="text-amber-700 dark:text-amber-400 text-xs mt-2">Affectez d\'abord un car à ce départ pour pouvoir émettre le billet.</div>';
-                } else if (d.message) {
+                if (d.message) {
                     html += '<div class="text-amber-700 dark:text-amber-400 text-xs mt-2">' + d.message + '</div>';
                 }
                 apercu.innerHTML = html;

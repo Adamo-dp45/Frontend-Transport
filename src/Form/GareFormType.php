@@ -46,7 +46,6 @@ class GareFormType extends AbstractType
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'constraints' => [
-                    new NotBlank(),
                     new Length(max: 150)
                 ],
                 'required' => false

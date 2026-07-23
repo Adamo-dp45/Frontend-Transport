@@ -31,6 +31,8 @@
             <a href="{{ path('tarif.index') }}" class="text-xs text-primary hover:underline shrink-0">Voir la grille tarifaire</a>
             {% endif %}
         </div>
+        {# Cumul des tronçons pour retrouver le décalage depuis l'origine (heure de passage relative). #}
+        {% set cumul = 0 %}
         <ol class="space-y-1">
             {% for arret in ligne.arrets|sort((a, b) => a.ordre <=> b.ordre) %}
             <li class="flex gap-3">
@@ -39,7 +41,22 @@
                     {% if not loop.last %}<span class="flex-1 w-0.5 bg-border my-0.5"></span>{% endif %}
                 </div>
                 <div class="pb-3">
-                    <p class="text-sm font-medium">{{ arret.gare.libelle }}</p>
+                    <p class="text-sm font-medium">
+                        {{ arret.gare.libelle }}
+                        {# Tronçon menant ici + HEURE DE PASSAGE estimée (heure de départ de la ligne +
+                           cumul des tronçons) : c'est elle qui fixe la limite de présentation des passagers
+                           montant à cet arrêt. L'origine n'a pas de tronçon mais garde son heure de départ. #}
+                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null %}
+                            {% set cumul = cumul + arret.dureeTronconMinutes %}
+                        {% endif %}
+                        {% set aHeure = arret.ordre == 0 or (arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null) %}
+                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null %}
+                            <span class="ml-2 text-xs font-normal text-muted-foreground tabular-nums">tronçon +{{ arret.dureeTronconMinutes }} min</span>
+                        {% endif %}
+                        {% if ligne.heuredepart and aHeure %}
+                            <span class="ml-1 text-xs font-medium text-foreground tabular-nums">🕒 {{ ligne.heuredepart|date_modify('+' ~ cumul ~ ' minutes')|date('H:i') }}</span>
+                        {% endif %}
+                    </p>
                     {% if arret.gare.ville %}<p class="text-xs text-muted-foreground">{{ arret.gare.ville }}</p>{% endif %}
                 </div>
             </li>

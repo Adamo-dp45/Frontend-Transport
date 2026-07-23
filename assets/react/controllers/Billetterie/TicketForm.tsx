@@ -33,6 +33,7 @@ import {
     ArrowRight,
 } from "lucide-react";
 import { flash } from "../../../elements/Alert"
+import PlanCar from "./PlanCar"
 
 /*
     interface CreatedTicket { -- Pour le post création sans redirection
@@ -78,13 +79,15 @@ interface Siege {
     occupantDescente?: string | null;
     // Siège revendu : porté par plusieurs billets sur le voyage (réutilisé sur des tronçons disjoints)
     revendu?: boolean;
+    // Siège en conflit : ≥2 billets dont un évincé (priorité amont) → overlay d'alerte, cf. PlanCar
+    conflit?: boolean;
 }
 
 interface SiegesResponse {
     siegesGauche: number;
     siegesDroite: number;
     sieges: Siege[];
-    placesReservees?: number;       // places tenues par des réservations sur ce tronçon
+    placesReservees?: number;       // réservations EN ATTENTE : place tenue le temps du paiement
     placesDisponibles?: number | null;
 }
 
@@ -137,194 +140,10 @@ interface TicketFormProps {
     currentUserId?: number | null;    // pour savoir si je suis le commercial du voyage sélectionné
 }
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
-const SIEGE_W = 44;
-const SIEGE_H = 44;
-const GAP = 6;
-
-// ─── Siège individuel ─────────────────────────────────────────────────────────
-function SiegeCell({
-    siege,
-    selected,
-    reserve = false,
-    onClick,
-    onLiberer,
-}: {
-    siege: Siege;
-    selected: boolean;
-    reserve?: boolean;
-    onClick: () => void;
-    onLiberer?: (s: Siege) => void;
-}) {
-    const isOccupe = siege.statut === "OCCUPE";
-    // Un siège occupé reste cliquable pour être LIBÉRÉ (le passager descend en route) puis revendu
-    const liberable = isOccupe && !!siege.occupantTicketId && !!onLiberer;
-    // Siège déjà revendu (réutilisé sur ≥2 tronçons) → signalé par une COULEUR (violet)
-    const revendu = !!siege.revendu;
-    // Place tenue par une RÉSERVATION (non encore émise) → siège PRESSENTI (repère ambre). Reste
-    // VENDABLE : le billet n'étant pas encore émis, l'agent peut quand même vendre ce siège.
-    const estReserve = reserve && !isOccupe && !selected;
-
-    return (
-        <button
-            type="button"
-            disabled={isOccupe && !liberable}
-            onClick={() => {
-                if (liberable) onLiberer!(siege);
-                else if (!isOccupe) onClick();
-            }}
-            title={
-                (estReserve
-                    ? `Siège ${siege.numero} — pressenti pour une réservation en attente (encore vendable). `
-                    : "") + (liberable
-                        ? `Siège ${siege.numero} — occupé par ${siege.occupantNom ?? "passager"} (${siege.occupantMontee ?? "?"} → ${siege.occupantDescente ?? "?"}). Cliquer pour libérer.`
-                        : `Siège ${siege.numero} — ${siege.statut}`) + (revendu ? " · déjà revendu" : "")
-            }
-            className={cn(
-                "relative flex items-center justify-center rounded-md border-2 text-xs font-bold transition-all duration-150 select-none",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-                // Sélection (toujours bleu, prioritaire)
-                !isOccupe && selected &&
-                    "cursor-pointer border-blue-500 bg-blue-500 text-white shadow-md shadow-blue-200 scale-105",
-                // ── RÉSERVÉ (place tenue par une réservation) → repère ambre, MAIS reste vendable ──
-                estReserve &&
-                    "cursor-pointer border-amber-400 bg-amber-100 text-amber-700 hover:border-amber-500 hover:bg-amber-200 hover:scale-105",
-                // ── REVENDU → violet (occupé non libérable / libérable / libre) ──
-                revendu && isOccupe && !liberable &&
-                    "cursor-not-allowed border-violet-300 bg-violet-100 text-violet-500",
-                revendu && liberable &&
-                    "cursor-pointer border-violet-300 bg-violet-100 text-violet-600 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-600",
-                revendu && !isOccupe && !selected && !estReserve &&
-                    "cursor-pointer border-violet-400 bg-violet-100 text-violet-700 hover:border-violet-500 hover:bg-violet-200 hover:scale-105",
-                // ── NON revendu (comportement normal) ──
-                !revendu && isOccupe && !liberable &&
-                    "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400",
-                !revendu && liberable &&
-                    "cursor-pointer border-gray-200 bg-gray-100 text-gray-400 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-600",
-                !revendu && !isOccupe && !selected && !estReserve &&
-                    "cursor-pointer border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100 hover:scale-105"
-            )}
-            style={{ width: SIEGE_W, height: SIEGE_H }}
-        >
-            {siege.numero}
-            {estReserve && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white shadow-sm" aria-hidden>
-                    R
-                </span>
-            )}
-            {isOccupe && (
-                <span className="absolute inset-0 flex items-center justify-center">
-                    <span className={cn("h-0.5 w-3/4 rotate-45 rounded", revendu ? "bg-violet-400" : "bg-gray-400")} />
-                </span>
-            )}
-            {liberable && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold leading-none text-white shadow-sm" aria-hidden>
-                    ↻
-                </span>
-            )}
-        </button>
-    );
-}
-
-// ─── Plan du car ──────────────────────────────────────────────────────────────
-
-function PlanCar({
-    sieges,
-    siegesGauche,
-    siegesDroite,
-    selectedIds,
-    reservedIds,
-    onToggle,
-    onLiberer,
-}: {
-    sieges: Siege[];
-    siegesGauche: number;
-    siegesDroite: number;
-    selectedIds: Set<number>;
-    reservedIds: Set<number>;
-    onToggle: (siege: Siege) => void;
-    onLiberer?: (siege: Siege) => void;
-}) {
-    const byRangee = sieges.reduce<Record<number, Siege[]>>((acc, s) => {
-        (acc[s.rangee] ??= []).push(s);
-        return acc;
-    }, {});
-
-    const rangees = Object.keys(byRangee)
-        .map(Number)
-        .sort((a, b) => a - b);
-
-    // Rendu UNIFIÉ en grille : chaque siège à sa colonne ABSOLUE. Grilles (cote 'GRILLE') + anciens sièges
-    // GAUCHE/DROITE (colonne par côté → colonne absolue calculée) rendus par le même chemin.
-    const absCol = (s: Siege) => (s.cote === "DROITE" ? (siegesGauche || 0) + 1 + s.colonne : s.colonne);
-    const maxCol = Math.max(1, ...sieges.map(absCol));
-
-    return (
-        <div className="overflow-x-auto pb-2">
-            {/* Rangées — grille unifiée (chaque siège à sa colonne absolue, trous = vides) */}
-            <div className="flex flex-col" style={{ gap: GAP }}>
-                {rangees.map((rangee) => {
-                    const seats = byRangee[rangee];
-                    return (
-                        <div key={rangee} className="flex items-center" style={{ gap: GAP }}>
-                            <div className="w-7 text-right text-[10px] font-semibold text-gray-400">
-                                {rangee}
-                            </div>
-                            <div className="flex" style={{ gap: GAP }}>
-                                {Array.from({ length: maxCol }, (_, i) => {
-                                    const s = seats.find((x) => absCol(x) === i + 1);
-                                    return s ? (
-                                        <SiegeCell
-                                            key={s.id}
-                                            siege={s}
-                                            selected={selectedIds.has(s.id)}
-                                            reserve={reservedIds.has(s.id)}
-                                            onClick={() => onToggle(s)}
-                                            onLiberer={onLiberer}
-                                        />
-                                    ) : (
-                                        <div key={`e-${rangee}-${i}`} style={{ width: SIEGE_W, height: SIEGE_H }} />
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Légende */}
-            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Légende des sièges</p>
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-foreground">
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block size-4 shrink-0 rounded border-2 border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950" />
-                        Libre
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block size-4 shrink-0 rounded border-2 border-blue-500 bg-blue-500" />
-                        Sélectionné
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="relative inline-block size-4 shrink-0 rounded border-2 border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800">
-                            <span className="absolute -top-1.5 -right-1.5 flex size-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>↻</span>
-                        </span>
-                        <span>Occupé <span className="text-muted-foreground">· cliquer pour libérer en route</span></span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block size-4 shrink-0 rounded border-2 border-violet-400 bg-violet-100 dark:border-violet-600 dark:bg-violet-950" />
-                        Revendu
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="relative inline-block size-4 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:border-amber-600 dark:bg-amber-950">
-                            <span className="absolute -top-1.5 -right-1.5 flex size-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white" aria-hidden>R</span>
-                        </span>
-                        <span>Réservé <span className="text-muted-foreground">· repère, reste vendable</span></span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-}
+// ─── Plan des sièges ──────────────────────────────────────────────────────────
+// FUSION : le plan et le siège individuel proviennent désormais du composant PARTAGÉ
+// './PlanCar' (mêmes 5 états, pastilles R/↻, légende adaptative, variantes dark) —
+// consommé aussi par 'PlanCarReadonly' (fiche véhicule) et 'DesistementForm' (report).
 /*
     function CreatedTicketsPanel({ -- Pour le post création sans redirection
         tickets,
@@ -629,6 +448,21 @@ export default function TicketForm({
                 });
                 return prev.filter((s) => s.id !== siege.id);
             }
+            /*
+                Garde de CAPACITÉ : on ne vend pas plus de places qu'il n'y a de sièges à bord AU MOMENT
+                où le passager monte. Les ventes des gares en aval ne comptent pas — l'amont est
+                prioritaire — mais des places peuvent être tenues sans siège attribué (réservations
+                payées). Sans cette garde, l'agent saisirait des passagers pour se faire refuser la vente.
+            */
+            if (placesRestantes !== null && prev.length >= placesRestantes) {
+                flash(
+                    placesRestantes === 0
+                        ? "Le car est complet au départ de cette gare."
+                        : `Il ne reste que ${placesRestantes} place(s) au départ de cette gare.`,
+                    'error'
+                );
+                return prev;
+            }
             setClientInfos((ci) => ({
                 ...ci,
                 [siege.id]: { nomclient: "", contactclient: "" },
@@ -888,24 +722,27 @@ export default function TicketForm({
         }
     };
 
-    // Places restantes PAR TRONÇON : nb de sièges LIBRE du plan pour le tronçon (montée → descente) sélectionné
-    const placesRestantes = siegesData
+    /*
+        Places restantes PAR TRONÇON = la CAPACITÉ renvoyée par l'API, pas le nombre de sièges libres
+        du plan. Depuis qu'une réservation PAYÉE tient une place, les deux peuvent diverger : la place
+        est retenue sans qu'un siège précis soit attribué (on réserve une PLACE, pas un siège). Compter
+        les sièges verts laisserait donc croire à des places vendables qui n'existent plus — l'agent
+        sélectionnerait un siège pour se faire refuser la vente au dernier moment.
+    */
+    const siegesLibres = siegesData
         ? siegesData.sieges.filter((s) => s.statut === "LIBRE").length
         : null;
-
-    // Sièges pressentis pour les RÉSERVATIONS en attente : on marque (ambre, non vendable) les N
-    // premiers sièges libres — N = places tenues par des réservations sur ce tronçon — pour montrer
-    // à l'agent quels sièges sont réservés. (La réservation ne choisit pas de siège ; il est attribué
-    // à l'émission du billet = 1er siège libre, d'où le choix des premiers libres.)
-    const reservedIds = (() => {
-        const n = siegesData?.placesReservees ?? 0;
-        if (!siegesData || n <= 0) return new Set<number>();
-        const libres = siegesData.sieges
-            .filter((s) => s.statut === "LIBRE")
-            .sort((a, b) => a.numero - b.numero)
-            .slice(0, n);
-        return new Set(libres.map((s) => s.id));
-    })();
+    const placesRestantes = siegesData
+        ? (siegesData.placesDisponibles ?? siegesLibres)
+        : null;
+    // Des sièges paraissent libres alors que la capacité est épuisée (réservations payées non émises)
+    /*
+        Plan et capacité comptent désormais la même chose : les SIÈGES occupés au point de montée. Ils
+        coïncident donc, sauf pour les réservations — elles tiennent une place sans qu'aucun siège leur
+        soit attribué. L'écart vaut exactement ce nombre-là.
+    */
+    const placesSansSiegeAttribue = placesRestantes !== null && siegesLibres !== null
+        && siegesLibres > placesRestantes;
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -1049,14 +886,25 @@ export default function TicketForm({
                                 <Users className="h-3 w-3" />
                                 {selectedVoyage.placestotal} places
                             </Badge>
+                            {/* « au départ de cette gare » et non « sur ce tronçon » : la disponibilité se
+                                juge au point de montée, les ventes des gares en aval n'y entrent pas. */}
                             {placesRestantes !== null && (
                                 <Badge variant={placesRestantes === 0 ? "destructive" : "secondary"}>
-                                    {placesRestantes === 0 ? "Complet sur ce tronçon" : `${placesRestantes} place(s) sur ce tronçon`}
+                                    {placesRestantes === 0 ? "Complet au départ de cette gare" : `${placesRestantes} place(s) au départ de cette gare`}
                                 </Badge>
                             )}
+                            {/* Sans ce repère le plan ment : des sièges paraissent libres alors qu'une
+                                réservation en tient déjà la place, sans siège attribué. */}
+                            {placesSansSiegeAttribue && (
+                                <Badge variant="outline" className="gap-1 border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400">
+                                    {(siegesLibres ?? 0) - (placesRestantes ?? 0)} place(s) tenue(s) par des réservations
+                                </Badge>
+                            )}
+                            {/* Réservations impayées : elles tiennent leur place le temps du paiement,
+                                puis la libèrent automatiquement à l'échéance. */}
                             {!!siegesData?.placesReservees && siegesData.placesReservees > 0 && (
                                 <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400">
-                                    {siegesData.placesReservees} place(s) réservée(s)
+                                    {siegesData.placesReservees} réservation(s) en attente de paiement
                                 </Badge>
                             )}
                             {selectedVoyage.datearriveereelle && (
@@ -1134,8 +982,9 @@ export default function TicketForm({
                                     siegesGauche={siegesData.siegesGauche}
                                     siegesDroite={siegesData.siegesDroite}
                                     selectedIds={new Set(selectedSieges.map((s) => s.id))}
-                                    reservedIds={reservedIds}
-                                    onToggle={(siege) => toggleSiege(siege)}
+                                    // PlanCar est générique : depuis 'sieges' (Siege[]) il infère T=Siege,
+                                    // donc onToggle/onLiberer attendent un 'Siege' → handlers passés tels quels.
+                                    onToggle={toggleSiege}
                                     onLiberer={handleLibererSiege}
                                 />
                             ) : siegesData ? (

@@ -33,6 +33,19 @@ function buildColumns(): ColumnDef<Entreprise>[] {
             header: "Libellé"
         },
         {
+            // Identifiant public de réservation (?slug= des apps mobiles/web). Cette table n'est
+            // rendue que sur /admin/entreprises, route gardée par ROLE_SUPER_ADMIN : la colonne
+            // n'est donc visible que du super admin, sans garde supplémentaire côté composant.
+            accessorKey: "slug",
+            header: "Slug",
+            cell: ({ row }) => {
+                const slug = row.original.slug
+                return slug
+                    ? <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{slug}</code>
+                    : <span className="text-muted-foreground">—</span>
+            }
+        },
+        {
             accessorKey: "contact1",
             header: "Contact 1"
         },

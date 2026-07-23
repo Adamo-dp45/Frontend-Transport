@@ -66,4 +66,22 @@ final class CommercialController extends AbstractController
 
         return $this->redirectToRoute('commercial.me');
     }
+
+    #[Route('/{id}/repartir', name: 'repartir', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    public function repartir(int $id, Request $request): Response
+    {
+        if ($this->isCsrfTokenValid('commercial_repartir', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/voyages/' . $id . '/repartir');
+                $this->addFlash('success', 'Départ du car enregistré');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'commercial.me');
+                if ($response) {
+                    return $response;
+                }
+            }
+        }
+
+        return $this->redirectToRoute('commercial.me');
+    }
 }

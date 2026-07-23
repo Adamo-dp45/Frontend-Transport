@@ -96,15 +96,15 @@ function buildColumns(
             id: "nbpieces",
             header: "Nombre de pièces",
             cell: ({ row }) => {
-                const total = row.original.detaildepannages.reduce((sum, d) => sum + d.quantite, 0)
-                return <span className="tabular-nums font-medium">{total}</span>
+                // Quantité totale agrégée par l'API (SUM) : plus de collection à sommer côté client
+                return <span className="tabular-nums font-medium">{row.original.piecesQuantiteTotale ?? 0}</span>
             }
         },
         {
             id: "nbpersonnels",
             header: "Nombre de personnels",
             cell: ({ row }) => {
-                return <span className="tabular-nums font-medium">{row.original.detailpersonnels.length}</span>
+                return <span className="tabular-nums font-medium">{row.original.detailpersonnelsCount ?? 0}</span>
             }
         },
         {

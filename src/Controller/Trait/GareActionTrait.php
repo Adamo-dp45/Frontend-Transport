@@ -22,4 +22,15 @@ trait GareActionTrait
         }
         return ($userGare['id'] ?? null) === $gareId;
     }
+
+    /**
+     * L'utilisateur courant est-il le COMMERCIAL (vendeur à bord) de ce billet ? Le commercial vend
+     * depuis la position du car : la gare de montée du billet n'est PAS sa gare d'attache, donc
+     * peutAgirSurGare() le refuserait. Il doit pourtant pouvoir agir sur ses propres ventes à bord
+     * (imprimer, rattacher un bagage…).
+     */
+    private function estCommercialDe(?int $commercialId): bool
+    {
+        return $commercialId !== null && $this->getUser()?->getId() === $commercialId;
+    }
 }

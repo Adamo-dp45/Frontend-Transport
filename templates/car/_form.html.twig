@@ -60,7 +60,9 @@
                 if (banquette > 0) {
                     var bench = [];
                     for (var m = 0; m < banquette && num <= total; m++) bench.push(num++);
-                    rows.push(bench.join(' '));
+                    // Préfixe « B: » = marqueur de BANQUETTE : le backend en déduit 'cote = ARRIERE'
+                    // et l'expose dans l'API, pour que tous les clients la reconnaissent sans calcul.
+                    rows.push('B: ' + bench.join(' '));
                 }
                 return rows.join('\n');
             }

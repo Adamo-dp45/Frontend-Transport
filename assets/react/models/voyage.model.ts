@@ -25,11 +25,17 @@ export interface Voyage {
     datearriveereelle: string | null  // arrivée réelle = clôture
     ligne: LigneRef
     car: Car | null
-    detailpersonnels: Detailpersonnel[]
-    courriers: Ref[]
-    bagages: Ref[]
+    // Collections COMPLÈTES : uniquement sur la FICHE (/api/voyages/{id}, groupe 'read:Voyage:item').
+    // Absentes de la LISTE, qui reçoit les compteurs ci-dessous — d'où l'optionnalité.
+    detailpersonnels?: Detailpersonnel[]
+    courriers?: Ref[]
+    bagages?: Ref[]
     placestotal: number,
-    ticketsCount: number // nb de billets actifs vendus (compté à la volée côté API ; remplace 'placesoccupees')
+    // Compteurs calculés en COUNT SQL côté API (aucune collection hydratée)
+    ticketsCount: number // nb de billets actifs vendus (remplace 'placesoccupees')
+    courriersCount: number
+    bagagesCount: number
+    detailpersonnelsCount: number
     createdAt: string
     // Commercial à bord + position courante du car
     commercial?: { id: number; nom?: string; prenom?: string } | null
@@ -39,4 +45,7 @@ export interface Voyage {
     // Ids des gares de la route EFFECTIVE (provenance → terminus, dans l'ordre). Une gare en amont de la
     // provenance (départ partiel) n'y figure PAS → aucune action d'exploitation/réception possible.
     routeeffectiveids?: number[]
+    // Passages réels (arrivée / départ par gare) — léger, exposé AUSSI en liste : pilote la disparition
+    // des boutons « Réceptionner » (arrivée déjà marquée) et « Le car repart » (départ déjà marqué).
+    passages?: { gare?: { id: number }; arriveeReelle: string | null; departReelle: string | null }[]
 }

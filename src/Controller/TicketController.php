@@ -228,12 +228,18 @@ final class TicketController extends AbstractController
             }
         }
 
-        // Modif / désistement réservés à la gare émettrice (gare de montée du ticket)
-        $peutAgir = $this->peutAgirSurGare($ticket['gare']['id'] ?? null);
+        // Deux périmètres distincts :
+        //  - peutGare : actions de GARE (désister/rembourser, supprimer du livre) réservées à la gare
+        //    émettrice — un commercial ne rembourse pas / ne retire pas un billet du livre ;
+        //  - peutAgir : actions du VENDEUR (imprimer, corriger l'identité) ouvertes AUSSI au commercial
+        //    qui l'a vendu à bord (sa gare de vente = position du car, pas sa gare d'attache).
+        $peutGare = $this->peutAgirSurGare($ticket['gare']['id'] ?? null);
+        $peutAgir = $peutGare || $this->estCommercialDe($ticket['commercial']['id'] ?? null);
 
         return $this->render('ticket/show.html.twig', [
             'ticket' => $this->withQrcode($ticket),
-            'peutAgir' => $peutAgir
+            'peutAgir' => $peutAgir,
+            'peutGare' => $peutGare,
         ]);
     }
 
@@ -246,7 +252,20 @@ final class TicketController extends AbstractController
              * @var ApiUser
              */
             $user = $this->getUser();
+            /*
+                Le formulaire a besoin du voyage COMPLET (car, places, commercial, garecourante…), donc
+                on garde '/api/voyages'. Mais on n'offre que ceux où l'on peut encore embarquer : le car
+                ne doit pas avoir quitté la gare de vente. Cette décision appartient au serveur — elle
+                dépend de la position réelle du véhicule et du rôle de l'agent (le commercial vend depuis
+                le car) — d'où l'intersection avec '/api/voyages/reservables?usage=vente' plutôt qu'un
+                filtre reconstitué ici, qui redeviendrait faux à la prochaine évolution de la règle.
+            */
             $voyages = $this->api->collection('/api/voyages?exists[datearriveereelle]=false');
+            $embarquables = array_column($this->api->collection('/api/voyages/reservables', ['usage' => 'vente']), 'id');
+            $voyages = array_values(array_filter(
+                $voyages,
+                fn($v) => in_array($v['id'] ?? null, $embarquables, true)
+            ));
             $gares = $this->api->collection('/api/gares');
             $beneficiaires = $this->api->collection('/api/beneficiaires');
             $userGare = $user->getGare();
@@ -626,10 +645,11 @@ final class TicketController extends AbstractController
             }
         }
 
-        // Garde d'impression : réservée à la gare créatrice (émettrice = gare de montée).
-        // Empêche le contournement par URL directe (miroir du bouton).
-        if (!$this->peutAgirSurGare($ticket['gare']['id'] ?? null)) {
-            $this->addFlash('error', 'Vous ne pouvez imprimer que les billets émis à votre gare.');
+        // Garde d'impression : réservée à la gare créatrice (émettrice = gare de montée) OU au commercial
+        // qui a vendu le billet à bord. Empêche le contournement par URL directe (miroir du bouton).
+        if (!$this->peutAgirSurGare($ticket['gare']['id'] ?? null)
+            && !$this->estCommercialDe($ticket['commercial']['id'] ?? null)) {
+            $this->addFlash('error', 'Vous ne pouvez imprimer que les billets émis à votre gare ou vendus par vous à bord.');
             return $this->redirectToRoute('ticket.show', ['id' => $id]);
         }
 

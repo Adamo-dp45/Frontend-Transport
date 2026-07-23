@@ -68,13 +68,68 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="card p-5">
             <p class="text-sm font-medium text-muted-foreground mb-4">Recettes par jour</p>
-            <canvas id="chartRecettes" height="120" data-values="{{ financiere.recettesParJour | map(r => {label: r.label, montant: r.montant}) | json_encode }}"></canvas>
+            <canvas id="chartRecettes" height="120" data-values="{{ financiere.recettesParJour | map(r => {label: r.label, montant: r.montant, tickets: r.tickets, reservations: r.reservations, courriers: r.courriers, bagages: r.bagages}) | json_encode }}"></canvas>
         </div>
         <div class="card p-5">
             <p class="text-sm font-medium text-muted-foreground mb-4">Coûts par jour</p>
             <canvas id="chartCouts" height="120" data-values="{{ financiere.coutsParJour | map(c => {label: c.label, depannage: c.depannage, approvisionnement: c.approvisionnement}) | json_encode }}"></canvas>
         </div>
     </div>
+</section>
+{% endif %}
+
+{# ── Ponctualité (admin) ──────────────────────────────────────────── #}
+{% if ponctualite and (ponctualite.global.nbPassages ?? 0) > 0 %}
+<section class="mb-10">
+    {{ s.sectionTitle('Ponctualité') }}
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+        {{ s.kpi('Retard moyen', ponctualite.global.retardMoyen, 'min', ponctualite.global.retardMoyen > 0 ? 'rose' : 'emerald', 'alert') }}
+        {{ s.kpi('À l\'heure', ponctualite.global.tauxALheure, '%', 'emerald', 'check') }}
+        {{ s.kpi('Temps d\'arrêt moyen', ponctualite.global.tempsArretMoyen, 'min', 'blue', 'chart') }}
+        {{ s.kpi('Passages mesurés', ponctualite.global.nbPassages, '', 'violet', 'pin') }}
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Retard moyen par gare</p>
+            <div class="text-sm space-y-1.5">
+                {% for g in ponctualite.parGare|slice(0, 8) %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">{{ g.libelle }} <span class="text-muted-foreground">· {{ g.nbPassages }} passage{{ g.nbPassages > 1 ? 's' }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ g.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : (g.retardMoyen > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">
+                        {{ g.retardMoyen > 0 ? '+' }}{{ g.retardMoyen }} min · {{ g.tauxALheure }}% à l'heure
+                    </span>
+                </div>
+                {% else %}
+                <p class="text-muted-foreground italic">Aucun passage mesuré.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Retard moyen par ligne</p>
+            <div class="text-sm space-y-1.5 mb-4">
+                {% for l in ponctualite.parLigne|slice(0, 6) %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">{{ l.code }} <span class="text-muted-foreground">· {{ l.nbPassages }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ l.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : 'text-foreground' }}">{{ l.retardMoyen > 0 ? '+' }}{{ l.retardMoyen }} min</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% if ponctualite.evolution|length > 1 %}
+            {% set maxRetard = 1 %}
+            {% for e in ponctualite.evolution %}{% if e.retardMoyen|abs > maxRetard %}{% set maxRetard = e.retardMoyen|abs %}{% endif %}{% endfor %}
+            <p class="text-xs text-muted-foreground mb-2 pt-3 border-t border-border">Évolution du retard le long du trajet (par arrêt)</p>
+            <div class="flex items-end gap-1 h-16">
+                {% for e in ponctualite.evolution %}
+                <div class="flex-1 flex flex-col items-center justify-end" title="Arrêt {{ e.ordre }} : {{ e.retardMoyen }} min ({{ e.nbPassages }} passage{{ e.nbPassages > 1 ? 's' }})">
+                    <div class="w-full rounded-t {{ e.retardMoyen > ponctualite.seuilALheureMinutes ? 'bg-rose-400' : 'bg-violet-400' }}" style="height: {{ (e.retardMoyen|abs / maxRetard * 100)|round }}%; min-height: 2px;"></div>
+                    <span class="text-[10px] text-muted-foreground mt-0.5">{{ e.ordre }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-3">« À l'heure » = retard ≤ {{ ponctualite.seuilALheureMinutes }} min. Mesuré sur les passages réels horodatés.</p>
 </section>
 {% endif %}
 

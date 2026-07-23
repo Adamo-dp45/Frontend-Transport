@@ -274,12 +274,22 @@ final class CarController extends AbstractController
         }
         $grid = [];
         foreach (preg_split('/\r\n|\r|\n/', trim($text)) as $ligne) {
-            if (trim($ligne) === '') {
+            $ligne = trim($ligne);
+            if ($ligne === '') {
                 continue;
             }
             $cellules = [];
-            foreach (preg_split('/\s+/', trim($ligne)) as $cellule) {
-                $cellules[] = ($cellule === '.' || $cellule === '0' || $cellule === '') ? null : (int) $cellule;
+            // Marqueur de rangée optionnel en tête (« B: 57 58 … » = banquette) : conservé tel quel
+            // en 1re cellule de la grille, le backend en déduit 'cote = ARRIERE'.
+            if (preg_match('/^([A-Za-z])\s*:\s*(.*)$/', $ligne, $m)) {
+                $cellules[] = strtoupper($m[1]);
+                $ligne = trim($m[2]);
+            }
+            foreach (preg_split('/\s+/', $ligne) as $cellule) {
+                if ($cellule === '') {
+                    continue;
+                }
+                $cellules[] = ($cellule === '.' || $cellule === '0') ? null : (int) $cellule;
             }
             $grid[] = $cellules;
         }
@@ -298,7 +308,13 @@ final class CarController extends AbstractController
             if (!is_array($rangee)) {
                 continue;
             }
-            $lignes[] = implode(' ', array_map(
+            // Marqueur de rangée (1re cellule chaîne) restitué sous la forme « B: … » dans l'éditeur
+            $prefixe = '';
+            if (isset($rangee[0]) && is_string($rangee[0])) {
+                $prefixe = strtoupper($rangee[0]) . ': ';
+                array_shift($rangee);
+            }
+            $lignes[] = $prefixe . implode(' ', array_map(
                 static fn ($c) => ($c === null || (int) $c <= 0) ? '.' : (string) (int) $c,
                 $rangee
             ));

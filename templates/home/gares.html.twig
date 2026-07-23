@@ -95,7 +95,7 @@
                     <span>Courriers <strong class="text-foreground tabular-nums">{{ g.recetteCourriers|number_format(0, ',', ' ') }}</strong></span>
                     <span>Bagages <strong class="text-foreground tabular-nums">{{ g.recetteBagages|number_format(0, ',', ' ') }}</strong></span>
                     <span>Annulés <strong class="tabular-nums {{ (g.ticketsAnnules ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground' }}">{{ g.ticketsAnnules ?? 0 }}</strong></span>
-                    <span>Reportés <strong class="tabular-nums {{ (g.ticketsReportes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground' }}">{{ g.ticketsReportes ?? 0 }}</strong></span>
+                    <span title="{% if (g.ticketsReportesEviction ?? 0) > 0 %}dont {{ g.ticketsReportesEviction }} relogement(s) d'évincé(s), imputable(s) à la compagnie{% else %}reports demandés par le client{% endif %}">Reportés <strong class="tabular-nums {{ (g.ticketsReportes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground' }}">{{ g.ticketsReportes ?? 0 }}</strong>{% if (g.ticketsReportesEviction ?? 0) > 0 %} <span class="text-rose-600 dark:text-rose-400">· {{ g.ticketsReportesEviction }} évic.</span>{% endif %}</span>
                     <span>Remises <strong class="tabular-nums {{ (g.remiseTotale ?? 0) > 0 ? 'text-fuchsia-600 dark:text-fuchsia-400' : 'text-foreground' }}">{{ (g.remiseTotale ?? 0)|number_format(0, ',', ' ') }} F</strong>{% if (g.remiseNb ?? 0) > 0 %} <span class="text-muted-foreground">· {{ g.remiseNb }}</span>{% endif %}</span>
                 </div>
 

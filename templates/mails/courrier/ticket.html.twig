@@ -2,6 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    {#
+        Reçu COURRIER — format thermique 80 mm (cf. PdfService::generate, défaut 'thermal').
+        IMPORTANT : Dompdf ne supporte PAS flexbox. Toute mise en page sur 2 colonnes (en-tête,
+        valeur/frais) passe donc par des <table>, sinon les blocs s'empilent.
+    #}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -12,267 +17,177 @@
             padding: 4mm;
         }
 
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .upper { text-transform: uppercase; }
-
-        /* En-tête : sigle à gauche, contact + date à droite */
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2px;
+        /* ── En-tête : sigle + gare à gauche, téléphones + date à droite ── */
+        .hdr { width: 100%; border-collapse: collapse; }
+        .hdr td { vertical-align: top; padding: 0; }
+        .hdr .r { text-align: right; }
+        .sigle {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            line-height: 1.1;
         }
-        .header-sigle {
-            font-size: 18px;
-            font-weight: 900;
-            line-height: 1;
-        }
-        .header-right {
-            text-align: right;
-            font-size: 10px;
-        }
-        .header-agency {
+        .gare {
             font-size: 11px;
             font-weight: bold;
+            letter-spacing: 1px;
         }
-        .header-date {
-            font-size: 11px;
-            font-weight: bold;
-        }
+        .tels { font-size: 10px; font-weight: bold; }
+        .date { font-size: 11px; font-weight: bold; margin-top: 1px; }
 
-        /* Titre principal */
+        /* ── Titre ── */
         .title {
             text-align: center;
-            font-size: 18px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 6px 0 4px;
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 7px 0 5px;
         }
 
-        /* Bandeau de statut (perdu / annulé) — inversé pour être bien visible */
+        /* ── Bandeau d'état (perdu / annulé) — hors cas nominal ── */
         .statut-banner {
             background: #000;
             color: #fff;
-            border: 2px solid #000;
             text-align: center;
             font-size: 14px;
-            font-weight: 900;
-            text-transform: uppercase;
+            font-weight: bold;
             letter-spacing: 2px;
             padding: 4px 2px;
-            margin: 5px 0;
-        }
-
-        /* Ligne simple centrée */
-        .info-line {
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin: 3px 0;
-        }
-        .info-line .label {
-            font-weight: bold;
-        }
-        .info-line .value {
-            font-weight: bold;
-        }
-
-        /* Ligne VALEUR + FRAIS sur la même ligne */
-        .valeur-frais {
-            display: flex;
-            justify-content: center;
-            gap: 10mm;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin: 3px 0;
-        }
-
-        /* Bloc CODE */
-        .code-line {
-            text-align: center;
-            font-size: 20px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 3px;
             margin: 6px 0;
         }
-        .code-line .code-label {
-            font-size: 16px;
-        }
 
-        /* Sections EXPÉDITEUR / DESTINATAIRE */
-        .section-title {
-            text-align: center;
-            font-size: 13px;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin: 5px 0 1px;
-        }
-        .section-value {
-            text-align: center;
-            font-size: 13px;
+        /* ── Lignes d'information ── */
+        .line { font-size: 12px; font-weight: bold; letter-spacing: 1px; margin: 4px 0; }
+        .line .v { margin-left: 8px; }
+
+        .vf { width: 100%; border-collapse: collapse; margin: 4px 0; }
+        .vf td { font-size: 12px; font-weight: bold; letter-spacing: 1px; padding: 0; }
+        .vf .big { font-size: 15px; }
+
+        .code {
+            font-size: 20px;
             font-weight: bold;
-            text-transform: uppercase;
-            margin: 1px 0;
+            letter-spacing: 2px;
+            margin: 7px 0;
         }
-        .section-contact {
+        .code .lbl { font-size: 14px; }
+
+        /* ── Expéditeur / Destinataire ── */
+        .sect {
             text-align: center;
-            font-size: 11px;
-            font-weight: bold;
-            margin: 1px 0 4px;
-        }
-
-        /* REF */
-        .ref-line {
-            font-size: 13px;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin: 5px 0 2px;
-        }
-
-        /* Frais suivi */
-        .suivi-line {
             font-size: 12px;
             font-weight: bold;
-            text-transform: uppercase;
-            margin: 2px 0 5px;
+            letter-spacing: 1px;
+            margin: 7px 0 1px;
         }
-
-        /* Table colis */
-        .colis-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 4px 0;
-            font-size: 10px;
-        }
-        .colis-table thead tr th {
-            border: 1px solid #000;
-            padding: 2px 4px;
+        .sect-v {
             text-align: center;
+            font-size: 13px;
             font-weight: bold;
-            text-transform: uppercase;
-            background: #eee;
+            letter-spacing: 1px;
         }
-        .colis-table tbody tr td {
-            border: 1px solid #000;
-            padding: 2px 4px;
-            text-align: center;
-        }
+        .sect-c { text-align: center; font-size: 11px; font-weight: bold; margin-top: 1px; }
 
-        /* Table title */
+        .ref { font-size: 13px; font-weight: bold; letter-spacing: 1px; margin: 7px 0 4px; }
+        .suivi { font-size: 12px; font-weight: bold; letter-spacing: 1px; margin: 4px 0 6px; }
+        .suivi .big { font-size: 14px; margin-left: 8px; }
+
+        /* ── Liste des colis ── */
         .table-title {
             text-align: center;
             font-size: 11px;
             font-weight: bold;
-            text-transform: uppercase;
+            letter-spacing: 1px;
             border: 1px solid #000;
             border-bottom: none;
             padding: 2px;
         }
-
-        /* Footer */
-        .footer {
-            font-size: 8.5px;
-            text-align: center;
-            margin-top: 6px;
+        .colis { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .colis th, .colis td {
+            border: 1px solid #000;
+            padding: 2px 4px;
+            text-align: left;
             font-weight: bold;
-            text-transform: uppercase;
         }
+        .colis th { letter-spacing: 1px; }
 
-        .separator { border-top: 1px dashed #000; margin: 3px 0; }
-        .separator-solid { border-top: 1px solid #000; margin: 3px 0; }
+        /* ── Pied ── */
+        .footer { font-size: 8px; text-align: center; font-weight: bold; margin-top: 7px; }
+        .footer p { margin-top: 2px; }
     </style>
 </head>
 <body>
 
-    {# ── En-tête ── #}
-    <div class="header-top">
-        <div>
-            <div class="header-sigle bold upper">{{ entreprise.sigle ?? entreprise.libelle }}</div>
-            <div class="header-agency upper">{{ entreprise.adresse ?? '' }}</div>
-        </div>
-        <div class="header-right">
-            {% if entreprise.contact1 %}
-                <div>{{ entreprise.contact1 }}</div>
-            {% endif %}
-            {% if entreprise.contact2 %}
-                <div>{{ entreprise.contact2 }}</div>
-            {% endif %}
-            <div class="header-date bold">{{ "now"|date("d/m/Y") }}</div>
-        </div>
-    </div>
+    {# Accès défensifs : l'entreprise ou une gare peut manquer selon la réponse API (strict_variables). #}
+    {% set ent = entreprise|default({}) %}
+    {% set marque = ent.sigle|default(ent.libelle|default('')) %}
+    {% set garedepart = courrier.garedepart|default(null) %}
+    {% set garearrivee = courrier.garearrivee|default(null) %}
 
-    <div class="separator-solid"></div>
+    {# ── En-tête ── #}
+    <table class="hdr">
+        <tr>
+            <td>
+                <div class="sigle">{{ marque|upper }}</div>
+                <div class="gare">{{ garedepart ? garedepart.libelle|upper : '' }}</div>
+            </td>
+            <td class="r">
+                {% set tels = [ent.contact1|default(''), ent.contact2|default('')]|filter(t => t is not empty) %}
+                {% if tels|length %}<div class="tels">{{ tels|join('/') }}</div>{% endif %}
+                <div class="date">{{ (courrier.createdAt|default(null) ? courrier.createdAt : "now")|date("d/m/Y") }}</div>
+            </td>
+        </tr>
+    </table>
 
     {# ── Titre ── #}
-    <div class="title">Reçu Courrier</div>
+    <div class="title">REÇU COURRIER</div>
 
     {% if courrier.statut in ['PERDU', 'ANNULE'] %}
-    <div class="statut-banner">{{ courrier.statut == 'PERDU' ? 'Courrier perdu' : 'Courrier annulé' }}</div>
+    <div class="statut-banner">{{ courrier.statut == 'PERDU' ? 'COURRIER PERDU' : 'COURRIER ANNULÉ' }}</div>
     {% endif %}
-
-    <div class="separator-solid"></div>
 
     {# ── Destination ── #}
-    <div class="info-line upper">
-        <span class="label">Destination : </span>
-        <span class="value">{{ courrier.garearrivee.libelle ?? '—' }}</span>
-    </div>
+    <div class="line">DESTINATION :<span class="v">{{ garearrivee ? garearrivee.libelle|upper : '—' }}</span></div>
 
     {# ── Valeur + Frais ── #}
-    <div class="valeur-frais">
-        <span>Valeur : {{ courrier.detailcourriers|map(d => d.valeur)|reduce((carry, v) => carry + v, 0)|number_format(0, ',', ' ') }}</span>
-        <span>Frais : <strong>{{ courrier.montant|number_format(0, ',', ' ') }}</strong></span>
-    </div>
-
-    <div class="separator-solid"></div>
+    {% set valeur = courrier.detailcourriers|map(d => d.valeur)|reduce((carry, v) => carry + v, 0) %}
+    <table class="vf">
+        <tr>
+            <td>VALEUR : {{ valeur|number_format(0, ',', ' ') }}</td>
+            <td>FRAIS : <span class="big">{{ courrier.montant|number_format(0, ',', ' ') }}</span></td>
+        </tr>
+    </table>
 
     {# ── Code ── #}
-    <div class="code-line">
-        <span class="code-label">Code : </span>{{ courrier.codecourrier }}
-    </div>
-
-    <div class="separator-solid"></div>
+    <div class="code"><span class="lbl">CODE :</span> {{ courrier.codecourrier }}</div>
 
     {# ── Expéditeur ── #}
-    <div class="section-title">Expéditeur</div>
-    <div class="section-value">{{ courrier.nomexpediteur|upper }}</div>
-    <div class="section-contact">{{ courrier.contactexpediteur }}</div>
-
-    <div class="separator-solid"></div>
+    <div class="sect">EXPÉDITEUR</div>
+    <div class="sect-v">{{ courrier.nomexpediteur|upper }}</div>
+    <div class="sect-c">{{ courrier.contactexpediteur }}</div>
 
     {# ── Destinataire ── #}
-    <div class="section-title">Destinataire</div>
-    <div class="section-value">{{ courrier.nomdestinataire|upper }}</div>
-    <div class="section-contact">{{ courrier.contactdestinataire }}</div>
+    <div class="sect">DESTINATAIRE</div>
+    <div class="sect-v">{{ courrier.nomdestinataire|upper }}</div>
+    <div class="sect-c">{{ courrier.contactdestinataire }}</div>
 
-    <div class="separator-solid"></div>
-
-    {# ── Référence voyage ── #}
+    {# ── Référence ── #}
     {% if courrier.voyage %}
-    <div class="ref-line">
-        Réf : {{ courrier.voyage.codevoyage }}
-    </div>
+    <div class="ref">RÉF : {{ courrier.voyage.codevoyage }}</div>
     {% endif %}
 
-    {# ── Frais suivi SMS ── #}
+    {# ── Frais de suivi SMS ── #}
     {% if courrier.fraissuivi %}
-    <div class="suivi-line">
-        Frais de suivi SMS : {{ courrier.fraissuivi|number_format(0, ',', ' ') }}
-    </div>
+    <div class="suivi">FRAIS DE SUIVI SMS :<span class="big">{{ courrier.fraissuivi|number_format(0, ',', ' ') }}</span></div>
     {% endif %}
 
     {# ── Liste des colis ── #}
-    <div class="table-title">Liste des colis</div>
-    <table class="colis-table">
+    <div class="table-title">LISTE DES COLIS</div>
+    <table class="colis">
         <thead>
             <tr>
-                <th>Nature</th>
-                <th>Désignation</th>
+                <th>NATURE</th>
+                <th>DÉSIGNATION</th>
             </tr>
         </thead>
         <tbody>
@@ -285,11 +200,10 @@
         </tbody>
     </table>
 
-    {# ── Footer ── #}
-    <div class="separator-solid"></div>
+    {# ── Pied ── #}
     <div class="footer">
-        <p>NB : Passé un délai de 15 jours {{ entreprise.sigle ?? entreprise.libelle }} pas responsable en cas de perte</p>
-        <p>Pas de remboursement après encaissement</p>
+        <p>NB : PASSÉ UN DÉLAI DE 15 JOURS {{ marque|upper }} PAS RESPONSABLE EN CAS DE PERTE</p>
+        <p>PAS DE REMBOURSEMENT APRÈS ENCAISSEMENT</p>
     </div>
 
 </body>

@@ -90,6 +90,25 @@ final class VoyageController extends AbstractController
                 $recetteReservations += (int) ($t['prix'] ?? 0);
             }
         }
+
+        /*
+            Réservations PAYÉES dont le billet n'est PAS encore émis. Elles étaient totalement absentes
+            de cette page, qui ne lisait que les billets : la recette du voyage était sous-estimée du
+            montant déjà encaissé, et le car paraissait moins rempli qu'il ne le sera. Le manifeste,
+            lui, les comptait déjà — d'où l'écart entre les deux écrans.
+            Celles qui ONT un billet sont déjà comptées ci-dessus, via ce billet.
+        */
+        $reservationsSansBillet = [];
+        try {
+            foreach ($this->api->collection('/api/reservations', ['voyage.id' => $id]) as $r) {
+                if (($r['etatpaiement'] ?? null) === 'PAYE' && empty($r['ticket'])) {
+                    $reservationsSansBillet[] = $r;
+                    $recetteReservations += (int) ($r['prix'] ?? 0);
+                }
+            }
+        } catch(ApiException) {
+            // non bloquant : la page reste affichable sans ce complément
+        }
         $recetteCourriers = 0;
         $recetteBagages = 0;
         try {
@@ -171,6 +190,22 @@ final class VoyageController extends AbstractController
                 }
             }
 
+            // Les réservations payées sans billet occuperont bien une place : le billet sera émis
+            // avant le départ. Aucun siège ne leur est encore attribué, elles comptent donc comme
+            // une place pleine sur tout leur tronçon.
+            foreach($reservationsSansBillet as $r) {
+                $m = $ordreParGare[$r['gare']['id'] ?? null] ?? null;
+                $d = $ordreParGare[$r['garedescente']['id'] ?? null] ?? $maxOrdre;
+                if($m === null) {
+                    continue;
+                }
+                for($i = $m; $i < $d; $i++) {
+                    if(isset($occSegment[$i])) {
+                        $occSegment[$i]++;
+                    }
+                }
+            }
+
             for($i = 0; $i < $maxOrdre; $i++) {
                 $occ = $occSegment[$i] ?? 0;
                 $segments[] = [
@@ -183,7 +218,9 @@ final class VoyageController extends AbstractController
             }
         } else {
             // Pas d'info ligne (repli) : on compte les tickets
-            $picOccupation = $nbrTickets;
+            // Sans ligne, on ne sait pas découper en segments : repli sur un total, réservations
+            // payées comprises pour rester cohérent avec la branche ci-dessus.
+            $picOccupation = $nbrTickets + count($reservationsSansBillet);
         }
 
         $placesRestantes = max(0, $placestotal - $picOccupation);
@@ -413,10 +450,28 @@ final class VoyageController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function receptionner(int $id, Request $request): Response
     {
-        if ($this->isCsrfTokenValid('receptionner_voyage', $request->request->get('_token'))) {
+        if($this->isCsrfTokenValid('receptionner_voyage', $request->request->get('_token'))) {
             try {
                 $this->api->patch('/api/voyages/' . $id . '/receptionner');
                 $this->addFlash('success', 'Voyage réceptionné à votre gare : les courriers et bagages qui y descendent ont été mis à jour');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'voyage.show', ['id' => $id]);
+                if ($response) {
+                    return $response;
+                }
+            }
+        }
+        return $this->redirectToRoute('voyage.show', ['id' => $id]);
+    }
+
+    #[Route('/{id}/repartir', name: 'repartir', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_USER')]
+    public function repartir(int $id, Request $request): Response
+    {
+        if($this->isCsrfTokenValid('repartir_voyage', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/voyages/' . $id . '/repartir');
+                $this->addFlash('success', 'Départ du car de votre gare enregistré');
             } catch (ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, null, 'voyage.show', ['id' => $id]);
                 if ($response) {

@@ -13,6 +13,7 @@ export default function PlanCarReadonly({ sieges, siegesGauche, siegesDroite }: 
             siegesGauche={siegesGauche}
             siegesDroite={siegesDroite}
             readonly={true}
+            showLegend={false}
         />
     </>
 }

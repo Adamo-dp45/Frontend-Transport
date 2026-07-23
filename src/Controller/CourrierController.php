@@ -326,14 +326,17 @@ final class CourrierController extends AbstractController
                 }
             }
         */
-        return $pdfService->generate(
+        // Autofit : la hauteur de page s'ajuste au contenu → UNE seule page, quel que soit le nombre
+        // de colis (une hauteur thermique fixe finit toujours par déborder sur une 2e page).
+        return $pdfService->generateThermalAutofit(
             'mails/courrier/ticket.html.twig',
             [
                 'courrier' => $courrier,
                 'entreprise' => $entreprise,
                 // 'logoBase64' => $logoBase64
             ],
-            'courrier-' . ($courrier['codecourrier'] ?? $id) . date('YmdHis') . '.pdf'
+            'courrier-' . ($courrier['codecourrier'] ?? $id) . date('YmdHis') . '.pdf',
+            1
         );
     }
 

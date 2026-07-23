@@ -114,31 +114,39 @@ final class SearchController extends AbstractController
             return $this->json([]);
         }
 
-        // Un agent de gare ne voit (et ne rattache un bagage qu'à) SES billets = ceux émis à sa gare
-        // (gare de montée). Admin/central → tous les billets.
-        $gare = $this->getUser()?->getGare();
-        $filtreGare = ($gare && !$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPER_ADMIN'))
-            ? ['gare.id' => $gare['id']]
-            : [];
+        // Un agent de gare rattache un bagage à SES billets = ceux émis à sa gare (gare de montée) MAIS
+        // AUSSI ceux qu'il a vendus À BORD comme commercial (gare de montée = position du car, ≠ sa gare
+        // d'attache). Sans ce second périmètre, le vendeur à bord ne pouvait pas rattacher un bagage à un
+        // billet vendu en route. Admin / central → tous les billets (aucun filtre).
+        $user = $this->getUser();
+        $gare = $user?->getGare();
+        $estLarge = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN') || $gare === null;
+        $portees = $estLarge
+            ? [[]]
+            : [['gare.id' => $gare['id']], ['commercial.id' => $user->getId()]];
 
         try {
-            $byNom = $this->api->collection('/api/tickets?' . http_build_query(array_merge([
-                'statut' => 'VALIDE',
-                'nomclient' => $q ?: null,
-                'itemsPerPage' => $limit,
-                'page' => 1,
-            ], $filtreGare)));
-            $byCode = mb_strlen($q) >= 2 ? $this->api->collection('/api/tickets?' . http_build_query(array_merge([
-                'statut' => 'VALIDE',
-                'codeticket' => $q,
-                'itemsPerPage' => $limit,
-                'page' => 1,
-            ], $filtreGare))) : [];
-
-            // Fusion par id (un billet peut matcher nom ET code)
+            // Fusion par id sur les deux périmètres × (nom, code) — un billet peut matcher plusieurs fois.
             $parId = [];
-            foreach (array_merge($byNom, $byCode) as $t) {
-                $parId[$t['id']] = $t;
+            foreach ($portees as $filtre) {
+                foreach ($this->api->collection('/api/tickets?' . http_build_query(array_merge([
+                    'statut' => 'VALIDE',
+                    'nomclient' => $q ?: null,
+                    'itemsPerPage' => $limit,
+                    'page' => 1,
+                ], $filtre))) as $t) {
+                    $parId[$t['id']] = $t;
+                }
+                if (mb_strlen($q) >= 2) {
+                    foreach ($this->api->collection('/api/tickets?' . http_build_query(array_merge([
+                        'statut' => 'VALIDE',
+                        'codeticket' => $q,
+                        'itemsPerPage' => $limit,
+                        'page' => 1,
+                    ], $filtre))) as $t) {
+                        $parId[$t['id']] = $t;
+                    }
+                }
             }
 
             $results = array_map(function ($t) {

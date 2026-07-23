@@ -9,12 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Loader2, CheckCircle2, MapPin, ArrowRight } from "lucide-react"
 import { flash } from "../../../elements/Alert"
 
+/* Sert /api/voyages/reservables : la liste est DÉJÀ filtrée et triée côté serveur (gare de l'agent,
+   avancement du car, durées d'arrêt). Rien à re-décider ici. */
 interface VoyageRef {
     id: number
     provenance: string
     destination: string
     codevoyage: string
-    car?: { id: number } | null
+    /** Passage du car à la gare de l'agent — l'heure qui compte au guichet. Null si l'agent n'a pas de gare. */
+    heurepassage?: string | null
+    datedepartprevue?: string | null
+    enRoute?: boolean
 }
 
 interface Arret {
@@ -24,15 +29,21 @@ interface Arret {
     ordre: number
 }
 
+/** "2026-07-20T15:20:00+00:00" -> "20/07 15:20" */
+function formatHeure(iso: string): string {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ""
+    return d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+}
+
 interface Props {
     voyages: VoyageRef[]
-    preselectVoyageId?: number
     userGareId?: number | null
     userGareLibelle?: string | null
 }
 
-export default function ReservationForm({ voyages, preselectVoyageId, userGareId, userGareLibelle }: Props) {
-    const [voyageId, setVoyageId] = useState<string>(preselectVoyageId ? String(preselectVoyageId) : "")
+export default function ReservationForm({ voyages, userGareId, userGareLibelle }: Props) {
+    const [voyageId, setVoyageId] = useState<string>("")
     const [arrets, setArrets] = useState<Arret[]>([])
     const [monteeId, setMonteeId] = useState<string>("")
     const [descenteId, setDescenteId] = useState<string>("")
@@ -139,6 +150,16 @@ export default function ReservationForm({ voyages, preselectVoyageId, userGareId
                                     <SelectItem key={v.id} value={String(v.id)}>
                                         <span className="font-mono text-xs text-gray-500 mr-2">{v.codevoyage}</span>
                                         {v.provenance} → {v.destination}
+                                        {/* Heure de passage à VOTRE gare, pas le départ du voyage :
+                                            sur un car déjà en route, c'est la seule qui a du sens. */}
+                                        {v.heurepassage && (
+                                            <span className="ml-2 text-xs tabular-nums text-muted-foreground">
+                                                {formatHeure(v.heurepassage)}
+                                            </span>
+                                        )}
+                                        {v.enRoute && (
+                                            <span className="ml-2 text-xs text-amber-600">en route</span>
+                                        )}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

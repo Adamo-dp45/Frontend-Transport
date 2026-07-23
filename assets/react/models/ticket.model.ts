@@ -21,4 +21,12 @@ export interface Ticket {
     ticketOrigine?: { id: number; codeticket: string } | null
     // Billet émis comme récompense de fidélité (carte à tampons)
     fideliteRecompense?: boolean
+    /*
+        ÉVINCÉ par la priorité amont : à sa gare de montée, le siège est déjà pris par un passager monté
+        plus tôt → ce billet, bien que VALIDE, ne montera pas. DÉRIVÉ à la lecture par l'API (jamais
+        stocké) : n'est fiable que sur la ressource /api/tickets. Cf. Ticket::isEvince côté backend.
+    */
+    evince?: boolean
+    // Commercial (vendeur à bord) ayant émis ce billet, si vente en route (id seul exposé sur read:Ticket)
+    commercial?: { id: number } | null
 }

@@ -104,7 +104,7 @@ class CarFormType extends AbstractType
                 'label' => 'Plan de sièges',
                 'required' => false,
                 'help' => 'Une rangée par ligne, numéros séparés par des espaces, « . » pour une allée ou un vide. Ex : « 3 4 5 . 2 1 ». Laissé vide, un plan standard est généré depuis les colonnes gauche/droite. Le nombre de sièges est déduit du plan.',
-                'attr' => ['rows' => 6, 'class' => 'font-mono', 'placeholder' => "3 4 5 . 2 1\n8 9 10 . 7 6\n. . . . . 11\n14 15 . . 13 12\n16 17 18 19 20 21"],
+                'attr' => ['rows' => 6, 'class' => 'font-mono', 'placeholder' => "3 4 5 . 2 1\n8 9 10 . 7 6\n. . . . . 11\n14 15 . . 13 12\nB: 16 17 18 19 20"],
             ])
         ;
     }

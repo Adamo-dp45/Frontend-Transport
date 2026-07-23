@@ -191,8 +191,11 @@ final class BagageController extends AbstractController
     #[IsGranted('BAGAGE_VOIR')]
     public function print(int $id): Response
     {
+        $bagage = null;
+        $entreprise = null;
         try {
             $bagage = $this->api->item('/api/bagages/' . $id);
+            $entreprise = $this->api->item('/api/me/entreprise'); // en-tête du reçu (sigle + téléphones)
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'bagage.show', ['id' => $id]);
             if($response) {
@@ -208,10 +211,15 @@ final class BagageController extends AbstractController
             return $this->redirectToRoute('bagage.show', ['id' => $id]);
         }
 
-        return $this->pdfService->generate(
+        // Autofit : hauteur de page ajustée au contenu → une seule page, sans grand vide en bas.
+        return $this->pdfService->generateThermalAutofit(
             'mails/bagage/ticket.html.twig',
-            ['bagage' => $bagage],
-            'ticket-' . ($bagage['codebagage'] ?? $id) . '.pdf'
+            [
+                'bagage' => $bagage,
+                'entreprise' => $entreprise
+            ],
+            'bagage-' . ($bagage['codebagage'] ?? $id) . '.pdf',
+            1
         );
     }
 

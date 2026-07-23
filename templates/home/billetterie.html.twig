@@ -75,11 +75,19 @@
     <div class="card p-5">
         <p class="text-sm font-medium text-muted-foreground mb-4">Désistements (reports / annulations)</p>
         <div class="flex flex-wrap gap-6">
-            <div><p class="text-2xl font-semibold tabular-nums text-amber-600 dark:text-amber-400">{{ ds.reporte ?? 0 }}</p><p class="text-xs text-muted-foreground">Reportés</p></div>
+            {# « Reportés » = reports VOLONTAIRES du client. Les relogements d'évincés (imputables à la
+               compagnie) sont comptés à part et exclus du taux : ce n'est pas un renoncement du client. #}
+            <div><p class="text-2xl font-semibold tabular-nums text-amber-600 dark:text-amber-400">{{ ds.reporteVolontaire ?? ds.reporte ?? 0 }}</p><p class="text-xs text-muted-foreground">Reportés</p></div>
             <div><p class="text-2xl font-semibold tabular-nums text-red-600 dark:text-red-400">{{ ds.annule ?? 0 }}</p><p class="text-xs text-muted-foreground">Annulés (remboursés)</p></div>
             <div><p class="text-2xl font-semibold tabular-nums">{{ ds.valide ?? 0 }}</p><p class="text-xs text-muted-foreground">Validés</p></div>
+            {% if (ds.reporteEviction ?? 0) > 0 %}
+            <div title="Billets évincés par la priorité amont, relogés sur un autre départ. Imputables à la compagnie — exclus du taux de désistement.">
+                <p class="text-2xl font-semibold tabular-nums text-rose-600 dark:text-rose-400">{{ ds.reporteEviction }}</p>
+                <p class="text-xs text-muted-foreground">Évincés relogés <span class="opacity-70">· compagnie</span></p>
+            </div>
+            {% endif %}
         </div>
-        <p class="text-xs text-muted-foreground mt-4 pt-3 border-t border-border">Taux de désistement : <strong class="text-foreground">{{ ds.taux ?? 0 }} %</strong> des billets émis sur la période</p>
+        <p class="text-xs text-muted-foreground mt-4 pt-3 border-t border-border">Taux de désistement : <strong class="text-foreground">{{ ds.taux ?? 0 }} %</strong> des billets émis sur la période{% if (ds.reporteEviction ?? 0) > 0 %} <span class="opacity-70">(reports d'éviction exclus)</span>{% endif %}</p>
         {% set annulAg = ds.parAgent ?? [] %}
         {% if annulAg|length > 0 %}
         <p class="text-xs text-muted-foreground mt-3 mb-1">Annulations par agent <span class="opacity-70">· montant remboursé</span></p>

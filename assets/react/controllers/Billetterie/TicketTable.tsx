@@ -31,6 +31,7 @@ type Props = {
     csrfDelete: string
     userGareId: number | null   // gare de l'agent (null = central/admin sans gare)
     isAdmin: boolean
+    currentUserId: number | null // pour reconnaître les billets vendus à bord par CET utilisateur (commercial)
 }
 
 function buildColumns(
@@ -41,7 +42,8 @@ function buildColumns(
     canDelete: boolean,
     csrfDelete: string,
     userGareId: number | null,
-    isAdmin: boolean
+    isAdmin: boolean,
+    currentUserId: number | null
 ): ColumnDef<Ticket>[] {
 
     const sortUrls = (field: string) => ({
@@ -163,6 +165,19 @@ function buildColumns(
                 return (
                     <div className="flex flex-col gap-0.5 items-start">
                         <Badge className={styles[s] ?? ""}>{labels[s] ?? s}</Badge>
+                        {/*
+                            ÉVINCÉ : le billet est VALIDE mais son siège a été repris à la gare amont
+                            (surbooking assumé). Le passager ne montera pas → la gare émettrice doit le
+                            reloger. Signalé même sur un billet valide, c'est justement le cas piège.
+                        */}
+                        {row.original.evince && s === "VALIDE" && (
+                            <Badge
+                                className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                                title="Siège repris par la gare amont (priorité amont). Ce passager ne montera pas : à reloger sur un autre départ."
+                            >
+                                ⚠ Évincé
+                            </Badge>
+                        )}
                         {row.original.fideliteRecompense && (
                             <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">🎁 Fidélité</Badge>
                         )}
@@ -213,9 +228,13 @@ function buildColumns(
             id: "actions",
             cell: ({ row }) => {
                 const ticket = row.original
-                // Agir (modifier / désister / supprimer) seulement sur les tickets de SA gare émettrice ;
-                // un agent d'une autre gare ne peut que VOIR. Admin / central (sans gare) : non restreints.
-                const peutAgir = isAdmin || userGareId == null || ticket.gare?.id === userGareId
+                // peutGare : actions de GARE (désister/rembourser, supprimer du livre) réservées à la gare
+                // émettrice. Admin / central (sans gare) : non restreints.
+                const peutGare = isAdmin || userGareId == null || ticket.gare?.id === userGareId
+                // Le vendeur à bord : la gare de montée du billet n'est pas sa gare d'attache.
+                const estCommercial = ticket.commercial != null && ticket.commercial.id === currentUserId
+                // peutAgir : actions du VENDEUR (imprimer, corriger l'identité), ouvertes AUSSI au commercial.
+                const peutAgir = peutGare || estCommercial
                 return (
                     <div className="flex gap-2 items-center">
                         <DropdownMenu>
@@ -238,15 +257,17 @@ function buildColumns(
                                     </DropdownMenuItem>
                                 )}
 
-                                {canEdit && peutAgir && ticket.statut === "VALIDE" && !ticket.voyage?.datearriveereelle && (
+                                {/* Désister (remboursement) : action de GARE, pas ouverte au commercial */}
+                                {canEdit && peutGare && ticket.statut === "VALIDE" && !ticket.voyage?.datearriveereelle && (
                                     <DropdownMenuItem asChild>
                                         <a href={`/ticket/${ticket.id}/desister`} className="text-orange-600 focus:text-orange-700">Désister</a>
                                     </DropdownMenuItem>
                                 )}
 
-                                {canDelete && peutAgir && <DropdownMenuSeparator />}
+                                {canDelete && peutGare && <DropdownMenuSeparator />}
 
-                                {canDelete && peutAgir && (
+                                {/* Supprimer (retrait du livre) : action de GARE, pas ouverte au commercial */}
+                                {canDelete && peutGare && (
                                     <DropdownMenuItem asChild>
                                         <form
                                             method="POST"
@@ -282,12 +303,12 @@ function buildColumns(
     ]
 }
 
-export default function TicketTable({tickets, meta, queryParams, voyages, gares, canEdit, canDelete, csrfDelete, userGareId, isAdmin}: Props) {
+export default function TicketTable({tickets, meta, queryParams, voyages, gares, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId}: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin),
-        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId),
+        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId]
     )
     const filters: ServerTableFilter[] = useMemo(() => {
         const list: ServerTableFilter[] = [

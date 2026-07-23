@@ -54,6 +54,24 @@
         </div>
     </div>
 
+    {# Plan des sièges : disposition physique de CE véhicule (statique, tous libres, hors contexte voyage).
+       Carte pleine largeur car le plan a besoin d'espace horizontal (plusieurs colonnes de sièges). #}
+    {% if car.sieges is defined and car.sieges is not empty %}
+    <div class="card p-6 mb-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Plan des sièges</h2>
+            <span class="text-xs text-muted-foreground">{{ car.sieges|length }} place(s)</span>
+        </div>
+        <div {{ react_component('PlanCarReadonly', {
+            sieges: car.sieges,
+            siegesGauche: car.sieges_gauche ?? 0,
+            siegesDroite: car.sieges_droite ?? 0,
+        }) }}>
+            <div class="flex items-center justify-center gap-6 py-8"><twig:Spinner class="size-8" /></div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-4">
             <div class="card overflow-hidden">

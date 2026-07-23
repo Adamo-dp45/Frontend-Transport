@@ -13,7 +13,7 @@
             background: #fff;
             width: 190mm;
             margin: 0 auto;
-            padding: 10mm 0;
+            padding: 10mm 0 12mm; /* bas : réserve la place du numéro de page (élément fixed) */
         }
 
         /* ── HEADER ── */
@@ -180,9 +180,35 @@
         .footer table { width: 100%; border-collapse: collapse; }
         .footer td { border: none; padding: 0; vertical-align: bottom; }
         .footer .td-right { text-align: right; }
+
+        /* ── IMPRESSION / PAGINATION (Dompdf) ──
+           Document signé et archivé : il doit rester lisible s'il passe sur plusieurs pages.
+           - thead répété en haut de chaque page (longues listes) ;
+           - une ligne de tableau ne se coupe jamais en deux ;
+           - un titre de section ne reste jamais orphelin en bas de page ;
+           - blocs d'en-tête / résumé / signatures insécables ;
+           - numéro de page : un élément 'fixed' est rejoué par Dompdf sur chaque page. */
+        thead { display: table-header-group; }
+        .data-table tr { page-break-inside: avoid; }
+        .section-title { page-break-after: avoid; }
+        .header, .recette-banner, .summary-wrap, .sig-wrap { page-break-inside: avoid; }
+
+        .page-num {
+            position: fixed;
+            bottom: 3mm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            color: #aaa;
+        }
+        .page-num:before { content: "Page " counter(page); }
     </style>
 </head>
 <body>
+
+    {# Numéro de page (rejoué sur chaque page par Dompdf) #}
+    <div class="page-num"></div>
 
     {# ── EN-TÊTE ── #}
     <div class="header">
@@ -234,6 +260,45 @@
             </table>
         </div>
     </div>
+
+    {# ── PASSAGE DU CAR À CETTE GARE : prévu vs réel, retard, temps d'arrêt ── #}
+    {# Accès défensifs (?? null) : certains champs sont absents/null selon la position (origine sans
+       arrivée, terminus pas encore atteint). #}
+    {% set p_prevue = bordereau.gare.heurePrevue ?? null %}
+    {% set p_arrivee = bordereau.gare.arriveeReelle ?? null %}
+    {% set p_depart = bordereau.gare.departReelle ?? null %}
+    {% set p_retard = bordereau.gare.retardMinutes ?? null %}
+    {% set p_arret = bordereau.gare.tempsArretMinutes ?? null %}
+    {% if p_prevue or p_arrivee or p_depart %}
+    <div class="header-body" style="margin-top:2mm;">
+        <table>
+            <tr>
+                <td style="width:20%;">
+                    <div class="info-label">Passage prévu</div>
+                    <div class="info-value">{{ p_prevue ?? '—' }}</div>
+                </td>
+                <td style="width:20%;">
+                    <div class="info-label">Arrivée réelle</div>
+                    <div class="info-value">{{ p_arrivee ?? '—' }}</div>
+                </td>
+                <td style="width:20%;">
+                    <div class="info-label">Retard</div>
+                    <div class="info-value" style="{% if p_retard is not null and p_retard > 0 %}color:#c0392b;{% elseif p_retard is not null and p_retard < 0 %}color:#1e7a34;{% endif %}">
+                        {% if p_retard is null %}—{% elseif p_retard > 0 %}+{{ p_retard }} min{% elseif p_retard < 0 %}{{ p_retard }} min (avance){% else %}à l'heure{% endif %}
+                    </div>
+                </td>
+                <td style="width:20%;">
+                    <div class="info-label">Départ réel</div>
+                    <div class="info-value">{{ p_depart ?? '—' }}</div>
+                </td>
+                <td style="width:20%;">
+                    <div class="info-label">Temps d'arrêt</div>
+                    <div class="info-value">{% if p_arret is not null %}{{ p_arret }} min{% else %}—{% endif %}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
 
     {# ── BANDEAU PLACES AU DÉPART (le car sort de cette gare) ── #}
     <div class="recette-banner">

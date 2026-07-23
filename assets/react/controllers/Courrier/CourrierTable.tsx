@@ -128,7 +128,7 @@ function buildColumns(
             header: "Colis",
             cell: ({ row }) => (
                 <span className="tabular-nums font-medium">
-                    {row.original.detailcourriers.length}
+                    {row.original.detailcourriersCount ?? 0}
                 </span>
             ),
         },

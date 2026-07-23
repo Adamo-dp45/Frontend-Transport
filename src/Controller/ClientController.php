@@ -77,6 +77,23 @@ final class ClientController extends AbstractController
             defaultPerPage: 10,
         );
 
+        // Bagages du client (via le billet rattaché) — namespacés sous 'b' pour ne pas entrer en
+        // collision avec la pagination/tri des billets (top-level) sur la même page.
+        $bagages = $tableHelper->handleRelated(
+            endpoint: '/api/bagages',
+            queryParams: $request->query->all('b'),
+            fixedFilters: ['ticket.client.id' => $id],
+            allowedSorts: [
+                'id',
+                'codebagage',
+                'poids',
+                'montant',
+                'statut',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
         // État de fidélité (non bloquant : la fiche reste affichable si l'appel échoue)
         $fidelite = null;
         try {
@@ -89,7 +106,10 @@ final class ClientController extends AbstractController
             'fidelite' => $fidelite,
             'tickets' => $tickets['items'],
             'meta' => $tickets['meta'],
-            'queryParams' => $tickets['queryParams']
+            'queryParams' => $tickets['queryParams'],
+            'bagages' => $bagages['items'],
+            'bagagesMeta' => $bagages['meta'],
+            'bagagesParams' => $bagages['queryParams']
         ]);
     }
 
