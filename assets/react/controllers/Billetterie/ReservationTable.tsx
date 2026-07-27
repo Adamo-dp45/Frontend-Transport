@@ -115,6 +115,19 @@ function buildColumns(
             }
         },
         {
+            /*
+                État de PAIEMENT, distinct du statut : une réservation A_REGULARISER est payée elle
+                aussi (no-show récupérable), et une CONFIRMEE l'est toujours. Le statut seul ne dit
+                donc pas si l'argent est encaissé — d'où cette colonne (même logique que CourrierTable,
+                qui sépare déjà Statut et Paiement).
+            */
+            accessorKey: "etatpaiement",
+            header: "Paiement",
+            cell: ({ row }) => row.original.etatpaiement === "PAYE"
+                ? <Badge className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">Payé</Badge>
+                : <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">En attente</Badge>
+        },
+        {
             accessorKey: "dateexpiration",
             header: "Échéance",
             /*

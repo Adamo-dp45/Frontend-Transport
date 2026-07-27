@@ -10,6 +10,10 @@
     <div class="mb-6">
         <h1 class="text-3xl font-semibold tracking-[-0.5px]">Comment utiliser iTransport</h1>
         <p class="mt-1 text-muted-foreground">Guide pas à pas des opérations courantes. Choisissez une rubrique dans le sommaire.</p>
+        <a href="{{ path('demarrage') }}" class="mt-3 inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10">
+            <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+            Nouvelle compagnie ? Commencez par la prise en main
+        </a>
     </div>
 
     <div class="lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
@@ -32,6 +36,7 @@
                     {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('systeme', 'Système & maintenance') }}{% endif %}
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('corbeille', 'Corbeille') }}{% endif %}
                     {{ h.toc('compte', 'Mon compte') }}
                 </ul>
             </nav>
@@ -98,14 +103,15 @@
             {# Réservation #}
             {% if is_granted('RESERVATION_VOIR') or is_granted('TICKET_VOIR') %}
             {{ h.open('reservation', 'ticket', 'Réserver une place', 'Module Billetterie') }}
-                <p class="mb-3 text-sm text-muted-foreground">La réservation tient une <strong>place</strong> sur un tronçon (montée → descente) <strong>avant</strong> le départ, sans choisir de siège. Le siège est attribué à la <strong>confirmation</strong> (émission du billet).</p>
+                <p class="mb-3 text-sm text-muted-foreground">La réservation tient une <strong>place</strong> sur un tronçon (montée → descente) <strong>avant</strong> le départ, sans choisir de siège. Le siège est attribué à la <strong>confirmation</strong> (émission du billet). Les réservations sont créées par les <strong>clients depuis l\'application mobile</strong> ; au guichet, vous les <strong>gérez</strong>.</p>
                 <ol class="space-y-3">
-                    {{ h.step(1, 'Ouvrez <strong>Billetterie → Réservations → « Nouvelle réservation »</strong>. Choisissez le <strong>voyage</strong>, le trajet (montée → descente), et renseignez le <strong>nom</strong> et le <strong>contact</strong> du client.') }}
-                    {{ h.step(2, 'La réservation est créée ' ~ h.chip('En attente', 'amber') ~ ' : elle réserve une place et <strong>expire</strong> automatiquement un certain délai avant le départ si elle n\'est pas confirmée.') }}
-                    {{ h.step(3, '<strong>Confirmer (payer)</strong> — encaisse le paiement, attribue un siège libre et émet le <strong>billet</strong> ' ~ h.chip('Valide', 'emerald') ~ '. La réservation passe ' ~ h.chip('Confirmée', 'green') ~ '.') }}
+                    {{ h.step(1, 'Le client réserve depuis l\'<strong>app mobile</strong>. La réservation apparaît ' ~ h.chip('En attente', 'amber') ~ ' dans <strong>Billetterie → Réservations</strong> : elle tient une place et <strong>expire</strong> automatiquement un délai avant le départ si elle n\'est pas confirmée.') }}
+                    {{ h.step(2, '<strong>Confirmer (payer)</strong> — à la présentation du client, encaisse le paiement, attribue un siège libre et émet le <strong>billet</strong> ' ~ h.chip('Valide', 'emerald') ~ '. La réservation passe ' ~ h.chip('Confirmée', 'green') ~ '.') }}
+                    {{ h.step(3, '<strong>Émettre le billet</strong> — pour une réservation déjà payée en ligne, génère le billet à présenter à bord.') }}
                     {{ h.step(4, '<strong>Annuler</strong> — libère la place tant que la réservation est encore en attente.') }}
                 </ol>
                 {{ h.note('Pour réserver alors qu\'aucun car n\'est encore affecté, le voyage doit avoir une <strong>capacité prévisionnelle</strong> (« places prévues ») ; sinon la capacité du car affecté fait foi.') }}
+                {{ h.note('Si le <strong>départ est reporté</strong> plus tard, les réservations payées passées en ' ~ h.chip('À régulariser', 'orange') ~ ' par un no-show sont automatiquement <strong>repêchées</strong> en ' ~ h.chip('Confirmée', 'green') ~ ' : le car n\'était pas parti, c\'est l\'horaire qui a changé — sans pénalité ni report à refaire.') }}
                 {% if is_granted('ROLE_ADMIN') %}
                 {{ h.note('<strong>Administrateur</strong> : réglez le <strong>délai d\'expiration</strong> (en minutes avant le départ) dans <strong>Billetterie → Paramètres réservation</strong>.') }}
                 {% endif %}
@@ -119,8 +125,10 @@
                     {{ h.step(1, 'Ouvrez <strong>Voyages</strong> → « Nouveau voyage ». Choisissez la <strong>ligne</strong> et la date de départ.') }}
                     {{ h.step(2, 'Sur la fiche du voyage, <strong>affectez</strong> : le <strong>véhicule</strong>, le <strong>personnel</strong> (chauffeur…) et, si vous en avez un, le <strong>commercial à bord</strong>.') }}
                     {{ h.step(3, 'Pendant le trajet, la <strong>position du car</strong> avance à chaque gare qui le réceptionne. Le commercial à bord vend depuis cette position.') }}
-                    {{ h.step(4, 'À l\'arrivée, la gare de destination <strong>clôture</strong> le voyage : il est terminé.') }}
+                    {{ h.step(4, 'La fiche du voyage affiche une <strong>frise des horaires</strong> par gare : heure de passage <strong>prévue</strong>, <strong>arrivée</strong> et <strong>départ réels</strong>, <strong>retard</strong> et temps d\'arrêt. La position actuelle du car y est repérée.') }}
+                    {{ h.step(5, 'À l\'arrivée, la gare de destination <strong>clôture</strong> le voyage : il est terminé.') }}
                 </ol>
+                {{ h.note('La colonne <strong>« Position du car »</strong> de la liste des voyages montre où se trouve chaque car en un coup d\'œil.') }}
             {{ h.close() }}
             {% endif %}
 
@@ -128,11 +136,13 @@
             {% if is_granted('VOYAGE_VOIR') %}
             {{ h.open('reception', 'check', 'Réceptionner un voyage à ma gare', 'Gare intermédiaire') }}
                 <ol class="space-y-3">
-                    {{ h.step(1, 'Quand un car arrive à votre gare, ouvrez la fiche du voyage et cliquez <strong>« Réceptionner »</strong>.') }}
+                    {{ h.step(1, 'Quand un car arrive à votre gare, ouvrez la fiche du voyage et cliquez <strong>« Réceptionner »</strong>. L\'<strong>heure d\'arrivée</strong> est horodatée automatiquement.') }}
                     {{ h.step(2, 'Cela confirme le <strong>passage du car</strong> à votre gare et met à jour automatiquement : les <strong>courriers</strong> qui y descendent passent ' ~ h.chip('Réceptionné', 'orange') ~ ', les <strong>bagages</strong> passent ' ~ h.chip('Livré', 'green') ~ '.') }}
                     {{ h.step(3, 'La position du car avance jusqu\'à votre gare — utile pour le suivi et pour le commercial à bord.') }}
+                    {{ h.step(4, 'Au redémarrage, cliquez <strong>« Le car repart »</strong> : l\'<strong>heure de départ</strong> de votre gare est horodatée. Le bouton n\'apparaît qu\'une fois l\'arrivée marquée, et disparaît une fois le départ enregistré.') }}
                 </ol>
                 {{ h.note('La réception est réservée aux gares <strong>intermédiaires</strong> de la ligne (ni l\'origine, ni le terminus). La gare de destination, elle, <strong>clôture</strong> le voyage.') }}
+                {{ h.note('Marquer l\'arrivée ET le départ à chaque gare alimente les <strong>horaires réels</strong> : sans ces pointages, les retards et les statistiques de ponctualité sont faussés (un passage non marqué n\'est jamais compté).') }}
             {{ h.close() }}
             {% endif %}
 
@@ -166,9 +176,10 @@
             {{ h.open('suivi', 'building', 'Suivre les cars depuis ma gare', 'Ma gare') }}
                 <ol class="space-y-3">
                     {{ h.step(1, 'Ouvrez <strong>Ma gare</strong>. La section <strong>« Suivi des cars »</strong> liste les voyages qui desservent votre gare.') }}
-                    {{ h.step(2, 'Colonne <strong>« Vers ma gare »</strong> : les cars en approche (avec le nombre d\'arrêts restants et l\'heure de départ d\'origine). Colonne <strong>« Depuis ma gare »</strong> : les cars à quai ou déjà partis.') }}
+                    {{ h.step(2, 'Colonne <strong>« Vers ma gare »</strong> : les cars en approche, avec l\'<strong>heure d\'arrivée estimée (≈)</strong> chez vous et le <strong>retard</strong> courant du car. Colonne <strong>« Depuis ma gare »</strong> : les cars à quai ou déjà partis.') }}
                     {{ h.step(3, 'Le <strong>mini-plan de ligne</strong> montre la position du car (icône bus) par rapport à votre gare. Cliquez une ligne pour ouvrir la fiche du voyage (si vous y avez accès).') }}
                 </ol>
+                {{ h.note('L\'heure estimée = heure prévue chez vous + retard actuel du car. Elle ne s\'affiche qu\'une fois le car <strong>parti</strong> : tant qu\'il n\'a pas démarré, seul l\'horaire prévu est montré.') }}
             {{ h.close() }}
 
             {# Stats & export #}
@@ -178,7 +189,9 @@
                     {{ h.step(1, 'Les pages de statistiques (Billetterie, Courrier, Bagages, Exploitation, Flotte, Stock, Gares…) présentent KPI, graphiques et tableaux.') }}
                     {{ h.step(2, 'Utilisez le <strong>filtre de période</strong> (dates de début/fin) en haut de page, puis « Filtrer ».') }}
                     {{ h.step(3, 'Cliquez <strong>« Excel »</strong> ou <strong>« PDF »</strong> en haut de page pour <strong>exporter</strong> les données de la période. Le fichier se télécharge dans un nouvel onglet.') }}
+                    {{ h.step(4, 'La page <strong>Ponctualité</strong> (Espace propriétaire) synthétise, à partir des passages horodatés : le <strong>retard moyen</strong> et le <strong>taux à l\'heure</strong> par <strong>gare</strong>, <strong>ligne</strong>, <strong>véhicule</strong> et <strong>membre d\'équipage</strong>, ainsi que l\'évolution du retard le long du trajet.') }}
                 </ol>
+                {{ h.note('Un <strong>bandeau de fiabilité</strong> indique le taux de <strong>couverture des pointages</strong> : si les agents ne marquent pas systématiquement arrivées et départs, les retards affichés sont <strong>sous-estimés</strong> (un passage non pointé n\'est pas compté). Visez une couverture élevée avant de vous fier aux chiffres.') }}
                 {{ h.note('Les recettes ne comptent que les opérations valides : un billet annulé ou reporté ne double-compte jamais.') }}
             {{ h.close() }}
             {% endif %}
@@ -188,12 +201,13 @@
             {{ h.open('admin', 'shield', 'Administration', 'Réservé aux administrateurs') }}
                 <ol class="space-y-3">
                     {{ h.step(1, '<strong>Utilisateurs & rôles</strong> : créez des comptes et déléguez des droits. Un acteur de gare ne délègue que sur le périmètre de sa gare.') }}
-                    {{ h.step(2, '<strong>Gares & lignes</strong> : les lignes (suite ordonnée d\'arrêts) servent de base aux voyages et aux tarifs.') }}
+                    {{ h.step(2, '<strong>Gares & lignes</strong> : les lignes (suite ordonnée d\'arrêts) servent de base aux voyages et aux tarifs. Pour chaque arrêt, la <strong>durée du tronçon</strong> (temps depuis l\'arrêt précédent) détermine l\'<strong>heure de passage</strong> prévue du car — et donc les échéances des réservations.') }}
                     {{ h.step(3, '<strong>Flotte & stock</strong> : véhicules, dépannages, pièces, approvisionnements ; chaque mouvement de stock est tracé avec son auteur.') }}
                     {{ h.step(4, '<strong>Paramètres de l\'entreprise</strong> : réglez la <strong>remise</strong> maximale, la <strong>fidélité</strong> (seuil / récompense), la <strong>réservation</strong> (pénalité de no-show) et la <strong>recette</strong> (inclure ou non les courriers dans le chiffre d\'affaires).') }}
-                    {{ h.step(5, 'Le <strong>journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, pertes, livraisons, remises, changements sur les voyages.') }}
+                    {{ h.step(5, 'Le <strong>journal d\'activité</strong> répond à « qui a fait quoi » : changements sur les voyages, annulations / suppressions / pertes / livraisons, remises, encaissements et émissions de billets sur réservation, dépannages, et ajustements de stock (avec leur motif).') }}
                     {{ h.step(6, 'La page <strong>Agents</strong> résume les <strong>actions critiques par agent</strong> (taux d\'annulation, annulations/suppressions, montants forcés) pour repérer les anomalies.') }}
                 </ol>
+                {{ h.note('<strong>Recalage des durées</strong> : en modifiant une ligne, si assez de voyages ont été horodatés, l\'application propose par tronçon la <strong>durée réellement observée</strong> (médiane). Cliquez <strong>« Appliquer »</strong> (par tronçon ou « Tout appliquer »), <strong>vérifiez</strong>, puis enregistrez. Cela met à jour les heures de passage annoncées — donc les échéances des réservations en cours : c\'est pourquoi rien n\'est changé sans votre validation.') }}
             {{ h.close() }}
             {% endif %}
 
@@ -206,6 +220,21 @@
                     {{ h.step(3, 'La connexion et la déconnexion restent possibles pour tous : un utilisateur bloqué peut se connecter mais tombe directement sur la page de maintenance.') }}
                     {{ h.step(4, 'Pensez à <strong>désactiver</strong> la maintenance une fois l\'intervention terminée.') }}
                 </ol>
+            {{ h.close() }}
+            {% endif %}
+
+            {# Corbeille — super admin uniquement #}
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            {{ h.open('corbeille', 'trash', 'Corbeille', 'Réservé au super administrateur') }}
+                <p class="mb-3 text-sm text-muted-foreground">La corbeille rassemble, <strong>toutes compagnies confondues</strong>, les enregistrements supprimés (billets, voyages, gares, tarifs, cars, rôles…). Rien n\'est réellement effacé à la suppression : tout atterrit ici, où vous pouvez le <strong>restaurer</strong> ou le <strong>supprimer définitivement</strong>.</p>
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Administration → Corbeille</strong>. Chaque ligne indique le <strong>type</strong>, l\'<strong>élément</strong>, l\'<strong>entreprise</strong> propriétaire, la <strong>date</strong> de suppression et son <strong>auteur</strong>.') }}
+                    {{ h.step(2, '<strong>Filtrez</strong> par <strong>type</strong> (les pastilles en haut) et par <strong>entreprise</strong> (le menu déroulant) pour cibler ce que vous cherchez.') }}
+                    {{ h.step(3, '<strong>Restaurer</strong> — l\'élément est remis en service, exactement comme avant sa suppression.') }}
+                    {{ h.step(4, '<strong>Supprimer définitivement</strong> — l\'élément est effacé pour de bon. Action <strong>irréversible</strong>, à confirmer.') }}
+                    {{ h.step(5, 'Les boutons <strong>« Tout restaurer »</strong> et <strong>« Tout vider »</strong> agissent sur <strong>le filtre courant</strong> : filtrez d\'abord (par type et/ou entreprise), puis appliquez.') }}
+                </ol>
+                {{ h.warn('Une suppression définitive peut être <strong>refusée</strong> si l\'élément est encore référencé par d\'autres données : détachez-les d\'abord. Le vidage en lot est « tout ou rien » — si un seul élément est référencé, aucun n\'est supprimé.') }}
             {{ h.close() }}
             {% endif %}
 
@@ -244,6 +273,7 @@
                 {% elseif icon == 'building' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
                 {% elseif icon == 'chart' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                 {% elseif icon == 'shield' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                {% elseif icon == 'trash' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                 {% else %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 {% endif %}
             </div>

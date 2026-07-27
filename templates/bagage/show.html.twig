@@ -54,7 +54,9 @@
             <button type="submit" class="btn btn-warning">Annuler</button>
         </form>
         {% endif %}
-        {% if is_granted('BAGAGE_SUPPRIMER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
+        {# Suppression réservée à l'admin d'entreprise (miroir de la garde serveur) : un bagage porte
+           de la recette, sa sortie normale est l'ANNULATION, tracée. #}
+        {% if is_granted('ROLE_ADMIN') and bagage.statut == 'ENREGISTRE' and peutAgir %}
         <form method="POST" action="{{ path('bagage.delete', { id: bagage.id }) }}" class="inline"
               onsubmit="return confirm('Supprimer ce bagage ?')">
             <button type="submit" class="btn btn-danger">Supprimer</button>

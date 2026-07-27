@@ -37,7 +37,7 @@ function buildColumns(): ColumnDef<Entreprise>[] {
             // rendue que sur /admin/entreprises, route gardée par ROLE_SUPER_ADMIN : la colonne
             // n'est donc visible que du super admin, sans garde supplémentaire côté composant.
             accessorKey: "slug",
-            header: "Slug",
+            header: "Slug de réservation",
             cell: ({ row }) => {
                 const slug = row.original.slug
                 return slug

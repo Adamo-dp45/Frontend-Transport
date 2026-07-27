@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "../../../lib/utils";
+import { printTicketsUnParUn } from "../../../lib/printTickets";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -28,22 +29,11 @@ import {
     MapPin,
     Bus,
     Plus,
-    Printer,
-    Eye,
     ArrowRight,
 } from "lucide-react";
 import { flash } from "../../../elements/Alert"
 import PlanCar from "./PlanCar"
 
-/*
-    interface CreatedTicket { -- Pour le post création sans redirection
-        id: number
-        codeticket: string
-        siege: { numero: number }
-        nomclient?: string | null
-        prix: number
-    }
-*/
 interface Voyage {
     "@id": string;
     id: number;
@@ -144,138 +134,6 @@ interface TicketFormProps {
 // FUSION : le plan et le siège individuel proviennent désormais du composant PARTAGÉ
 // './PlanCar' (mêmes 5 états, pastilles R/↻, légende adaptative, variantes dark) —
 // consommé aussi par 'PlanCarReadonly' (fiche véhicule) et 'DesistementForm' (report).
-/*
-    function CreatedTicketsPanel({ -- Pour le post création sans redirection
-        tickets,
-        onNouvelleVente,
-    }: {
-        tickets: CreatedTicket[]
-        onNouvelleVente: () => void
-    }) {
-        const [printingAll, setPrintingAll] = useState(false)
-
-        const handlePrintAll = async () => {
-            setPrintingAll(true)
-            try {
-                const res = await fetch("/ticket/batch/print", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids: tickets.map(t => t.id) }),
-                })
-                if (res.ok) {
-                    const blob = await res.blob()
-                    const url = URL.createObjectURL(blob)
-                    window.open(url, "_blank")
-                    setTimeout(() => URL.revokeObjectURL(url), 10_000)
-                }
-            } finally {
-                setPrintingAll(false)
-            }
-        }
-
-        return (
-            <Card className="border-emerald-200 bg-emerald-50/50">
-                <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
-                            <CheckCircle2 className="h-5 w-5" />
-                            {tickets.length > 1
-                                ? `${tickets.length} tickets créés avec succès`
-                                : "Ticket créé avec succès"}
-                        </CardTitle>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={onNouvelleVente}
-                            className="gap-1.5 text-xs"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            Nouvelle vente
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    {/* Liste des tickets créés /}
-                    {tickets.map((ticket) => (
-                        <div
-                            key={ticket.id}
-                            className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-4 py-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                {/* Badge siège /}
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                                    {ticket.siege.numero}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-mono font-medium text-gray-700">
-                                        {ticket.codeticket}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                        {ticket.nomclient ?? "Passager non renseigné"}
-                                        {" · "}
-                                        <span className="font-medium text-emerald-600">
-                                            {ticket.prix.toLocaleString("fr-FR")} FCFA
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Actions par ticket /}
-                            <div className="flex items-center gap-1.5">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 gap-1.5 text-xs"
-                                    onClick={() =>
-                                        window.open(`/ticket/${ticket.id}/pdf`, "_blank")
-                                    }
-                                >
-                                    <Printer className="h-3.5 w-3.5" />
-                                    Imprimer
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 gap-1.5 text-xs"
-                                    asChild
-                                >
-                                    <a href={`/ticket/${ticket.id}`}>
-                                        <Eye className="h-3.5 w-3.5" />
-                                        Voir
-                                    </a>
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Actions globales si plusieurs tickets /}
-                    {tickets.length > 1 && (
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-emerald-200">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handlePrintAll}
-                                disabled={printingAll}
-                                className="gap-1.5 text-xs"
-                            >
-                                {printingAll ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <Printer className="h-3.5 w-3.5" />
-                                )}
-                                Tout imprimer ({tickets.length})
-                            </Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        )
-    }
-*/
 // (Vente rapide retirée : composant QuickConfirmDialog supprimé)
 
 
@@ -336,16 +194,6 @@ export default function TicketForm({
             ? Math.round(unitPrice * Math.min(remiseNum, 100) / 100)
             : Math.min(remiseNum, unitPrice))
         : 0;
-    /*
-        const [createdTickets, setCreatedTickets] = useState<CreatedTicket[]>([]) -- Pour le post création sans redirection, pour l'utiliser on supprime toute la logique de redirection/window.open dans 'handleSubmit'
-        const handleNouvelleVente = () => {
-            setCreatedTickets([])
-            setSelectedSieges([])
-            setClientInfos({})
-            // Garder le voyage sélectionné pour enchaîner les ventes rapidement
-            // Garder gareId et voyageId pour enchaîner rapidement
-        }
-    */
 
 
     // ── Charger les sièges ────────────────────────────────────────────────────
@@ -658,62 +506,29 @@ export default function TicketForm({
                     await loadSieges(voyageId, monteeId, descenteId);
                 } else {
 
-                    const res = await fetch("/ticket/batch/print", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ids: data.created }),
-                    })
-
-                    if(res.ok) {
-                        const blob = await res.blob()
-                        const url  = URL.createObjectURL(blob)
-                        window.open(url, "_blank")
-                        setTimeout(() => URL.revokeObjectURL(url), 10_000)
-                    } else {
-                        // setFlashError("Erreur lors de la génération du PDF groupé.")
-                        flash("Erreur lors de la génération du PDF groupé.", 'error');
-                    }
-
                     /*
-                    // Vente groupée → ouvrir chaque PDF dans un nouvel onglet
-                    // Petit délai entre chaque ouverture pour éviter le blocage popup des navigateurs
-                    data.created.forEach((id: number, index: number) => {
-                        setTimeout(() => {
-                            window.open(`/ticket/${id}/pdf`, `_blank`);
-                        }, index * 300);
-                    });
+                        UNE TÂCHE D'IMPRESSION PAR BILLET (et non un PDF groupé de N pages) : le pilote
+                        thermique coupe le plus souvent « en fin de document », un document unique
+                        faisait donc sortir les billets COLLÉS. L'envoi séquentiel via iframe évite
+                        aussi le blocage de pop-ups de l'ancienne approche multi-onglets.
                     */
+                    try {
+                        await printTicketsUnParUn(data.created)
+                    } catch {
+                        flash("Erreur lors de l'impression des billets.", 'error');
+                    }
                     /* Recharger le plan après l'ouverture des onglets
                         setFlashSuccess(
                             `${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` +
                             `imprimez-les depuis la liste des tickets.`
                         );
-                     */
-
+                    */
                     flash(`${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` + `imprimez-les depuis la liste des tickets.`, 'success'); // Vu que certains navigateurs bloquent 'window.open' si ce n'est pas déclenché directement par un clic utilisateur
 
                     await loadSieges(voyageId, monteeId, descenteId);
                 }
             }
 
-            /*
-                if (data.created?.length > 0) { -- Post création sans redirection
-                    // Charger les détails de chaque ticket créé
-                    const details = await Promise.all(
-                        data.created.map((id: number) =>
-                            fetch(`/ticket/${id}/json`).then(r => r.json())
-                        )
-                    )
-                    // setCreatedTickets(details) // ❌ Écrase les tickets précédents
-                    // ✅ Accumule
-                    setCreatedTickets(prev => [...prev, ...details])
-                    // Recharger le plan pour refléter les nouveaux sièges occupés
-                    await loadSieges(voyageId)
-                    // Réinitialiser la sélection
-                    setSelectedSieges([])
-                    setClientInfos({})
-                }
-            */
         } catch {
             // setFlashError("Erreur réseau. Veuillez réessayer.");
             flash("Erreur réseau. Veuillez réessayer.", 'error');
@@ -765,14 +580,6 @@ export default function TicketForm({
             )}
 
 
-            {/* Panneau post-création
-                {createdTickets.length > 0 && (
-                    <CreatedTicketsPanel
-                        tickets={createdTickets}
-                        onNouvelleVente={handleNouvelleVente}
-                    />
-                )}
-            */}
 
 
             {/* Sélection voyage + gare côte à côte */}
@@ -1132,27 +939,6 @@ export default function TicketForm({
                             {selectedSieges.length > 0 && (
                                 <div className="rounded-xl border bg-card p-4 space-y-3">
                                     <p className="text-sm font-medium">Remise (optionnel)</p>
-                                    {/* Ancienne version (balises natives) — conservée en commentaire :
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <div>
-                                            <label className="text-xs text-muted-foreground">Type</label>
-                                            <select value={remiseType} onChange={(e) => setRemiseType(e.target.value as "MONTANT" | "POURCENTAGE")} className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                                                <option value="MONTANT">Montant (FCFA)</option>
-                                                <option value="POURCENTAGE">Pourcentage (%)</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-muted-foreground">Valeur</label>
-                                            <input type="number" min="0" value={remiseValeur} onChange={(e) => setRemiseValeur(e.target.value)} placeholder="0" className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-muted-foreground">Bénéficiaire</label>
-                                            <select value={beneficiaireId} onChange={(e) => setBeneficiaireId(e.target.value)} className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                                                <option value="">— Aucun —</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div className="space-y-1.5">
                                             <Label>Type</Label>

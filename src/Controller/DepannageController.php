@@ -268,7 +268,9 @@ final class DepannageController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('DEPANNAGE_SUPPRIMER')]
+    // Suppression réservée à l'admin d'entreprise : un dépannage a consommé du stock et dispose déjà
+    // d'une sortie tracée (annulation, qui restaure le stock). Cf. TicketController::delete.
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('delete_depannage', $request->request->get('_token'))) {

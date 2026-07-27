@@ -77,6 +77,14 @@ class ApiAuthenticator extends AbstractLoginFormAuthenticator
         */
         $response = new RedirectResponse($this->getTargetPath($request->getSession(), $firewallName) ?? $this->urlGenerator->generate('home'));
 
+        // Marque la CONNEXION (soumission du formulaire) : HomeController consommera ce drapeau UNE
+        // fois pour appliquer la redirection « tâche du moment » (commercial à bord -> son espace de
+        // vente). Posé INCONDITIONNELLEMENT : le cas normal « login -> tableau de bord » sauvegarde
+        // un targetPath ('/'), donc conditionner à son absence empêchait justement la redirection.
+        // Une navigation ULTÉRIEURE vers le tableau de bord n'aura pas ce drapeau -> affiche la gare.
+        // (Non posé lors d'une reconnexion silencieuse remember-me : ce n'est pas une « connexion ».)
+        $request->getSession()->set('post_login_redirect', true);
+
         $refreshToken = $this->apiClient->getRefreshToken();
         if($refreshToken) {
             $response->headers->setCookie(

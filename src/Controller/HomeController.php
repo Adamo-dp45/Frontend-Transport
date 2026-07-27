@@ -29,44 +29,110 @@ final class HomeController extends AbstractController
             return $this->redirectToRoute('admin.user.index');
         }
 
-        // Routage du tableau de bord global.
-        // - Commercial à bord d'un voyage actif → son espace commercial (sa tâche du moment).
-        // - Agent / admin de gare (rattaché à une gare) → « Ma gare ».
-        // - Utilisateur central sans gare → le tableau de bord global SANS la partie financière (réservée
-        //   à l'admin d'entreprise) : il tombe sur le rendu ci-dessous.
-        if(!$this->isGranted('ROLE_ADMIN')) {
-            /** @var ApiUser $user */
-            $user = $this->getUser();
+        /** @var ApiUser $user */
+        $user = $this->getUser();
+        $estAdmin = $this->isGranted('ROLE_ADMIN');
+        $gareRef = $user->getGare();
+        $aGare = $gareRef && !empty($gareRef['id']);
 
-            // Priorité : s'il accompagne un car en ce moment, on l'amène direct sur son espace de vente.
+        // Redirection << tache du moment >> RESERVEE A LA CONNEXION : un commercial a bord d'un voyage
+        // actif est envoye direct a son espace de vente (drapeau 'post_login_redirect' pose par
+        // ApiAuthenticator, consomme ici une seule fois). Une navigation ULTERIEURE vers le tableau
+        // de bord n'a plus ce drapeau : elle affiche la gare, avec un lien vers l'espace commercial.
+        if($request->getSession()->remove('post_login_redirect') && !$estAdmin) {
             try {
                 $mesVoyages = $this->api->item('/api/voyages/me/commercial');
                 if(!empty($mesVoyages['voyages'])) {
                     return $this->redirectToRoute('commercial.me');
                 }
             } catch(ApiException) {
-                // non bloquant : on retombe sur le routage par défaut
+                // non bloquant : on retombe sur le rendu du tableau de bord
             }
-
-            $gare = $user->getGare();
-            if($gare && !empty($gare['id'])) {
-                return $this->redirectToRoute('gare.me');
-            }
-            // sinon (central sans gare) : on continue vers le dashboard global (financier masqué plus bas)
         }
 
-        // La partie financière est réservée à l'admin d'entreprise.
-        $estAdmin = $this->isGranted('ROLE_ADMIN');
+        // Tableau de bord UNIQUE, conditionne selon le profil :
+        //  - agent rattache a une gare (non-admin) -> vue << Ma gare >> (operationnel)
+        //  - admin d'entreprise, ou utilisateur central sans gare -> vue << Entreprise >> (globale ;
+        //    la partie financiere reste reservee a l'admin d'entreprise)
+        if(!$estAdmin && $aGare) {
+            return $this->dashboardGare($request, $gareRef['id']);
+        }
 
+        return $this->dashboardEntreprise($request, $estAdmin);
+    }
+
+    /**
+     * Vue << Ma gare >> : operationnel d'UNE gare (suivi des cars, recette, incidents, agents).
+     * Logique reprise de l'ancien GareController::me, desormais fusionnee dans le tableau de bord unique.
+     */
+    private function dashboardGare(Request $request, int $gareId): Response
+    {
+        $periode = $request->query->get('periode', 'mois');
+        if(!in_array($periode, ['jour', 'mois', 'tout'], true)) {
+            $periode = 'mois';
+        }
+
+        // La recette (dashboard) est reservee a l'admin de gare / admins.
+        $peutVoirRecette = $this->isGranted('ROLE_ADMIN_GARE') || $this->isGranted('ROLE_ADMIN');
+
+        $gare = null;
+        $users = [];
+        $stats = null;
+        $suivi = ['versMaGare' => [], 'depuisMaGare' => []];
+        try {
+            // Accessible a tout ROLE_USER ('/api/gares/{id}' n'exige pas GARE_VOIR) : c'est SA gare.
+            $gare = $this->api->item('/api/gares/' . $gareId);
+            if($peutVoirRecette) {
+                $stats = $this->api->item('/api/gares/me/dashboard', ['periode' => $periode]);
+            }
+            // Suivi des cars : operationnel, accessible a tout agent rattache a la gare.
+            $suivi = $this->api->item('/api/gares/me/suivi');
+            if($this->isGranted('USER_VOIR')) {
+                $users = $this->api->collection('/api/users', ['gare.id' => $gareId]);
+            }
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        // Cet agent est-il AUSSI commercial d'un voyage en cours ? -> bandeau vers son espace commercial.
+        $commercialVoyages = 0;
+        try {
+            $mc = $this->api->item('/api/voyages/me/commercial');
+            $commercialVoyages = count($mc['voyages'] ?? []);
+        } catch(ApiException) {
+            // non bloquant
+        }
+
+        return $this->render('home/index.html.twig', [
+            'mode' => 'gare',
+            'gare' => $gare,
+            'users' => $users,
+            'stats' => $stats,
+            'suivi' => $suivi,
+            'periode' => $periode,
+            'commercialVoyages' => $commercialVoyages,
+        ]);
+    }
+
+    /**
+     * Vue << Entreprise >> : pilotage global (exploitation, financier, stock, flotte).
+     * La partie financiere est reservee a l'admin d'entreprise (masquee pour un central sans gare).
+     */
+    private function dashboardEntreprise(Request $request, bool $estAdmin): Response
+    {
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
+        $exploitation = [];
+        $stock = [];
+        $flotte = [];
         $financiere = null;
-        $ponctualite = null;
         try {
             $exploitation = $this->api->item('/api/stats/exploitation?' . $periode);
             if($estAdmin) {
                 $financiere = $this->api->item('/api/stats/financiere?' . $periode);
-                $ponctualite = $this->api->item('/api/stats/ponctualite?' . $periode);
             }
             $stock = $this->api->item('/api/stats/stock?' . $periode);
             $flotte = $this->api->item('/api/stats/flotte?' . $periode);
@@ -100,13 +166,6 @@ final class HomeController extends AbstractController
                 'recettesParJour' => $financiere['recettesParJour'] ?? [],
                 'coutsParJour' => $financiere['coutsParJour'] ?? []
             ];
-            $ponctualite = [
-                'global' => $ponctualite['global'] ?? [],
-                'parGare' => $ponctualite['parGare'] ?? [],
-                'parLigne' => $ponctualite['parLigne'] ?? [],
-                'evolution' => $ponctualite['evolution'] ?? [],
-                'seuilALheureMinutes' => $ponctualite['seuilALheureMinutes'] ?? 10,
-            ];
         }
 
         $stock = [
@@ -124,9 +183,9 @@ final class HomeController extends AbstractController
         ];
 
         return $this->render('home/index.html.twig', [
+            'mode' => 'entreprise',
             'exploitation' => $exploitation,
             'financiere' => $financiere,
-            'ponctualite' => $ponctualite,
             'stock' => $stock,
             'flotte' => $flotte,
             'debut' => $debut,
@@ -256,6 +315,29 @@ final class HomeController extends AbstractController
             'departs' => $departs,
             'debut' => $debut,
             'fin' => $fin
+        ]);
+    }
+
+    #[Route('/stats/ponctualite', name: 'owner.stats.ponctualite', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function ponctualite(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $ponctualite = null;
+        try {
+            $ponctualite = $this->api->item('/api/stats/ponctualite?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('home/ponctualite.html.twig', [
+            'ponctualite' => $ponctualite,
+            'debut' => $debut,
+            'fin' => $fin,
         ]);
     }
 
@@ -629,6 +711,17 @@ final class HomeController extends AbstractController
     public function aide(): Response
     {
         return $this->render('home/aide.html.twig', []);
+    }
+
+    /**
+     * PRISE EN MAIN : parcours de mise en route d'une compagnie (paramétrage dans l'ordre des
+     * dépendances) puis scénario complet d'une journée d'exploitation, gare par gare. Complète
+     * la page « Aide », qui est une référence PAR TÂCHE, là où celle-ci est CHRONOLOGIQUE.
+     */
+    #[Route('/prise-en-main', name: 'demarrage', methods: ['GET'])]
+    public function demarrage(): Response
+    {
+        return $this->render('home/demarrage.html.twig', []);
     }
 
     #[Route('/ui', name: 'ui', methods: ['GET'])]

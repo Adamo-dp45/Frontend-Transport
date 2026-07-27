@@ -547,7 +547,7 @@ final class VoyageController extends AbstractController
 
         return $this->render('voyage/commercial.html.twig', [
             'voyage' => $voyage,
-            'users' => $users,
+            'users' => $users
         ]);
     }
 

@@ -33,8 +33,6 @@ type Props = {
     csrfDelete: string
 }
 
-const SEUIL_STOCK = 5
-
 function buildColumns(
     getSortToggleUrl: (f: string) => string,
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
@@ -82,9 +80,10 @@ function buildColumns(
             ),
             cell: ({ row }) => {
                 const stock = row.original.stockinitial
-                const bas = stock <= SEUIL_STOCK
+                const seuil = row.original.seuilstock
+                const bas = stock <= seuil
                 return (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" title={`Seuil d'alerte : ${seuil}`}>
                         <span className={`font-semibold tabular-nums ${bas ? "text-red-600" : "text-foreground"}`}>
                             {stock}
                         </span>

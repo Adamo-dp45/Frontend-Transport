@@ -9,6 +9,7 @@ export interface Piece {
     libelle: string
     image: Image | null
     stockinitial: number
+    seuilstock: number
     prixunitaire: number
     typepiece: Libelle | null
     marquepiece: Libelle | null

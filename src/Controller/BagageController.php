@@ -224,7 +224,9 @@ final class BagageController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('BAGAGE_SUPPRIMER')]
+    // Suppression réservée à l'admin d'entreprise : un bagage porte de la recette et dispose déjà
+    // d'une sortie tracée (annulation). Cf. TicketController::delete pour le raisonnement complet.
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('delete_bagage', $request->request->get('_token'))) {

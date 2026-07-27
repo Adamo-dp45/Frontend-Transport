@@ -9,6 +9,17 @@ use Twig\Environment;
 
 class PdfService
 {
+    /**
+     * Hauteur STANDARD d'un ticket thermique (80 × 160 mm). Une hauteur de page CONSTANTE est ce qui
+     * permet à l'imprimante de couper au bon endroit : le pilote thermique est configuré sur une
+     * taille de papier fixe, et une page PDF plus courte ou plus longue décale le repère de coupe
+     * (symptôme : des tickets qui sortent collés ou coupés en plein milieu). Régler le pilote sur
+     * ce même format 80 × 160 mm, avec « découpe après chaque page ».
+     */
+    public const TICKET_HAUTEUR_PT = 453.54; // 160 mm
+
+    public const TICKET_LARGEUR_PT = 226.77; // 80 mm
+
     public function __construct(
         private readonly Environment $twig
     )
@@ -75,11 +86,25 @@ class PdfService
         array $data,
         string $filename = 'ticket.pdf',
         int $expectedPages = 1,
-        float $widthPt = 226.77
+        float $widthPt = 226.77,
+        ?float $hauteurFixePt = null
     ): Response
     {
         $html = $this->twig->render($template, $data);
         $expectedPages = max(1, $expectedPages);
+
+        /*
+            HAUTEUR FIXE demandée (tickets) : on la privilégie, car une hauteur de page CONSTANTE
+            d'un lot à l'autre est ce qui permet au pilote thermique de couper au bon endroit.
+            On ne la retient toutefois que si le contenu tient réellement dedans — sinon on
+            retombe sur l'auto-fit ci-dessous plutôt que de TRONQUER un billet.
+        */
+        if ($hauteurFixePt !== null) {
+            $pages = $this->renderDompdf($html, $widthPt, $hauteurFixePt)->getCanvas()->get_page_count();
+            if ($pages <= $expectedPages) {
+                return $this->renderAt($html, $widthPt, $hauteurFixePt, $filename);
+            }
+        }
 
         // Gros lots : l'auto-fit (plusieurs rendus) coûterait cher → hauteur fixe sûre
         if ($expectedPages > 20) {

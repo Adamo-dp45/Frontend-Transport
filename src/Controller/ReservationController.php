@@ -95,21 +95,27 @@ final class ReservationController extends AbstractController
         ]);
     }
 
+    /*
+        CRÉATION DE RÉSERVATION DÉSACTIVÉE CÔTÉ WEB (routes reservation.new / reservation.create).
+        Les réservations proviennent désormais des apps mobiles (client) ; le guichet ne fait que les
+        GÉRER (confirmer/encaisser, émettre le billet, annuler, régulariser). Pour réactiver :
+        décommenter ce bloc ET le bouton « Nouvelle réservation » dans reservation/index.html.twig.
+
     #[Route('/reservation/nouveau', name: 'reservation.new', methods: ['GET'])]
     #[IsGranted('RESERVATION_CREER')]
     public function new(Request $request): Response
     {
         try {
-            /*
-                La RÉSERVABILITÉ est décidée par le back-end (/voyages/reservables) : elle dépend de la
-                gare de l'agent, de l'avancement réel du car et des durées de trajet par arrêt.
-
-                Elle était reconstituée ici avec des filtres ('datedepartprevue[after]',
-                'exists[datedepartreelle]'). Cette copie de la règle est devenue fausse dès que les
-                deux se sont affinées : un car parti d'Abidjan reste réservable au départ de Bouaké, où
-                il n'est pas encore passé, et l'échéance de Bouaké est bien plus tardive que celle de
-                l'origine. Le formulaire masquait donc des départs que l'API accepte.
-            */
+            //
+            //    La RÉSERVABILITÉ est décidée par le back-end (/voyages/reservables) : elle dépend de la
+            //    gare de l'agent, de l'avancement réel du car et des durées de trajet par arrêt.
+            //
+            //    Elle était reconstituée ici avec des filtres ('datedepartprevue[after]',
+            //    'exists[datedepartreelle]'). Cette copie de la règle est devenue fausse dès que les
+            //    deux se sont affinées : un car parti d'Abidjan reste réservable au départ de Bouaké, où
+            //    il n'est pas encore passé, et l'échéance de Bouaké est bien plus tardive que celle de
+            //    l'origine. Le formulaire masquait donc des départs que l'API accepte.
+            //
             $voyages = $this->api->collection('/api/voyages/reservables');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'reservation.index');
@@ -155,6 +161,7 @@ final class ReservationController extends AbstractController
             return $this->json(['detail' => $e->getMessage()], $e->getCode() ?: 422);
         }
     }
+    */
 
     #[Route('/reservation/{id}', name: 'reservation.show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('RESERVATION_VOIR')]

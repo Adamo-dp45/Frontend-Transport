@@ -84,11 +84,15 @@ final class SearchController extends AbstractController
 
                 // Enrichissement du label des PIÈCES : on affiche le stock courant (comme l'ancien
                 // select), utile en appro/dépannage pour repérer une pièce en rupture.
-                if ($resource === 'pieces') {
+                if($resource === 'pieces') {
                     $stock = $item['stockactuel'] ?? $item['stockinitial'] ?? null;
                     if ($stock !== null) {
                         $label .= ' (stock : ' . $stock . ')';
                     }
+                }
+
+                if($resource === 'users') {
+                    $label .= ' ' . $item['prenom'] . ' (' . $item['email'] . ')';
                 }
 
                 return [

@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Corbeille{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <p class="text-xs uppercase tracking-wide text-muted-foreground">Système</p>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Corbeille</h1>
+        <p class="mt-1 text-sm text-muted-foreground">Éléments supprimés de toutes les compagnies — restaurez-les ou supprimez-les définitivement.</p>
+    </div>
+    <a href="{{ path('admin.systeme.index') }}" class="btn btn-outline max-sm:w-full max-sm:justify-center">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Retour au système
+    </a>
+</div>
+
+<div {{ react_component('Systeme/CorbeilleTable', {
+        total: total,
+        parType: parType,
+        parEntreprise: parEntreprise,
+        items: items,
+        filtreType: filtreType,
+        filtreEntreprise: filtreEntreprise,
+        csrf: csrf_token('corbeille')
+    }) }}>
+    <div class="flex items-center justify-center gap-6 py-10">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

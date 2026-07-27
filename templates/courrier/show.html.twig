@@ -52,7 +52,9 @@
                 Imprimer le reçu
             </a>
             {% endif %}
-            {% if is_granted('COURRIER_SUPPRIMER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
+            {# Suppression réservée à l'admin d'entreprise (miroir de la garde serveur) : un courrier
+               porte de la recette, sa sortie normale est l'ANNULATION, tracée. #}
+            {% if is_granted('ROLE_ADMIN') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
             <form method="POST" action="{{ path('courrier.delete', { id: courrier.id }) }}" class="inline" onsubmit="return confirm('Supprimer ce courrier ?')">
                 <button type="submit" class="btn btn-danger">Supprimer</button>
             </form>

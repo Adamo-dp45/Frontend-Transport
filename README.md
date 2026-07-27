@@ -18,12 +18,10 @@
     > !! autoriser le bypass du `ROLE_ADMIN_GARE` on.. `ApiUser::hasPermission()` puis `PermissionVoter`
     > On a utiliser le système de cache natif de symfony `CacheInterface`
     > !! les icônes `lucide.dev` et `claude`
-    > Pour le guide
-        > On peut le faire à la première connexion de façon interactif via du javascript
-            > On a `Driver.js` léger et fonctionne sur n'importe quel élément du dom
-            > !! `Shepherd.js` complet et supporte react
-            > !! `Intro.js` classique
-        > !! avec une page `/aide` qui contient des sections par module, captures d'écran, descriptions..
+    > Pour le guide — DEUX pages complémentaires, volontairement séparées :
+        > `/aide` (`home/aide.html.twig`) : référence PAR TÂCHE (« comment vendre un billet », « réceptionner à ma gare »..), rubriques filtrées par permission
+        > `/prise-en-main` (`home/demarrage.html.twig`) : parcours CHRONOLOGIQUE pour une compagnie qui démarre — paramétrage dans l'ordre des dépendances (villes → gares → lignes + durées de tronçon → tarifs → cars → personnels → équipe), puis SCÉNARIO d'un voyage de bout en bout à 3 acteurs (origine prépare · intermédiaire réceptionne · terminus clôture), le commercial à bord, les imprévus (panne/changement de car, désistement, éviction, no-show, perdu, plan des sièges), le bilan de journée et les modules annexes
+        > !! on pourrait y ajouter une visite interactive à la première connexion via du javascript (`Driver.js` léger, `Shepherd.js` supporte react, `Intro.js` classique) et des captures d'écran
 
 - **Git**
     > git push -u origin main

@@ -660,7 +660,11 @@ final class TicketController extends AbstractController
                 'entreprise' => $this->getEntreprise(),
             ],
             'ticket-' . ($ticket['codeticket'] ?? $id) . '.pdf',
-            1
+            1,
+            PdfService::TICKET_LARGEUR_PT,
+            // Hauteur CONSTANTE : c'est elle qui aligne la page sur la taille papier du pilote
+            // thermique, donc sur le point de coupe (repli auto sur un billet exceptionnellement long).
+            PdfService::TICKET_HAUTEUR_PT
         );
     }
 
@@ -698,12 +702,24 @@ final class TicketController extends AbstractController
                 'entreprise' => $this->getEntreprise(),
             ],
             'tickets-lot-' . date('YmdHis') . '.pdf',
-            count($tickets)
+            count($tickets),
+            PdfService::TICKET_LARGEUR_PT,
+            // Même hauteur constante que l'impression unitaire : sur un lot, c'est ce qui garantit
+            // que CHAQUE page tombe pile sur un point de coupe (sinon les billets sortent collés).
+            PdfService::TICKET_HAUTEUR_PT
         );
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('TICKET_SUPPRIMER')]
+    /*
+        SUPPRESSION RÉSERVÉE À L'ADMIN D'ENTREPRISE (en plus de la permission). Un billet porte de la
+        recette : le retirer du livre après encaissement est un vecteur de fraude connu — c'est
+        exactement ce que traque TicketRepository::suppressionsParAgent (dont 'nbapresdepart', billet
+        supprimé APRÈS le départ = le passager a pourtant voyagé). La sortie normale d'un billet est
+        le DÉSISTEMENT (annulation ou report), tracé et réversible. La suppression ne reste ouverte
+        que pour l'erreur de saisie, sous la responsabilité de l'administrateur.
+    */
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('delete_ticket', $request->request->get('_token'))) {

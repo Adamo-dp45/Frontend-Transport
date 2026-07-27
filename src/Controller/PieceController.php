@@ -100,7 +100,7 @@ final class PieceController extends AbstractController
     public function new(Request $request): Response
     {
         $refs = $this->loadRefs();
-        $form = $this->createForm(PieceFormType::class, null, $refs);
+        $form = $this->createForm(PieceFormType::class, ['seuilstock' => 5], $refs); // seuil pré-rempli à 5, ajustable
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
@@ -124,6 +124,7 @@ final class PieceController extends AbstractController
                 'libelle' => $form->get('libelle')->getData(),
                 'stockinitial'=> $form->get('stockinitial')->getData(),
                 'prixunitaire'=> $form->get('prixunitaire')->getData(),
+                'seuilstock'=> $form->get('seuilstock')->getData(),
                 'image' => $mediaObject['@id'] ?? null
             ];
 
@@ -199,6 +200,7 @@ final class PieceController extends AbstractController
             $payload = [
                 'libelle' => $form->get('libelle')->getData(),
                 'prixunitaire'=> $form->get('prixunitaire')->getData(),
+                'seuilstock'=> $form->get('seuilstock')->getData(),
                 'image' => $mediaObjectIri
             ];
 

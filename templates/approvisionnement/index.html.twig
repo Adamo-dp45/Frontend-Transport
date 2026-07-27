@@ -24,7 +24,7 @@
         meta: meta,
         queryParams: queryParams,
         canEdit: is_granted('APPROVISIONNEMENT_MODIFIER'),
-        canDelete: is_granted('APPROVISIONNEMENT_SUPPRIMER'),
+        canDelete: is_granted('ROLE_ADMIN'),
         csrfDelete: csrf_token('delete_approvisionnement'),
         csrfAnnuler: csrf_token('annuler_approvisionnement')
     }) }} class="mb-3 mt-3"

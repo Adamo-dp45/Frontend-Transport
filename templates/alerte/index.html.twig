@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Centre d'alertes{% endblock %}
+
+{% block body %}
+<h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2] mb-4">Centre d'alertes</h1>
+<p class="text-muted-foreground mb-6">Notifications opérationnelles ciblées selon votre gare et votre rôle. Cliquez une alerte pour ouvrir la fiche concernée.</p>
+
+<div {{ react_component('AlerteTable', {
+        alertes: items,
+        meta: meta,
+        queryParams: queryParams,
+        familles: familles,
+        severites: severites,
+        statuts: statuts
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

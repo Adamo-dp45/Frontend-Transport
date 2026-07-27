@@ -41,7 +41,7 @@
             {{ ui.field('Contact 2', gare.contact2) }}
             {% if gare.datecreation is defined and gare.datecreation %}{{ ui.field('Date de création', gare.datecreation|date('d/m/Y')) }}{% endif %}
         </div>
-        {% if gare.description %}
+        {% if gare.description is defined and gare.description %}
         <div class="mt-4 pt-4 border-t border-border">
             {{ ui.field('Description', gare.description) }}
         </div>

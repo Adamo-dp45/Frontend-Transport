@@ -1,0 +1,127 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Ponctualité{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Ponctualité', 'Retards & régularité', 'owner.stats.ponctualite', debut, fin) }}
+
+{% if not ponctualite or (ponctualite.global.nbPassages ?? 0) == 0 %}
+    <div class="card p-10 text-center text-muted-foreground">
+        <p class="text-sm">Aucun passage horodaté sur la période.</p>
+        <p class="mt-1 text-xs">Les retards se calculent à partir des arrivées et départs marqués en gare (réception, « le car repart »).</p>
+    </div>
+{% else %}
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+        {{ s.kpi('Retard moyen', ponctualite.global.retardMoyen, 'min', ponctualite.global.retardMoyen > 0 ? 'rose' : 'emerald', 'alert') }}
+        {{ s.kpi('À l\'heure', ponctualite.global.tauxALheure, '%', 'emerald', 'check') }}
+        {{ s.kpi('Temps d\'arrêt moyen', ponctualite.global.tempsArretMoyen, 'min', 'blue', 'chart') }}
+        {{ s.kpi('Passages mesurés', ponctualite.global.nbPassages, '', 'violet', 'pin') }}
+    </div>
+
+    {#
+        FIABILITÉ des chiffres : ils reposent sur des passages horodatés par les agents. Un passage
+        non marqué est un retard NON COMPTÉ — un taux de couverture bas rend la ponctualité optimiste.
+    #}
+    {% set q = ponctualite.qualiteDonnee ?? null %}
+    {% if q and (q.nbVoyagesPartis ?? 0) > 0 %}
+    {% set couv = q.tauxCouverture ?? 0 %}
+    {% set qborder = couv < 70 ? 'border-rose-500' : (couv < 90 ? 'border-amber-500' : 'border-emerald-500') %}
+    {% set qtext = couv < 70 ? 'text-rose-600 dark:text-rose-400' : (couv < 90 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') %}
+    <div class="card p-4 mb-4 border-l-4 {{ qborder }}">
+        <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <p class="text-sm font-medium">Fiabilité de la donnée d'exploitation</p>
+            <p class="text-sm tabular-nums {{ qtext }}"><span class="font-semibold">{{ couv }}%</span> des passages attendus horodatés</p>
+        </div>
+        <p class="text-xs text-muted-foreground mt-1">
+            {{ q.passagesHorodates }}/{{ q.passagesAttendus }} passages sur {{ q.nbVoyagesPartis }} voyage{{ q.nbVoyagesPartis > 1 ? 's' }} parti{{ q.nbVoyagesPartis > 1 ? 's' }} ·
+            {{ q.tauxVoyagesComplets }}% de voyages complets
+            {% if (q.voyagesSansAucunPassage ?? 0) > 0 %} · <span class="text-rose-600 dark:text-rose-400">{{ q.voyagesSansAucunPassage }} sans aucun pointage</span>{% endif %}
+        </p>
+        {% if couv < 90 %}
+        <p class="text-xs text-muted-foreground mt-1 italic">Couverture partielle : les retards ci-dessous sont probablement sous-estimés (un passage non pointé n'est pas compté).</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Retard moyen par gare</p>
+            <div class="text-sm space-y-1.5">
+                {% for g in ponctualite.parGare %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">{{ g.libelle }} <span class="text-muted-foreground">· {{ g.nbPassages }} passage{{ g.nbPassages > 1 ? 's' }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ g.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : (g.retardMoyen > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">
+                        {{ g.retardMoyen > 0 ? '+' }}{{ g.retardMoyen }} min · {{ g.tauxALheure }}% à l'heure
+                    </span>
+                </div>
+                {% else %}
+                <p class="text-muted-foreground italic">Aucun passage mesuré.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Retard moyen par ligne</p>
+            <div class="text-sm space-y-1.5 mb-4">
+                {% for l in ponctualite.parLigne %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">{{ l.code }} <span class="text-muted-foreground">· {{ l.nbPassages }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ l.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : 'text-foreground' }}">{{ l.retardMoyen > 0 ? '+' }}{{ l.retardMoyen }} min</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% if ponctualite.evolution|length > 1 %}
+            {% set maxRetard = 1 %}
+            {% for e in ponctualite.evolution %}{% if e.retardMoyen|abs > maxRetard %}{% set maxRetard = e.retardMoyen|abs %}{% endif %}{% endfor %}
+            <p class="text-xs text-muted-foreground mb-2 pt-3 border-t border-border">Évolution du retard le long du trajet (par arrêt)</p>
+            <div class="flex items-end gap-1 h-16">
+                {% for e in ponctualite.evolution %}
+                <div class="flex-1 flex flex-col items-center justify-end" title="Arrêt {{ e.ordre }} : {{ e.retardMoyen }} min ({{ e.nbPassages }} passage{{ e.nbPassages > 1 ? 's' }})">
+                    <div class="w-full rounded-t {{ e.retardMoyen > ponctualite.seuilALheureMinutes ? 'bg-rose-400' : 'bg-violet-400' }}" style="height: {{ (e.retardMoyen|abs / maxRetard * 100)|round }}%; min-height: 2px;"></div>
+                    <span class="text-[10px] text-muted-foreground mt-0.5">{{ e.ordre }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Ponctualité par VÉHICULE et par ÉQUIPAGE (le « chauffeur » n'existe pas en dur : on affiche le type) #}
+    {% if ponctualite.parCar is not empty or ponctualite.parPersonnel is not empty %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        {% if ponctualite.parCar is not empty %}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Retard moyen par véhicule</p>
+            <div class="text-sm space-y-1.5">
+                {% for c in ponctualite.parCar %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate font-mono">{{ c.matricule }} <span class="font-sans text-muted-foreground">· {{ c.nbPassages }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ c.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : (c.retardMoyen > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">
+                        {{ c.retardMoyen > 0 ? '+' }}{{ c.retardMoyen }} min · {{ c.tauxALheure }}%
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if ponctualite.parPersonnel is not empty %}
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-3">Ponctualité par membre d'équipage</p>
+            <div class="text-sm space-y-1.5">
+                {% for p in ponctualite.parPersonnel %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">{{ p.nom }}{% if p.type %} <span class="text-muted-foreground">· {{ p.type }}</span>{% endif %} <span class="text-muted-foreground">· {{ p.nbPassages }}</span></span>
+                    <span class="tabular-nums shrink-0 {{ p.retardMoyen > ponctualite.seuilALheureMinutes ? 'text-rose-600 dark:text-rose-400' : (p.retardMoyen > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">
+                        {{ p.retardMoyen > 0 ? '+' }}{{ p.retardMoyen }} min · {{ p.tauxALheure }}%
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <p class="text-xs text-muted-foreground mt-4">« À l'heure » = retard ≤ {{ ponctualite.seuilALheureMinutes }} min. Mesuré sur les passages réels horodatés.</p>
+{% endif %}
+{% endblock %}

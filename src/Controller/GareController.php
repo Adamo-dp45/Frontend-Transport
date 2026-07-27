@@ -42,67 +42,6 @@ final class GareController extends AbstractController
         ]);
     }
 
-    #[Route('/me', name: 'me', methods: ['GET'])]
-    public function me(Request $request): Response
-    {
-        /** @var \App\Entity\ApiUser $user */
-        $user = $this->getUser();
-        $gareRef = $user->getGare();
-
-        // Utilisateur sans gare (admin/central) : on affiche un message, pas d'appel API
-        if(!$gareRef || empty($gareRef['id'])) {
-            return $this->render('gare/me.html.twig', ['gare' => null, 'users' => [], 'stats' => null, 'periode' => 'mois']);
-        }
-
-        $id = $gareRef['id'];
-        $periode = $request->query->get('periode', 'mois');
-        if(!in_array($periode, ['jour', 'mois', 'tout'], true)) {
-            $periode = 'mois';
-        }
-
-        // La recette (dashboard) est réservée à l'admin de gare / admins
-        $peutVoirRecette = $this->isGranted('ROLE_ADMIN_GARE') || $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN');
-
-        $users = [];
-        $stats = null;
-        $suivi = ['versMaGare' => [], 'depuisMaGare' => []];
-        try {
-            // Accessible à tout ROLE_USER ('/api/gares/{id}' n'exige pas GARE_VOIR) : c'est SA gare
-            $gare = $this->api->item('/api/gares/' . $id);
-            if($peutVoirRecette) {
-                $stats = $this->api->item('/api/gares/me/dashboard', ['periode' => $periode]);
-            }
-            // Suivi des cars : opérationnel, accessible à tout agent rattaché à la gare
-            $suivi = $this->api->item('/api/gares/me/suivi');
-            if($this->isGranted('USER_VOIR') || $this->isGranted('ROLE_SUPER_ADMIN')) {
-                $users = $this->api->collection('/api/users', ['gare.id' => $id]);
-            }
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'home');
-            if($response) {
-                return $response;
-            }
-        }
-
-        // Cet agent est-il AUSSI commercial d'un voyage en cours ? → on lui propose son espace commercial.
-        $commercialVoyages = 0;
-        try {
-            $mc = $this->api->item('/api/voyages/me/commercial');
-            $commercialVoyages = count($mc['voyages'] ?? []);
-        } catch(ApiException) {
-            // non bloquant
-        }
-
-        return $this->render('gare/me.html.twig', [
-            'gare' => $gare,
-            'users' => $users,
-            'stats' => $stats,
-            'suivi' => $suivi,
-            'periode' => $periode,
-            'commercialVoyages' => $commercialVoyages,
-        ]);
-    }
-
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('GARE_VOIR')]
     public function show(int $id): Response

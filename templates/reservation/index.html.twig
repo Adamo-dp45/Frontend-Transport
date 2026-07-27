@@ -9,12 +9,20 @@
         <p class="text-sm text-muted-foreground mt-1">Places réservées à l'avance ; le siège est attribué à la confirmation (paiement).</p>
     </div>
     <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {#
+            Création de réservation DÉSACTIVÉE côté web : les réservations proviennent des apps mobiles
+            (client). Le guichet ne fait que les GÉRER (confirmer/encaisser, émettre le billet, annuler,
+            régulariser). Pour réactiver : décommenter ci-dessous ET les routes reservation.new /
+            reservation.create dans ReservationController.
+        #}
+        {#
         {% if is_granted('RESERVATION_CREER') %}
         <a href="{{ path('reservation.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
             <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
             Nouvelle réservation
         </a>
         {% endif %}
+        #}
     </div>
 </div>
 

@@ -341,7 +341,9 @@ final class CourrierController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('COURRIER_SUPPRIMER')]
+    // Suppression réservée à l'admin d'entreprise : un courrier porte de la recette et dispose déjà
+    // d'une sortie tracée (annulation). Cf. TicketController::delete pour le raisonnement complet.
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('delete_courrier', $request->request->get('_token'))) {

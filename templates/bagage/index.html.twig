@@ -23,7 +23,7 @@
     queryParams: queryParams,
     voyages: voyages,
     canEdit: is_granted('BAGAGE_MODIFIER'),
-    canDelete: is_granted('BAGAGE_SUPPRIMER'),
+    canDelete: is_granted('ROLE_ADMIN'),
     csrfDelete: csrf_token('delete_bagage'),
     userGareId: app.user.gare ? app.user.gare.id : null,
     isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN')

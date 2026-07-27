@@ -94,9 +94,18 @@ final class LigneController extends AbstractController
     public function edit(int $id, Request $request): Response
     {
         if ($request->isMethod('GET')) {
+            // Suggestions de RECALAGE (médiane réelle par tronçon) : réservé aux admins, et non
+            // bloquant — si l'API refuse (droits) ou n'a pas assez de données, le formulaire s'affiche
+            // sans suggestions plutôt que de tomber en erreur.
+            $recalage = null;
             try {
                 $ligne = $this->api->item('/api/lignes/' . $id);
                 $gares = $this->api->collection('/api/gares');
+                try {
+                    $recalage = $this->api->item('/api/lignes/' . $id . '/recalage');
+                } catch (ApiException) {
+                    // pas d'accès / pas de données → on continue sans suggestions
+                }
             } catch (ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, null, 'ligne.index');
                 if ($response) {
@@ -106,7 +115,8 @@ final class LigneController extends AbstractController
 
             return $this->render('ligne/edit.html.twig', [
                 'ligne' => $ligne,
-                'gares' => $gares
+                'gares' => $gares,
+                'recalage' => $recalage,
             ]);
         }
 

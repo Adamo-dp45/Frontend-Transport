@@ -1,5 +1,6 @@
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Loader2, MoreHorizontal, Printer } from "lucide-react"
+import { printTicketsUnParUn } from "../../../lib/printTickets"
 import { Button } from "../../../components/ui/button"
 import {
     DropdownMenu,
@@ -383,25 +384,13 @@ export default function TicketTable({tickets, meta, queryParams, voyages, gares,
         setPrintError(null)
 
         try {
-            const res = await fetch("/ticket/batch/print", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ids: selectedIds }),
-            })
-
-            if(!res.ok) {
-                const err = await res.json().catch(() => ({}))
-                throw new Error(err.detail ?? "Erreur lors de la génération du PDF")
-            }
-
-            const blob = await res.blob() /*
-                - On ouvre le pdf dans un nouvel onglet
+            /*
+                UNE TÂCHE D'IMPRESSION PAR BILLET : un PDF groupé de N pages ne forme qu'un seul
+                document, et un pilote thermique réglé sur « couper en fin de document » fait alors
+                sortir les billets COLLÉS. On envoie donc les billets séquentiellement.
             */
-            const url = URL.createObjectURL(blob)
-            window.open(url, "_blank")
-            setTimeout(() => URL.revokeObjectURL(url), 10_000) /*
-                - On libère l'url après ouverture et on réinitialise la sélection après impression
-            */
+            await printTicketsUnParUn(selectedIds)
+            // Sélection réinitialisée une fois les billets envoyés à l'impression
             setRowSelection({})
         } catch (err) {
             setPrintError(err instanceof Error ? err.message : "Erreur inconnue")

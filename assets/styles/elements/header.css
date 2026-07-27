@@ -200,7 +200,7 @@ html.dark .dropdown{box-shadow:0 4px 20px rgba(0,0,0,.4),0 1px 6px rgba(0,0,0,.2
     .theme-btn{padding:0 .4rem;
 }
 
-  /* Notification dropdown on mobile — centered on screen 
+  /* Notification dropdown on mobile — centered on screen
   #notifDrop{
     position:fixed !important;
     left:50% !important;
@@ -212,3 +212,44 @@ html.dark .dropdown{box-shadow:0 4px 20px rgba(0,0,0,.4),0 1px 6px rgba(0,0,0,.2
   }
     */
 }
+
+/* ═══ NOTIFICATIONS (cloche du header) ═══ */
+#notifBtn{position:relative;}
+.notif-count{
+  position:absolute;top:-.25rem;right:-.25rem;
+  min-width:1rem;height:1rem;padding:0 .2rem;
+  background:#ef4444;color:#fff;
+  border-radius:9999px;
+  font-size:.5625rem;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--background);
+  pointer-events:none;
+}
+.notif-count[hidden]{display:none;}
+
+#notifList{max-height:min(60vh,420px);overflow-y:auto;}
+.notif-item{
+  display:flex;gap:.75rem;padding:.625rem 1rem;
+  cursor:pointer;transition:background .1s;
+  border-bottom:1px solid var(--border);
+}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:var(--accent);}
+.notif-item.unread{background:color-mix(in srgb,var(--primary) 5%,transparent);}
+.notif-dot-item{width:.5rem;height:.5rem;border-radius:9999px;flex-shrink:0;margin-top:.35rem;background:var(--border);}
+.notif-dot-item.notif-sev-crit{background:#ef4444;}
+.notif-dot-item.notif-sev-warn{background:#f59e0b;}
+.notif-dot-item.notif-sev-info{background:var(--primary);}
+.notif-item:not(.unread) .notif-dot-item{background:var(--border);}
+.notif-body{flex:1;min-width:0;}
+.notif-text{font-size:.8125rem;line-height:1.45;color:var(--foreground);}
+.notif-text strong{font-weight:600;}
+.notif-time-label{font-size:.75rem;color:var(--muted-foreground);margin-top:.1875rem;}
+.notif-empty{padding:1.25rem 1rem;color:var(--muted-foreground);font-size:.85rem;text-align:center;}
+.notif-footer{padding:.5rem 1rem;border-top:1px solid var(--border);display:flex;justify-content:center;}
+.notif-footer-btn{
+  font-size:.8125rem;font-weight:500;text-decoration:none;
+  color:var(--muted-foreground);background:none;border:none;cursor:pointer;
+  padding:.25rem .5rem;border-radius:var(--radius);transition:background .1s,color .1s;
+}
+.notif-footer-btn:hover{background:var(--accent);color:var(--foreground);}

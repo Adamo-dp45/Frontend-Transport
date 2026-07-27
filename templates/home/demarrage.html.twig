@@ -1,0 +1,403 @@
+{#
+    PRISE EN MAIN — parcours CHRONOLOGIQUE de mise en route d'une compagnie, puis scénario complet
+    d'une journée d'exploitation, gare par gare. Complète la page « Aide » (référence PAR TÂCHE).
+    Macros locales calquées sur celles de home/aide.html.twig pour garder la même identité visuelle.
+#}
+{% extends 'base.html.twig' %}
+{% import _self as g %}
+
+{% block title %}Prise en main{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# ── En-tête ── #}
+    <div class="mb-6">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Guide de démarrage</p>
+        <h1 class="text-3xl font-semibold tracking-[-0.5px]">Mettre la compagnie en route</h1>
+        <p class="mt-1 text-muted-foreground">
+            De la création des gares au premier voyage complet, puis au bilan de la journée.
+            Besoin d'une tâche précise ? Voyez plutôt <a href="{{ path('aide') }}" class="text-primary hover:underline">l'aide par module</a>.
+        </p>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
+
+        {# ── Sommaire ── #}
+        <aside class="mb-6 lg:mb-0">
+            <nav class="lg:sticky lg:top-4 rounded-xl border bg-card p-3 text-sm">
+                <p class="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sommaire</p>
+                <ul class="space-y-0.5">
+                    {{ g.toc('avant', '1 · Avant de commencer') }}
+                    {{ g.toc('parametrage', '2 · Paramétrer la compagnie') }}
+                    {{ g.toc('equipe', '3 · Créer l\'équipe') }}
+                    {{ g.toc('perimetre', '4 · Le périmètre de chaque gare') }}
+                    {{ g.toc('scenario', '5 · Un voyage de bout en bout') }}
+                    {{ g.toc('commercial', '6 · Le commercial à bord') }}
+                    {{ g.toc('imprevus', '7 · Quand ça ne se passe pas comme prévu') }}
+                    {{ g.toc('bilan', '8 · Le bilan de la journée') }}
+                    {{ g.toc('annexes', '9 · Les autres modules') }}
+                </ul>
+            </nav>
+        </aside>
+
+        {# ── Contenu ── #}
+        <div class="space-y-10">
+
+        {# ══════════════════ 1 · AVANT DE COMMENCER ══════════════════ #}
+        {{ g.open('avant', 'rocket', 'Avant de commencer', 'Étape 1') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Tout part du compte <strong>administrateur d'entreprise</strong> : c'est lui qui crée le
+                référentiel de la compagnie, puis délègue à chaque gare. Connectez-vous avec ce compte
+                pour dérouler tout le paramétrage.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, 'Ouvrez <strong>Paramètres → Mon entreprise</strong> : raison sociale, sigle, contacts. Le <strong>sigle</strong> et les contacts sont imprimés sur les billets et les reçus — autant les renseigner avant la première vente.') }}
+                {{ g.step(2, 'Réglez les <strong>paramètres métier</strong> pendant que vous y êtes : plafond de <strong>remise</strong>, programme de <strong>fidélité</strong>, délais de <strong>réservation</strong> et composition de la <strong>recette</strong>. Ils sont détaillés à la fin de ce guide.') }}
+                {{ g.step(3, 'Gardez en tête la règle qui structure toute l\'application : <strong>chaque agent travaille depuis SA gare</strong>. Ce qu\'il voit et ce qu\'il peut faire en découlent.') }}
+            </ol>
+            {{ g.note('L\'ordre du paramétrage n\'est pas arbitraire : chaque étape s\'appuie sur la précédente. Une ligne a besoin de ses gares, un tarif a besoin de deux gares, un voyage a besoin d\'une ligne et d\'un car. Suivez l\'ordre proposé et vous n\'aurez jamais à revenir en arrière.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 2 · PARAMÉTRER ══════════════════ #}
+        {{ g.open('parametrage', 'route', 'Paramétrer la compagnie', 'Étape 2') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Six étapes, dans cet ordre. Comptez une petite heure pour une compagnie qui dessert
+                quelques villes.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Les villes</strong> — la base géographique. Créez d\'abord les villes desservies (Abidjan, Bouaké, Korhogo…).') }}
+                {{ g.step(2, '<strong>Les gares</strong> — une gare appartient à une ville. Renseignez le chef de gare et les contacts : ils apparaissent sur les documents. C\'est à ces gares que vos agents seront rattachés.') }}
+                {{ g.step(3, '<strong>Les lignes</strong> — une ligne est un <strong>itinéraire ordonné d\'arrêts</strong>. Le 1<sup>er</sup> arrêt est l\'origine, le dernier le terminus, les autres sont intermédiaires. Ajoutez les arrêts dans l\'ordre réel du trajet.') }}
+                {{ g.step(4, '<strong>Les durées de tronçon</strong> — sur chaque arrêt, indiquez le temps de trajet <em>depuis l\'arrêt précédent</em> (vide à l\'origine). L\'application en déduit l\'<strong>heure de passage</strong> du car à chaque gare. C\'est facultatif, mais <strong>tout ou rien</strong> sur une ligne.') }}
+                {{ g.step(5, '<strong>Les tarifs</strong> — la grille est <strong>globale à la compagnie</strong> : un prix par <strong>couple de gares</strong>, saisi une seule fois et partagé par toutes les lignes. Le sens inverse est créé automatiquement au même montant.') }}
+                {{ g.step(6, '<strong>Les véhicules et le personnel</strong> — créez les marques, modèles et types, puis les <strong>cars</strong> (avec leur nombre de sièges, qui détermine la capacité) et les <strong>personnels</strong> (chauffeurs, mécaniciens… le type est un libellé libre, à vous de le définir).') }}
+            </ol>
+            {{ g.note('Pourquoi renseigner les durées de tronçon ? Sans elles, tout se cale sur l\'heure de départ du voyage. Avec elles, un client qui monte à Bouaké voit l\'heure à laquelle le car passe <strong>chez lui</strong>, et non celle à laquelle il quitte Abidjan. Les échéances de réservation et le calcul des retards en dépendent également.') }}
+            {{ g.warn('Les durées de trajet vieillissent. Quand vous aurez quelques dizaines de voyages au compteur, ouvrez le <strong>recalage</strong> depuis la fiche de la ligne : l\'application compare vos durées déclarées au temps réellement observé et vous propose un ajustement, tronçon par tronçon. Elle ne modifie jamais rien toute seule.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 3 · L'ÉQUIPE ══════════════════ #}
+        {{ g.open('equipe', 'shield', 'Créer l\'équipe', 'Étape 3') }}
+            <p class="text-sm leading-relaxed mb-4">
+                L'application est pensée pour que la direction ne soit pas le passage obligé de toutes
+                les créations de comptes : chaque gare s'administre elle-même.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Créez un administrateur par gare</strong> et rattachez-le à sa gare. Il devient responsable de son périmètre : il gère les utilisateurs simples de SA gare et voit la recette de sa caisse.') }}
+                {{ g.step(2, '<strong>Chaque admin de gare crée ses agents</strong> (guichetiers, agents courrier/bagage) et leur attribue des permissions. Il ne peut pas créer d\'autres administrateurs de gare : cette hiérarchie est verrouillée.') }}
+                {{ g.step(3, '<strong>Les permissions se donnent par module</strong> (voir / créer / modifier / supprimer sur les billets, courriers, bagages…). Un agent ne voit dans son menu que ce que ses permissions autorisent.') }}
+                {{ g.step(4, 'Un <strong>utilisateur central sans gare</strong> (superviseur, contrôleur) voit l\'ensemble de la compagnie, mais pas la partie financière — réservée à l\'administrateur d\'entreprise.') }}
+            </ol>
+            {{ g.note('Personne ne se gère soi-même : le profil est une page à part. Le fondateur et les administrateurs d\'entreprise ne sont modifiables que par le super administrateur de la plateforme.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 4 · LE PÉRIMÈTRE PAR GARE ══════════════════ #}
+        {{ g.open('perimetre', 'building', 'Le périmètre de chaque gare', 'Étape 4') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Deux règles, une fois comprises, expliquent presque tout ce qui suit : ce qu'une gare
+                <strong>voit</strong>, et ce qu'elle peut <strong>faire</strong>. Les deux découlent du
+                rattachement de l'agent à sa gare. Un <strong>administrateur d'entreprise</strong> ou un
+                <strong>utilisateur central sans gare</strong>, lui, voit et gère l'ensemble de la compagnie.
+            </p>
+
+            {{ g.phase('1', 'Ce que chaque gare voit', 'Filtrage par gare') }}
+            <p class="text-sm leading-relaxed mb-3">
+                Un agent rattaché à une gare ne voit pas toute la compagnie « en vrac » : ses listes sont
+                filtrées à son périmètre, sur trois niveaux.
+            </p>
+            <ul class="space-y-2 text-sm leading-relaxed">
+                <li><strong>Le référentiel de la compagnie</strong> — gares, lignes, tarifs, cars, personnels, stock, dépannages : <strong>partagé</strong>, tout le monde le voit. C'est le socle commun.</li>
+                <li><strong>Ce qui circule sur ses lignes</strong> — un <strong>voyage</strong> apparaît si sa ligne dessert la gare ; un <strong>billet</strong>, s'il tient à un tel voyage ; un <strong>courrier</strong> ou un <strong>bagage</strong>, si sa gare en est le départ <em>ou</em> l'arrivée. Chaque gare suit donc ce qui la traverse, sans voir les trajets qui ne la concernent pas.</li>
+                <li><strong>Ce qui lui est propre</strong> — les <strong>utilisateurs</strong> de sa gare, sa caisse, ses incidents.</li>
+            </ul>
+            {{ g.note('C\'est pourquoi deux gares d\'une même ligne voient le même voyage mais chacune sa propre caisse ; et pourquoi le tableau de bord « Ma gare » ne montre que les cars qui desservent la gare, jamais la flotte entière.') }}
+
+            {{ g.phase('2', 'Ce que chaque gare peut faire', 'Droits selon la position') }}
+            <p class="text-sm leading-relaxed mb-3">
+                Sur un même voyage, les droits dépendent de la <strong>position de la gare sur la ligne</strong>.
+                La formule du scénario — l'origine prépare, l'intermédiaire réceptionne, le terminus clôture —
+                se décline ainsi :
+            </p>
+            <ul class="space-y-2 text-sm leading-relaxed">
+                <li><strong>Préparer (planifier)</strong> — créer le voyage, le modifier, affecter le commercial, le supprimer : réservé à la gare d'<strong>origine</strong> (ou à un administrateur). Une gare intermédiaire ne prépare pas, elle réceptionne.</li>
+                <li><strong>Intervenir sur le car (exploitation)</strong> — changer le véhicule ou le chauffeur : <strong>toute gare de la ligne sauf la destination</strong>, pour que la gare où le car se trouve réellement puisse agir en cas de panne.</li>
+                <li><strong>Réceptionner</strong> — réservé aux gares <strong>intermédiaires</strong> (ni origine, ni terminus).</li>
+                <li><strong>Clôturer</strong> — réservé au <strong>terminus</strong> (ou à un administrateur). Un voyage clôturé n\'est plus modifiable ni affectable.</li>
+            </ul>
+            <p class="text-sm leading-relaxed mt-4 mb-3">
+                À ces droits s'ajoute la <strong>position réelle du car</strong>, qui gouverne la vente gare par gare :
+            </p>
+            <ul class="space-y-2 text-sm leading-relaxed">
+                <li><strong>Le car est à quai</strong> (ou a atteint la gare) — on embarque : la vente et l'attribution de siège restent ouvertes. Être à la gare de montée n'est pas trop tard, c'est justement le moment d'embarquer.</li>
+                <li><strong>Le car en est reparti</strong> — plus de vente ni de désistement à cette gare : on ne vend pas une place dans un véhicule absent. Les gares en <strong>aval</strong>, elles, vendent encore — le car va les chercher.</li>
+            </ul>
+            {{ g.note('Cas particulier, le <strong>départ partiel</strong> : une gare intermédiaire peut lancer un voyage depuis chez elle (le car commence sa course là). Elle devient l\'<strong>origine effective</strong> ; ventes et réservations sont alors bornées à cette gare et au-delà.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 5 · LE SCÉNARIO ══════════════════ #}
+        {{ g.open('scenario', 'check', 'Un voyage de bout en bout', 'Étape 5') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Prenons une ligne <strong>Abidjan → Bouaké → Korhogo</strong> et suivons une journée
+                complète. Trois acteurs, chacun connecté depuis sa propre gare. La règle qui gouverne
+                tout le déroulé tient en une phrase :
+            </p>
+            <div class="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium">
+                L'origine <strong>prépare</strong> · l'intermédiaire <strong>réceptionne</strong> · le terminus <strong>clôture</strong>
+            </div>
+
+            {{ g.phase('A', 'Abidjan prépare et fait partir le car', 'Gare d\'origine') }}
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Créer le voyage</strong> — Voyages → Nouveau. Choisissez la ligne et la date de départ. Seule la gare d\'origine peut le faire (ou un administrateur).') }}
+                {{ g.step(2, '<strong>Affecter le car</strong> — c\'est lui qui fixe la capacité réelle (son nombre de sièges) et qui permet le plan de sièges. Tant qu\'aucun car n\'est affecté, le départ est refusé.') }}
+                {{ g.step(3, '<strong>Affecter le personnel</strong> — chauffeur, aide-chauffeur… Vous pouvez en affecter plusieurs.') }}
+                {{ g.step(4, '<strong>Désigner un commercial à bord</strong> (facultatif) — il vendra en route depuis la position réelle du car. Voir la section suivante.') }}
+                {{ g.step(5, '<strong>Vendre les billets</strong> — Billetterie → Nouveau billet. Choisissez le voyage, puis le trajet du client : <strong>gare de montée → gare de descente</strong>. La montée est forcée à votre gare. Le prix vient de la grille tarifaire pour ce couple de gares.') }}
+                {{ g.step(6, '<strong>Enregistrer les courriers</strong> — Courrier → Nouveau. Expéditeur, destinataire, gare d\'arrivée, puis un ou plusieurs colis (chacun taxé selon sa tranche de valeur). Le voyage peut être affecté maintenant ou plus tard.') }}
+                {{ g.step(7, '<strong>Enregistrer les bagages</strong> — Bagage → Nouveau. On part du <strong>billet</strong> du client : le bagage en hérite (voyage, gares, identité). Il ne reste que la nature et le poids à saisir, le tarif se calcule.') }}
+                {{ g.step(8, '<strong>Encaisser les réservations</strong> — les clients qui ont réservé depuis l\'application mobile se présentent : vous confirmez le paiement, attribuez un siège et le billet est émis.') }}
+                {{ g.step(9, '<strong>Imprimer les bordereaux</strong> — le <strong>bordereau de gare</strong> pour votre caisse (ce que VOUS avez vendu), et le <strong>bordereau chauffeur</strong> à remettre au conducteur : il récapitule TOUT ce que le car transporte, billets, courriers et bagages confondus.') }}
+                {{ g.step(10, '<strong>Démarrer le voyage</strong> — l\'heure de départ réelle est horodatée. Les courriers passent ' ~ g.chip('En transit', 'blue') ~ ' et les bagages ' ~ g.chip('Embarqué', 'blue') ~ ' automatiquement.') }}
+            </ol>
+
+            {{ g.phase('B', 'Bouaké voit venir le car, le réceptionne et le fait repartir', 'Gare intermédiaire') }}
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Voir le car arriver</strong> — depuis <strong>Ma gare</strong>, l\'agent de Bouaké voit le car dans « Vers ma gare », avec l\'<strong>heure d\'arrivée estimée</strong> chez lui et le <strong>retard courant</strong>. Un mini-plan de ligne montre où le car se trouve.') }}
+                {{ g.step(2, '<strong>Réceptionner</strong> — à l\'arrivée du car, ouvrez la fiche du voyage et cliquez « Réceptionner ». L\'heure d\'arrivée est horodatée. En une action, l\'application bascule les courriers qui descendent ici en ' ~ g.chip('Réceptionné', 'orange') ~ ' et les bagages en ' ~ g.chip('Livré', 'green') ~ '. Les réservations dont la gare de montée vient d\'être dépassée sont closes.') }}
+                {{ g.step(3, '<strong>Vendre depuis Bouaké</strong> — l\'agent vend maintenant ses propres billets sur les tronçons restants (Bouaké → Korhogo), enregistre ses courriers et ses bagages, exactement comme Abidjan.') }}
+                {{ g.step(4, '<strong>Remettre les colis</strong> — les courriers arrivés attendent leur destinataire. Quand il se présente, confirmez la <strong>livraison</strong> : le courrier passe ' ~ g.chip('Livré', 'green') ~ '.') }}
+                {{ g.step(5, '<strong>Imprimer son bordereau de gare</strong> — chaque gare fait le bilan de sa propre caisse.') }}
+                {{ g.step(6, '<strong>Faire repartir le car</strong> — cliquez « Le car repart » : l\'heure de départ de Bouaké est horodatée. Le bouton n\'apparaît qu\'une fois l\'arrivée marquée.') }}
+            </ol>
+            {{ g.note('Ces horodatages ne servent pas qu\'au suivi du jour : ils alimentent les statistiques de <strong>ponctualité</strong> et le <strong>recalage</strong> des durées de trajet. Une gare qui ne pointe pas fait paraître la compagnie plus ponctuelle qu\'elle ne l\'est — l\'indicateur de « qualité de la donnée » est là pour le révéler.') }}
+
+            {{ g.phase('C', 'Korhogo clôture le voyage', 'Terminus') }}
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Réceptionner les passagers et les colis</strong> — comme à Bouaké, l\'agent voit le car approcher.') }}
+                {{ g.step(2, '<strong>Clôturer le voyage</strong> — seule la gare de destination peut le faire. L\'heure d\'arrivée réelle est enregistrée, les bagages restants passent ' ~ g.chip('Livré', 'green') ~ ', et le voyage n\'est plus modifiable.') }}
+                {{ g.step(3, '<strong>Le car redevient disponible</strong> — il peut être affecté à un nouveau voyage. Tant qu\'un voyage n\'est pas clôturé, son véhicule reste immobilisé.') }}
+                {{ g.step(4, '<strong>Remettre les courriers</strong> aux destinataires et confirmer chaque livraison.') }}
+            </ol>
+            {{ g.warn('Un voyage oublié, non clôturé, garde son car indisponible : c\'est la cause n<sup>o</sup> 1 des « je ne peux pas affecter ce véhicule ». Le terminus doit clôturer.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 6 · LE COMMERCIAL ══════════════════ #}
+        {{ g.open('commercial', 'bus', 'Le commercial à bord', 'Étape 6') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Le commercial est un vendeur qui <strong>voyage avec le car</strong>. Il permet de
+                remplir les places restées vides en cours de route, là où aucune gare ne vend.
+                Voici ce qu'on lui explique le premier jour.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Vous êtes rattaché à un voyage</strong> — la gare d\'origine vous désigne comme commercial. À la connexion, l\'application vous amène directement sur votre <strong>espace commercial</strong> : c\'est votre poste de travail du jour.') }}
+                {{ g.step(2, '<strong>Vous vendez depuis la position du car</strong>, pas depuis une gare fixe. L\'application sait où se trouve le véhicule et ne vous propose que les trajets encore possibles à partir de là.') }}
+                {{ g.step(3, '<strong>Faites avancer votre position</strong> — à chaque arrêt franchi, déclarez-le. C\'est ce qui met à jour les trajets que vous pouvez vendre. Si une gare réceptionne le car, la position avance toute seule.') }}
+                {{ g.step(4, '<strong>Vendez normalement</strong> — même écran que le guichet : trajet, siège, client, encaissement. Le billet porte votre nom.') }}
+                {{ g.step(5, '<strong>Vos ventes reviennent à votre gare d\'affectation</strong>, pas à la gare où le car se trouve au moment de la vente. Votre recette est ainsi rattachée à votre équipe d\'origine.') }}
+            </ol>
+            {{ g.note('Un agent peut être à la fois guichetier et commercial. Quand il accompagne un car, un rappel s\'affiche sur <strong>Ma gare</strong> pour basculer vers son espace commercial.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 7 · LES IMPRÉVUS ══════════════════ #}
+        {{ g.open('imprevus', 'alert', 'Quand ça ne se passe pas comme prévu', 'Étape 7') }}
+            <p class="text-sm leading-relaxed mb-4">
+                Le quotidien d'une compagnie, ce sont les exceptions. Voici comment l'application les traite.
+            </p>
+
+            {{ g.phase('1', 'Le car tombe en panne en route', 'Exploitation') }}
+            <p class="text-sm leading-relaxed mb-3">
+                Affectez simplement un <strong>autre car</strong> au voyage : les billets <strong>suivent
+                le nouveau véhicule</strong> automatiquement. Chaque passager reprend son numéro de siège
+                s'il existe dans le nouveau car, sinon il est réinstallé sur une place libre de son
+                tronçon. En cas de panne, on veut faire monter tout le monde — quitte à changer de numéro.
+            </p>
+            {{ g.note('Toute gare de la ligne peut intervenir sur le car et le chauffeur — c\'est bien la gare où le véhicule se trouve réellement qui doit pouvoir agir. Seule la destination finale en est exclue. Si le nouveau car est trop petit pour un tronçon, le changement est refusé plutôt que de laisser des passagers sans siège.') }}
+
+            {{ g.phase('2', 'Un client se désiste', 'Billetterie') }}
+            <ol class="space-y-3">
+                {{ g.step('a', '<strong>Annulation</strong> — le billet passe ' ~ g.chip('Annulé', 'rose') ~ ', le siège est libéré, le client est remboursé. Un <strong>motif est obligatoire</strong>. Les bagages rattachés sont annulés en cascade.') }}
+                {{ g.step('b', '<strong>Report</strong> — un nouveau billet est émis sur un autre départ ; l\'ancien passe ' ~ g.chip('Reporté', 'amber') ~ ' et libère sa place.') }}
+            </ol>
+            {{ g.warn('Les deux sont bloqués une fois que le car est passé à la gare de montée du passager : le service a commencé. Au guichet, en revanche, aucun délai n\'est imposé avant le départ — le passager est là, la vente et le désistement restent possibles jusqu\'au bout.') }}
+
+            {{ g.phase('3', 'Un passager est « évincé »', 'Billetterie') }}
+            <p class="text-sm leading-relaxed mb-3">
+                C'est la contrepartie d'une règle volontaire : <strong>la gare en amont est toujours
+                prioritaire</strong>. Une vente à Bouaké ne bloque jamais une vente à Abidjan, quitte à ce
+                que le même siège porte deux billets sur le tronçon commun. Le passager monté plus tôt
+                garde la place ; l'autre est <strong>évincé</strong> — il ne montera pas.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Repérer</strong> — un badge signale le billet dans la liste, un compteur par gare apparaît sur le manifeste, et une pastille d\'alerte s\'affiche sur le plan des sièges.') }}
+                {{ g.step(2, '<strong>Reloger</strong> — reportez le billet sur un autre départ. Ce report reste <strong>toujours possible</strong>, même après le passage du car : la compagnie a repris le siège, elle doit une solution.') }}
+                {{ g.step(3, '<strong>Aucune pénalité</strong> — ce report est reconnu comme imputable à la compagnie et exclu du taux de désistement. Le client n\'a rien renoncé.') }}
+            </ol>
+            {{ g.note('Une éviction peut disparaître d\'elle-même : si le passager amont se désiste ou descend en route, le siège se libère et l\'alerte s\'éteint. Le client n\'est jamais prévenu côté application mobile — cela se règle entre gares, avant de l\'inquiéter.') }}
+
+            {{ g.phase('4', 'Un client descend avant son terminus', 'Billetterie') }}
+            <p class="text-sm leading-relaxed mb-3">
+                Déclarez la <strong>descente réelle</strong> depuis le billet : le siège redevient
+                disponible pour la suite du trajet et peut être revendu immédiatement par la gare suivante.
+            </p>
+
+            {{ g.phase('5', 'Un client réserve puis ne vient pas', 'Réservation') }}
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Une réservation tient sa place</strong> tant que son échéance court, payée ou non. On ne vend donc jamais par-dessus.') }}
+                {{ g.step(2, '<strong>Impayée à l\'échéance</strong> → elle devient ' ~ g.chip('Expirée', 'rose') ~ ' et la place se libère toute seule.') }}
+                {{ g.step(3, '<strong>Payée mais client absent</strong> → elle passe ' ~ g.chip('À régulariser', 'amber') ~ '. L\'argent est encaissé : le client peut être reporté sur un autre départ, avec une <strong>pénalité</strong> et le complément de tarif éventuel.') }}
+                {{ g.step(4, '<strong>Si vous reportez le départ</strong> à plus tard, les clients devenus no-show sont <strong>repêchés automatiquement</strong> : le car n\'est pas parti, ils ont payé, c\'est l\'horaire qui a bougé. Sans pénalité.') }}
+                {{ g.step(5, '<strong>Si vous avancez le départ</strong>, les réservations payées encore valides sont <strong>exonérées de pénalité</strong> : le changement vient de la compagnie.') }}
+            </ol>
+
+            {{ g.phase('6', 'Un colis ou un bagage est perdu', 'Courrier & Bagage') }}
+            <p class="text-sm leading-relaxed mb-3">
+                Déclarez-le <strong>Perdu</strong> depuis sa fiche. Le statut est tracé au journal
+                d'activité avec son auteur, et le cas remonte dans les <strong>incidents</strong> de la
+                gare concernée. On ne supprime pas un colis perdu : on le déclare, pour qu'il reste
+                visible et opposable.
+            </p>
+
+            {{ g.phase('7', 'Lire le plan des sièges', 'Billetterie') }}
+            <p class="text-sm leading-relaxed mb-3">Le plan se lit <strong>pour le tronçon choisi</strong> — un siège libre ici peut très bien être occupé plus loin.</p>
+            <ul class="space-y-2 text-sm leading-relaxed">
+                <li><strong>Libre</strong> — disponible sur ce tronçon, cliquez pour l'attribuer.</li>
+                <li><strong>Sélectionné</strong> — le siège que vous êtes en train d'attribuer.</li>
+                <li><strong>Occupé</strong> (barré) — déjà pris sur ce tronçon.</li>
+                <li><strong>Libérable</strong> (pastille <strong>↻</strong>) — occupé, mais le passager peut être déclaré descendu pour revendre la place.</li>
+                <li><strong>Revendu</strong> (violet) — le siège porte plusieurs billets sur des tronçons qui ne se chevauchent pas. C'est normal et souhaitable : la place a été rentabilisée deux fois.</li>
+                <li><strong>Pastille d'alerte</strong> — un billet évincé existe sur ce voyage. Ce repère est global au voyage, il n'empêche pas la vente sur ce tronçon.</li>
+            </ul>
+        {{ g.close() }}
+
+        {# ══════════════════ 8 · LE BILAN ══════════════════ #}
+        {{ g.open('bilan', 'chart', 'Le bilan de la journée', 'Étape 8') }}
+            <p class="text-sm leading-relaxed mb-4">
+                La journée est finie, les cars sont rentrés. L'administrateur d'entreprise se connecte.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Le tableau de bord</strong> donne l\'essentiel : voyages réalisés, taux de remplissage, recettes, coûts et bénéfice net sur la période choisie.') }}
+                {{ g.step(2, '<strong>La recette se lit par canal</strong> : <strong>guichet</strong> (ventes en gare), <strong>commercial</strong> (ventes à bord, rattachées à la gare d\'affectation du vendeur) et <strong>réservation</strong> (payée, comptée à la gare de provenance). Un billet issu d\'une réservation n\'est jamais compté deux fois.') }}
+                {{ g.step(3, '<strong>Le détail par gare</strong> permet de comparer les caisses ; chaque chef de gare voit la sienne sur son propre tableau de bord.') }}
+                {{ g.step(4, '<strong>La ponctualité</strong> exploite les horodatages de la journée : retard moyen et taux à l\'heure par gare, par ligne, par véhicule et par membre d\'équipage, avec l\'évolution du retard le long du trajet.') }}
+                {{ g.step(5, '<strong>Le journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, remises, montants forcés, encaissements, ajustements de stock avec leur motif.') }}
+                {{ g.step(6, '<strong>La page Agents</strong> résume les actions critiques par agent (taux d\'annulation, remises accordées) pour repérer une dérive.') }}
+                {{ g.step(7, '<strong>Exportez</strong> en Excel ou PDF depuis n\'importe quelle page de statistiques, sur la période affichée.') }}
+            </ol>
+            {{ g.note('Les <strong>alertes</strong> (cloche en haut à droite) remontent automatiquement ce qui demande une action : stock sous le seuil, dépannage qui traîne, passagers à reloger, bons de réservation près d\'expirer, colis non livrés. Chacun ne voit que ce qui le concerne — sa gare, son rôle.') }}
+        {{ g.close() }}
+
+        {# ══════════════════ 9 · LES ANNEXES ══════════════════ #}
+        {{ g.open('annexes', 'gift', 'Les autres modules', 'Étape 9') }}
+            <div class="space-y-5 text-sm leading-relaxed">
+                <div>
+                    <h3 class="font-semibold mb-1">Fidélité</h3>
+                    <p>Une <strong>carte à tampons</strong> : le client adhère, chaque voyage payé ajoute un tampon, et au seuil atteint il obtient une remise ou un billet offert. Au guichet, il suffit de saisir son <strong>téléphone</strong> pour que l'application le reconnaisse et propose la récompense. L'état de la carte est recalculé depuis l'historique des billets — aucun compteur ne peut dériver.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Remise</h3>
+                    <p>Un rabais ponctuel sur un billet, en montant ou en pourcentage, avec un <strong>plafond réglé par la compagnie</strong>. Un bénéficiaire peut être associé (personnel, partenaire, autorité). Toutes les remises sont tracées et consultables par agent : c'est un point de contrôle, pas un geste anodin.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Stock &amp; approvisionnement</h3>
+                    <p>Gérez les <strong>pièces détachées</strong> et les fournisseurs. Un approvisionnement fait <strong>entrer</strong> les pièces en stock, un dépannage les fait <strong>sortir</strong>, et l'ajustement manuel corrige un écart (avec motif obligatoire). Chaque mouvement est enregistré dans l'<strong>inventaire</strong>, en lecture seule, avec son auteur. Définissez un <strong>seuil d'alerte propre à chaque pièce</strong> : c'est lui qui déclenche l'alerte de stock faible.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Flotte &amp; maintenance</h3>
+                    <p>Le parc de véhicules et leur historique d'interventions. Ouvrez un <strong>dépannage</strong> en y listant les pièces consommées : le stock est décrémenté et le coût calculé automatiquement. Affectez-y des mécaniciens. À la clôture, le véhicule est remis en service. Le suivi par véhicule montre les cars qui coûtent le plus cher.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Paramètres de l'entreprise</h3>
+                    <p>Quatre réglages structurants : le <strong>plafond de remise</strong>, le programme de <strong>fidélité</strong> (seuil et récompense), les délais de <strong>réservation</strong> (paiement, présentation, pénalité de no-show) et la composition de la <strong>recette</strong> (inclure ou non les courriers dans le chiffre d'affaires).</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Réservation en ligne</h3>
+                    <p>Vos clients réservent depuis l'<strong>application mobile</strong>, sans créer de compte : ils choisissent un trajet, un départ, paient, et reçoivent un bon. Ils suivent ensuite « où est mon car » avec la position réelle et le retard estimé. Au guichet, vous encaissez ou émettez simplement le billet correspondant.</p>
+                </div>
+            </div>
+            {{ g.note('Pour le détail d\'une opération précise — écran par écran — reportez-vous à <a href="' ~ path('aide') ~ '" class="underline">la page d\'aide</a>.') }}
+        {{ g.close() }}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# ── Macros (mêmes conventions visuelles que la page Aide) ── #}
+
+{% macro toc(anchor, label) %}
+    <li><a href="#{{ anchor }}" class="block rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{{ label }}</a></li>
+{% endmacro %}
+
+{% macro open(anchor, icon, title, eyebrow) %}
+    <section id="{{ anchor }}" class="scroll-mt-6">
+        <div class="mb-4 flex items-center gap-3">
+            <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                {% if icon == 'rocket' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                {% elseif icon == 'route' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                {% elseif icon == 'shield' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                {% elseif icon == 'check' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                {% elseif icon == 'bus' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M4 18V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><circle cx="7" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+                {% elseif icon == 'alert' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                {% elseif icon == 'chart' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                {% elseif icon == 'building' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+                {% else %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                {% endif %}
+            </div>
+            <div>
+                {% if eyebrow %}<p class="text-[11px] font-semibold uppercase tracking-wide text-primary">{{ eyebrow }}</p>{% endif %}
+                <h2 class="text-xl font-semibold leading-tight">{{ title }}</h2>
+            </div>
+        </div>
+        <div class="card p-5">
+{% endmacro %}
+
+{% macro close() %}
+        </div>
+    </section>
+{% endmacro %}
+
+{% macro step(n, text) %}
+    <li class="flex gap-3">
+        <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{{ n }}</span>
+        <span class="pt-0.5 text-sm leading-relaxed">{{ text|raw }}</span>
+    </li>
+{% endmacro %}
+
+{# Sous-titre d'une phase du scénario (acteur + moment). #}
+{% macro phase(lettre, titre, acteur) %}
+    <div class="mb-3 mt-6 flex items-center gap-3 border-t border-border pt-5 first:mt-0 first:border-0 first:pt-0">
+        <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">{{ lettre }}</span>
+        <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{{ acteur }}</p>
+            <h3 class="text-base font-semibold leading-tight">{{ titre }}</h3>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro note(text) %}
+    <div class="mt-4 flex gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-sm leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+        <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>{{ text|raw }}</span>
+    </div>
+{% endmacro %}
+
+{% macro warn(text) %}
+    <div class="mt-4 flex gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm leading-relaxed text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <span>{{ text|raw }}</span>
+    </div>
+{% endmacro %}
+
+{% macro chip(label, tone) %}
+{%- set tones = {
+    slate:   'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    blue:    'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+    orange:  'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+    green:   'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+    amber:   'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    violet:  'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+    rose:    'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+} -%}
+<span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium {{ tones[tone] ?? tones.slate }}">{{ label }}</span>
+{%- endmacro %}

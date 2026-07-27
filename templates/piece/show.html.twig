@@ -4,7 +4,7 @@
 {% block title %}La pièce - {{ piece.libelle }}{% endblock %}
 
 {% block body %}
-{% set SEUIL = 5 %}
+{% set SEUIL = piece.seuilstock ?? 5 %}
 {% set stock = piece.stockinitial %}
 <div class="max-w-[1100px] mx-auto">
     <div class="flex items-start justify-between gap-4 flex-wrap mb-6">

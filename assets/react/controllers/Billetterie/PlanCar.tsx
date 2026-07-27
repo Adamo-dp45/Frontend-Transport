@@ -131,6 +131,12 @@ function SiegeCell({
             style={{ width: SIEGE_W, height: SIEGE_H }}
         >
             {siege.numero}
+            {/*
+                DOSSIER du siège : petite barre en BAS de l'assise. Les passagers font face à l'AVANT
+                du véhicule (poste de conduite, en haut du plan) — le dossier est donc tourné vers
+                l'ARRIÈRE (le bas). Repère purement visuel, theme-aware, sans interaction.
+            */}
+            <span aria-hidden className="pointer-events-none absolute inset-x-1.5 bottom-1 h-1 rounded-full bg-foreground/25" />
             {isOccupe && (
                 <span className="absolute inset-0 flex items-center justify-center">
                     <span className={cn("h-0.5 w-3/4 rotate-45 rounded", revendu ? "bg-violet-400" : "bg-gray-400")} />

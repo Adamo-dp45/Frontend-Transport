@@ -12,6 +12,7 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Positive;
+use Symfony\Component\Validator\Constraints\PositiveOrZero;
 
 class PieceFormFactory
 {
@@ -49,6 +50,18 @@ class PieceFormFactory
                 'constraints' => [
                     new NotNull(),
                     new Positive()
+                ]
+            ])
+            ->add('seuilstock', IntegerType::class, [
+                'label' => 'Seuil d\'alerte stock',
+                'help' => 'Une alerte de stock faible se déclenche quand le stock passe à ce niveau ou en dessous.',
+                'constraints' => [
+                    new NotNull(),
+                    new PositiveOrZero()
+                ],
+                'attr' => [
+                    'min' => 0,
+                    'placeholder' => '5'
                 ]
             ])
             ->add('typepiece', ChoiceType::class, [

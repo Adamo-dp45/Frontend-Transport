@@ -49,18 +49,26 @@
 
                 <nav class="sidebar-nav">
                     <div class="sidebar-section">
-                        {% if is_granted('ROLE_ADMIN') %}
+                        {# Tableau de bord UNIQUE : libellé/icône adaptés au profil. Un agent rattaché à
+                           une gare (non-admin) voit « Ma gare » (vue opérationnelle) ; un admin ou un
+                           utilisateur central sans gare voit « Tableau de bord » (vue entreprise). #}
+                        {% if app.user and not is_granted('ROLE_SUPER_ADMIN') %}
+                        {% set estVueGare = app.user.gare and not is_granted('ROLE_ADMIN') %}
                         <div class="sb-section-title">Principal</div>
-                        <a href="{{ path('home') }}" class="nav-link {{ app.current_route starts with 'home' ? 'active' : '' }}" data-nav data-tooltip="Dashboard">
+                        <a href="{{ path('home') }}" class="nav-link {{ app.current_route starts with 'home' ? 'active' : '' }}" data-nav data-tooltip="{{ estVueGare ? 'Ma gare' : 'Dashboard' }}" title="{{ estVueGare ? 'Ma gare' : 'Tableau de bord' }}">
+                            {% if estVueGare %}
+                            <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>
+                            {% else %}
                             <svg class="nav-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#dashbord"></use></svg>
-                            <span class="sb-text">Tableau de bord</span>
+                            {% endif %}
+                            <span class="sb-text">{{ estVueGare ? 'Ma gare' : 'Tableau de bord' }}</span>
                         </a>
                         {% endif %}
 
-                        {% if app.user and app.user.gare %}
-                        <a href="{{ path('gare.me') }}" class="nav-link {{ app.current_route == 'gare.me' ? 'active' : '' }}" data-nav data-tooltip="Ma gare" title="Ma gare">
-                            <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>
-                            <span class="sb-text">Ma gare</span>
+                        {% if app.user and not is_granted('ROLE_SUPER_ADMIN') %}
+                        <a href="{{ path('alerte.index') }}" class="nav-link {{ app.current_route starts with 'alerte.' ? 'active' : '' }}" data-nav data-tooltip="Alertes" title="Alertes">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path stroke-linecap="round" stroke-linejoin="round" d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                            <span class="sb-text">Alertes</span>
                         </a>
                         {% endif %}
 
@@ -360,8 +368,11 @@
                                 <a href="{{ path('admin.entreprise.index') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Entreprises
                                 </a>
-                                <a href="{{ path('admin.systeme.index') }}" class="sub-link {{ app.current_route starts with 'admin.systeme.' ? 'active' : '' }}" data-subnav>
+                                <a href="{{ path('admin.systeme.index') }}" class="sub-link {{ app.current_route == 'admin.systeme.index' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Système
+                                </a>
+                                <a href="{{ path('admin.systeme.corbeille.index') }}" class="sub-link {{ app.current_route starts with 'admin.systeme.corbeille.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Corbeille
                                 </a>
                                 {% elseif is_granted('ROLE_ADMIN') %}
                                 <a href="{{ path('admin.entreprise.me') }}" class="sub-link {{ app.current_route starts with 'admin.entreprise.' ? 'active' : '' }}" data-subnav>
@@ -433,53 +444,40 @@
                             <div class="search-kbd-top"><kbd>⌘</kbd><kbd>K</kbd></div>
                         </div>
                         {% if app.user and app.user.gare %}
-                        <a href="{{ path('gare.me') }}" class="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                        <a href="{{ path('home') }}" class="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
                             {{ app.user.gare.libelle }}
                         </a>
                         {% endif %}
                     </div>
                     <div class="topbar-right">
-                        {#
-                            <div class="dropdown-anchor">
-                                <button class="icon-btn" id="notifBtn" data-tooltip="Notifications" data-tooltip-dir="bottom">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                                    <span class="notif-count" id="notifCount">3</span>
-                                </button>
-                                <div class="dropdown" id="notifDrop" style="min-width:340px;right:0;top:calc(100% + .375rem);">
-                                    <div class="dropdown-header" style="display:flex;align-items:center;justify-content:space-between;">
-                                        <div>
-                                            <div class="dropdown-title">Notifications</div>
-                                            <div class="dropdown-subtitle" id="notifSubtitle">3 unread messages</div>
-                                        </div>
-                                        <button class="btn btn-ghost btn-sm" id="markAllReadBtn" style="font-size:.75rem;color:var(--muted-fg)">Mark all read</button>
+                        {% if not is_granted('ROLE_SUPER_ADMIN') %}
+                        <div class="dropdown-anchor" id="notifAnchor"
+                             data-resume-url="{{ path('alerte.resume') }}"
+                             data-recentes-url="{{ path('alerte.recentes') }}"
+                             data-lire-tout-url="{{ path('alerte.lire_tout') }}"
+                             data-lire-url-base="{{ path('alerte.index') }}">
+                            <button class="icon-btn" id="notifBtn" data-tooltip="Notifications" data-tooltip-dir="bottom" aria-label="Notifications">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                <span class="notif-count" id="notifCount" hidden>0</span>
+                            </button>
+                            <div class="dropdown" id="notifDrop" style="min-width:340px;right:0;top:calc(100% + .375rem);">
+                                <div class="dropdown-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                    <div>
+                                        <div class="dropdown-title">Notifications</div>
+                                        <div class="dropdown-subtitle" id="notifSubtitle">Chargement…</div>
                                     </div>
-                                    <div id="notifList">
-                                        <div class="notif-item unread">
-                                            <div class="notif-dot-item unread"></div>
-                                            <div class="notif-body">
-                                                <div class="notif-text">
-                                                    <strong>Olivia Martin</strong> placed a new order for <strong>Pro Plan</strong>
-                                                </div>
-                                                <div class="notif-time-label">2 minutes ago</div>
-                                            </div>
-                                        </div>
-                                        <div class="notif-item">
-                                            <div class="notif-dot-item read"></div>
-                                            <div class="notif-body">
-                                                <div class="notif-text">
-                                                    Invoice <strong>#INV-0089</strong> marked as overdue
-                                                </div>
-                                                <div class="notif-time-label">3 hours ago</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notif-footer">
-                                        <button class="notif-footer-btn" id="viewAllNotifBtn">View all notifications</button>
-                                    </div>
+                                    <button class="btn btn-ghost btn-sm" id="markAllReadBtn" style="font-size:.75rem;color:var(--muted-fg)">Tout marquer lu</button>
+                                </div>
+                                <div id="notifList">
+                                    <div class="notif-empty">Chargement…</div>
+                                </div>
+                                <div class="notif-footer">
+                                    <a href="{{ path('alerte.index') }}" class="notif-footer-btn" id="viewAllNotifBtn">Voir toutes les alertes</a>
                                 </div>
                             </div>
-                        #}
+                        </div>
+                        {% endif %}
                         <a href="{{ path('aide') }}" title="Aide" class="icon-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
                         </a>

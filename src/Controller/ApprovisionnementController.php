@@ -195,7 +195,9 @@ final class ApprovisionnementController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('APPROVISIONNEMENT_SUPPRIMER')]
+    // Suppression réservée à l'admin d'entreprise : un approvisionnement a mouvementé le stock et
+    // dispose déjà d'une sortie tracée (annulation). Cf. TicketController::delete.
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('delete_approvisionnement', $request->request->get('_token'))) {
