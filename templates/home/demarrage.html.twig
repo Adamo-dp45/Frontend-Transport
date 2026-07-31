@@ -9,22 +9,48 @@
 {% block title %}Prise en main{% endblock %}
 
 {% block body %}
+{# Impression : on masque le chrome de l'app pour ne garder que le document. #}
+<style>
+@media print {
+    /* Le layout de l'app fige les hauteurs (100vh + overflow) : à l'impression, seul le viewport
+       visible sortirait. On libère toute la chaîne pour que le document COULE sur plusieurs pages. */
+    html, body { height: auto !important; overflow: visible !important; }
+    .shell, .main, .content, .content-inner {
+        height: auto !important; min-height: 0 !important; max-height: none !important;
+        overflow: visible !important; display: block !important;
+    }
+    .sidebar, .sidebar-overlay, .topbar, .no-print { display: none !important; }
+    .main { margin: 0 !important; }
+    .content, .content-inner { padding: 0 !important; max-width: none !important; }
+    .guide-grid { display: block !important; }
+    .guide-doc section { break-inside: avoid; }
+    .guide-doc { --tw-space-y-reverse: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 14mm; }
+}
+</style>
 <div class="max-w-[1100px] mx-auto">
 
     {# ── En-tête ── #}
-    <div class="mb-6">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Guide de démarrage</p>
-        <h1 class="text-3xl font-semibold tracking-[-0.5px]">Mettre la compagnie en route</h1>
-        <p class="mt-1 text-muted-foreground">
-            De la création des gares au premier voyage complet, puis au bilan de la journée.
-            Besoin d'une tâche précise ? Voyez plutôt <a href="{{ path('aide') }}" class="text-primary hover:underline">l'aide par module</a>.
-        </p>
+    <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Guide de démarrage</p>
+            <h1 class="text-3xl font-semibold tracking-[-0.5px]">Mettre la compagnie en route</h1>
+            <p class="mt-1 text-muted-foreground">
+                De la création des gares au premier voyage complet, puis au bilan de la journée.
+                Besoin d'une tâche précise ? Voyez plutôt <a href="{{ path('aide') }}" class="text-primary hover:underline">l'aide par module</a>.
+            </p>
+        </div>
+        <button type="button" id="exportGuidePdf" class="no-print shrink-0 inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10">
+            <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+            Exporter en PDF
+        </button>
     </div>
 
-    <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
+    <div class="guide-grid lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
 
         {# ── Sommaire ── #}
-        <aside class="mb-6 lg:mb-0">
+        <aside class="no-print mb-6 lg:mb-0">
             <nav class="lg:sticky lg:top-4 rounded-xl border bg-card p-3 text-sm">
                 <p class="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sommaire</p>
                 <ul class="space-y-0.5">
@@ -42,7 +68,7 @@
         </aside>
 
         {# ── Contenu ── #}
-        <div class="space-y-10">
+        <div class="guide-doc space-y-10">
 
         {# ══════════════════ 1 · AVANT DE COMMENCER ══════════════════ #}
         {{ g.open('avant', 'rocket', 'Avant de commencer', 'Étape 1') }}
@@ -320,6 +346,28 @@
         </div>
     </div>
 </div>
+
+{# Export PDF : impression navigateur (rend le vrai design). On force le thème
+   CLAIR le temps de l'impression puis on rétablit, pour un PDF lisible. #}
+<script>
+(function () {
+    var btn = document.getElementById('exportGuidePdf');
+    if (!btn || btn.dataset.bound) { return; }
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', function () {
+        var html = document.documentElement;
+        var wasDark = html.classList.contains('dark');
+        if (wasDark) {
+            html.classList.remove('dark');
+            window.addEventListener('afterprint', function restore() {
+                html.classList.add('dark');
+                window.removeEventListener('afterprint', restore);
+            });
+        }
+        window.print();
+    });
+})();
+</script>
 {% endblock %}
 
 {# ── Macros (mêmes conventions visuelles que la page Aide) ── #}

@@ -30,9 +30,11 @@
                     {% if is_granted('RESERVATION_VOIR') or is_granted('TICKET_VOIR') %}{{ h.toc('reservation', 'Réserver une place') }}{% endif %}
                     {% if is_granted('VOYAGE_VOIR') %}{{ h.toc('voyage', 'Créer et suivre un voyage') }}{% endif %}
                     {% if is_granted('VOYAGE_VOIR') %}{{ h.toc('reception', 'Réceptionner à ma gare') }}{% endif %}
+                    {{ h.toc('suivi', 'Suivre les cars') }}
+                    {% if is_granted('TICKET_VOIR') %}{{ h.toc('commercial', 'Vendre à bord (commercial)') }}{% endif %}
                     {% if is_granted('COURRIER_VOIR') %}{{ h.toc('courrier', 'Envoyer un courrier') }}{% endif %}
                     {% if is_granted('BAGAGE_VOIR') %}{{ h.toc('bagage', 'Enregistrer un bagage') }}{% endif %}
-                    {{ h.toc('suivi', 'Suivre les cars') }}
+                    {% if not is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('alertes', 'Alertes & notifications') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('systeme', 'Système & maintenance') }}{% endif %}
@@ -146,6 +148,30 @@
             {{ h.close() }}
             {% endif %}
 
+            {# Suivi des cars #}
+            {{ h.open('suivi', 'building', 'Suivre les cars depuis ma gare', 'Ma gare') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Ma gare</strong>. La section <strong>« Suivi des cars »</strong> liste les voyages qui desservent votre gare.') }}
+                    {{ h.step(2, 'Colonne <strong>« Vers ma gare »</strong> : les cars en approche, avec l\'<strong>heure d\'arrivée estimée (≈)</strong> chez vous et le <strong>retard</strong> courant du car. Colonne <strong>« Depuis ma gare »</strong> : les cars à quai ou déjà partis.') }}
+                    {{ h.step(3, 'Le <strong>mini-plan de ligne</strong> montre la position du car (icône bus) par rapport à votre gare. Cliquez une ligne pour ouvrir la fiche du voyage (si vous y avez accès).') }}
+                </ol>
+                {{ h.note('L\'heure estimée = heure prévue chez vous + retard actuel du car. Elle ne s\'affiche qu\'une fois le car <strong>parti</strong> : tant qu\'il n\'a pas démarré, seul l\'horaire prévu est montré.') }}
+            {{ h.close() }}
+
+            {# Commercial à bord #}
+            {% if is_granted('TICKET_VOIR') %}
+            {{ h.open('commercial', 'bus', 'Vendre à bord (commercial)', 'Espace commercial') }}
+                <p class="mb-3 text-sm text-muted-foreground">Le <strong>commercial à bord</strong> voyage avec le car et vend en cours de route, depuis la <strong>position réelle du car</strong> — là où aucune gare ne vend. La gare d\'origine le désigne sur la fiche du voyage.</p>
+                <ol class="space-y-3">
+                    {{ h.step(1, 'À la connexion, l\'application vous ouvre directement votre <strong>espace commercial</strong> (« Mon espace ») : vos voyages en cours, la position du car et votre recette propre.') }}
+                    {{ h.step(2, '<strong>Faites avancer la position</strong> à chaque arrêt franchi (« le car est arrivé à… », « le car repart »). C\'est ce qui met à jour les trajets vendables. Si une gare réceptionne le car, la position avance toute seule.') }}
+                    {{ h.step(3, '<strong>Vendez</strong> comme au guichet — trajet, siège, client, remise éventuelle — mais la <strong>montée est forcée à la position du car</strong>. Le billet porte votre nom, et un bagage peut être rattaché au billet.') }}
+                    {{ h.step(4, '<strong>Vos recettes reviennent à votre gare d\'affectation</strong>, pas à la gare où le car se trouve au moment de la vente.') }}
+                </ol>
+                {{ h.note('Un vendeur mobile dispose aussi d\'une <strong>application mobile dédiée</strong> (vente, bagages, reçu imprimable, « mes ventes » avec réimpression, manifeste des passagers) pour travailler depuis son téléphone à bord.') }}
+            {{ h.close() }}
+            {% endif %}
+
             {# Courrier #}
             {% if is_granted('COURRIER_VOIR') %}
             {{ h.open('courrier', 'mail', 'Envoyer un courrier', 'Module Courrier') }}
@@ -172,15 +198,18 @@
             {{ h.close() }}
             {% endif %}
 
-            {# Suivi des cars #}
-            {{ h.open('suivi', 'building', 'Suivre les cars depuis ma gare', 'Ma gare') }}
+            {# Alertes & notifications #}
+            {% if not is_granted('ROLE_SUPER_ADMIN') %}
+            {{ h.open('alertes', 'bell', 'Alertes & notifications', 'Ce qui demande une action') }}
+                <p class="mb-3 text-sm text-muted-foreground">La <strong>cloche</strong> en haut à droite regroupe ce qui exige une action de votre part. Chacun ne voit que ce qui le concerne — <strong>sa gare, son rôle</strong>. Le badge indique le nombre d\'alertes non lues.</p>
                 <ol class="space-y-3">
-                    {{ h.step(1, 'Ouvrez <strong>Ma gare</strong>. La section <strong>« Suivi des cars »</strong> liste les voyages qui desservent votre gare.') }}
-                    {{ h.step(2, 'Colonne <strong>« Vers ma gare »</strong> : les cars en approche, avec l\'<strong>heure d\'arrivée estimée (≈)</strong> chez vous et le <strong>retard</strong> courant du car. Colonne <strong>« Depuis ma gare »</strong> : les cars à quai ou déjà partis.') }}
-                    {{ h.step(3, 'Le <strong>mini-plan de ligne</strong> montre la position du car (icône bus) par rapport à votre gare. Cliquez une ligne pour ouvrir la fiche du voyage (si vous y avez accès).') }}
+                    {{ h.step(1, '<strong>Ouvrez la cloche</strong> pour un aperçu des alertes récentes, ou la page <strong>Alertes</strong> (menu) pour la liste complète, filtrable par famille et par gravité.') }}
+                    {{ h.step(2, 'Elles couvrent notamment : <strong>stock sous le seuil</strong>, <strong>dépannage qui traîne</strong>, <strong>passagers évincés à reloger</strong>, <strong>réservations près d\'expirer</strong>, <strong>colis non livrés</strong>, <strong>départ en retard</strong>, <strong>voyage sans personnel</strong>.') }}
+                    {{ h.step(3, '<strong>Marquez comme lu</strong> une alerte traitée, ou « Tout marquer lu ». Une alerte dont la cause disparaît (stock réapprovisionné, passager relogé) s\'éteint d\'elle-même.') }}
                 </ol>
-                {{ h.note('L\'heure estimée = heure prévue chez vous + retard actuel du car. Elle ne s\'affiche qu\'une fois le car <strong>parti</strong> : tant qu\'il n\'a pas démarré, seul l\'horaire prévu est montré.') }}
+                {{ h.note('Les alertes sont recalculées en continu : elles reflètent l\'état réel, pas un historique figé. Le super administrateur de la plateforme n\'est pas concerné par les alertes d\'exploitation.') }}
             {{ h.close() }}
+            {% endif %}
 
             {# Stats & export #}
             {% if is_granted('ROLE_ADMIN') %}
@@ -274,6 +303,8 @@
                 {% elseif icon == 'chart' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                 {% elseif icon == 'shield' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
                 {% elseif icon == 'trash' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                {% elseif icon == 'bus' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M4 18V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><circle cx="7" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+                {% elseif icon == 'bell' %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                 {% else %}<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 {% endif %}
             </div>

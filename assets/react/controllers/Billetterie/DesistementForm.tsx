@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Badge } from "../../../components/ui/badge"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -62,6 +62,9 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
     const [motif, setMotif] = useState<string>("")
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    // Rafraîchissement AUTO du plan du voyage de report (ventes concurrentes).
+    const [lastRefresh, setLastRefresh] = useState<number | null>(null)
+    const [refreshing, setRefreshing] = useState(false)
 
     const trajet = `${ticket.gare.libelle} → ${ticket.garedescente.libelle}`
 
@@ -74,6 +77,7 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
             const res = await fetch(`/ticket/sieges/${id}?montee=${ticket.gare.id}&descente=${ticket.garedescente.id}`)
             if (!res.ok) throw new Error("Erreur réseau")
             setSiegesData(await res.json())
+            setLastRefresh(Date.now())
         } catch {
             setError("Impossible de charger le plan des sièges du voyage de report.")
         } finally {
@@ -86,6 +90,47 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
     }, [mode, voyageCibleId, loadSieges])
 
     const selectedVoyage = voyagesCible.find((v) => String(v.id) === voyageCibleId)
+
+    // « Occupé » pour la synchro : évite une collision avec un chargement/une soumission.
+    const busyRef = useRef(false)
+    busyRef.current = loadingSieges || submitting
+
+    // Rafraîchissement SILENCIEUX du plan du voyage de report : reflète les ventes concurrentes et
+    // désélectionne le siège qu'une autre vente vient de prendre (avec un avis).
+    const refreshSieges = useCallback(async (id: string) => {
+        setRefreshing(true)
+        try {
+            const res = await fetch(`/ticket/sieges/${id}?montee=${ticket.gare.id}&descente=${ticket.garedescente.id}`)
+            if (!res.ok) return
+            const data: SiegesResponse = await res.json()
+            setSiegesData(data)
+            setLastRefresh(Date.now())
+            setSelectedSiege((prev) => {
+                if (!prev) return prev
+                const maj = data.sieges.find((s) => s.id === prev.id)
+                if (maj && maj.statut === "OCCUPE") {
+                    setError(`Le siège n° ${prev.numero} vient d'être pris : choisissez-en un autre.`)
+                    return null
+                }
+                return prev
+            })
+        } catch {
+            // silencieux : le rafraîchissement de fond ne gêne pas l'opération
+        } finally {
+            setRefreshing(false)
+        }
+    }, [ticket.gare.id, ticket.garedescente.id])
+
+    // Polling ~30 s tant qu'un voyage de report (avec car) est ouvert ; en pause si l'onglet est
+    // masqué ou pendant un chargement / une soumission.
+    useEffect(() => {
+        if (mode !== "REPORT" || !voyageCibleId || !selectedVoyage?.car) return
+        const interval = setInterval(() => {
+            if (document.hidden || busyRef.current) return
+            refreshSieges(voyageCibleId)
+        }, 30000)
+        return () => clearInterval(interval)
+    }, [mode, voyageCibleId, selectedVoyage?.car, refreshSieges])
 
     const toggleSiege = (siege: SiegePlan) => {
         const s = siege as SiegePlan & { "@id": string }
@@ -217,10 +262,33 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
             {mode === "REPORT" && (
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Bus className="h-4 w-4 text-blue-500" />
-                            Voyage de report
-                        </CardTitle>
+                        <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Bus className="h-4 w-4 text-blue-500" />
+                                Voyage de report
+                            </CardTitle>
+                            {voyageCibleId && selectedVoyage?.car && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="hidden sm:inline tabular-nums">
+                                        {refreshing
+                                            ? "Actualisation…"
+                                            : lastRefresh
+                                                ? `À jour · ${new Date(lastRefresh).toLocaleTimeString("fr-FR")}`
+                                                : ""}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => refreshSieges(voyageCibleId)}
+                                        disabled={refreshing || loadingSieges}
+                                        title="Actualiser le plan"
+                                        aria-label="Actualiser le plan"
+                                        className="inline-flex items-center justify-center rounded-md border px-2 py-1 transition-colors hover:bg-muted disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <CardDescription>
                             Seuls les voyages ouverts de la même ligne sont proposés. Le tronçon ({trajet}) et le prix sont conservés.
                         </CardDescription>

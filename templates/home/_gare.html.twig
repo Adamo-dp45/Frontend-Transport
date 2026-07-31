@@ -63,45 +63,9 @@
         </div>
     </div>
 
-    {# ── Suivi des cars (tout agent) ── #}
-    <section>
-        <div class="mb-4">{{ t.sectionHead('Suivi des cars', 'Cars en circulation desservant votre gare') }}</div>
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-
-            {# Vers ma gare #}
-            <div class="card p-4">
-                <div class="mb-2 flex items-center justify-between">
-                    <p class="flex items-center gap-2 text-sm font-medium">
-                        <span class="size-2 rounded-full bg-emerald-500"></span> Vers ma gare
-                    </p>
-                    <span class="text-xs text-muted-foreground">{{ nbVers }} car(s)</span>
-                </div>
-                {% if nbVers > 0 %}
-                <ul class="divide-y divide-border">
-                    {% for v in suivi.versMaGare %}<li>{{ t.carItem(v, 'vers', canShowVoyage) }}</li>{% endfor %}
-                </ul>
-                {% else %}
-                <p class="py-6 text-center text-sm text-muted-foreground">Aucun car en approche</p>
-                {% endif %}
-            </div>
-
-            {# Depuis ma gare #}
-            <div class="card p-4">
-                <div class="mb-2 flex items-center justify-between">
-                    <p class="flex items-center gap-2 text-sm font-medium">
-                        <span class="size-2 rounded-full bg-blue-500"></span> Depuis ma gare
-                    </p>
-                    <span class="text-xs text-muted-foreground">{{ nbDepuis }} car(s)</span>
-                </div>
-                {% if nbDepuis > 0 %}
-                <ul class="divide-y divide-border">
-                    {% for v in suivi.depuisMaGare %}<li>{{ t.carItem(v, 'depuis', canShowVoyage) }}</li>{% endfor %}
-                </ul>
-                {% else %}
-                <p class="py-6 text-center text-sm text-muted-foreground">Aucun car au départ</p>
-                {% endif %}
-            </div>
-        </div>
+    {# ── Suivi des cars (tout agent) — rafraîchi en direct (cf. modules/suivi.js) ── #}
+    <section id="suivi-cars-live" data-suivi-url="{{ path('gare.suivi.live') }}">
+        {% include 'home/_suivi_cars.html.twig' %}
     </section>
 
     {# ── Recette de la gare (admin de gare uniquement) ── #}

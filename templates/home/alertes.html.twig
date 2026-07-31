@@ -1,0 +1,68 @@
+{#
+    STATISTIQUES DES ALERTES — volumes par famille / gravité / statut / gare, évolution par jour,
+    taux et délai de résolution. Données de /api/stats/alertes (via HomeController::statsAlertes).
+#}
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+{% import _self as a %}
+
+{% block title %}Alertes{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Alertes', 'Statistiques', 'owner.stats.alertes', debut, fin) }}
+
+{% set total = stats.total|default(0) %}
+{% set delai = stats.delaiResolutionMoyenMin is defined ? stats.delaiResolutionMoyenMin : null %}
+
+<section class="mb-10">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+        {{ s.kpi('Total alertes', total, '', 'blue', 'alert') }}
+        {{ s.kpi('Actives', stats.actives|default(0), '', 'rose', 'alert', '', (stats.actives|default(0)) > 0 ? 'text-rose-500' : '') }}
+        {{ s.kpi('Résolues', stats.resolues|default(0), '', 'emerald', 'check') }}
+        {{ s.kpi('Taux de résolution', stats.tauxResolution|default(0), '%', 'teal', 'chart') }}
+        {{ s.kpi('Délai moyen', delai is not null ? delai : '—', delai is not null ? 'min' : '', 'amber', 'chart') }}
+    </div>
+
+    {% if total == 0 %}
+        <div class="card p-10 text-center text-muted-foreground">
+            Aucune alerte sur la période sélectionnée.
+        </div>
+    {% else %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ a.bloc('Par famille', stats.parFamille|default([]), total, 'bg-blue-500') }}
+            {{ a.bloc('Par gravité', stats.parSeverite|default([]), total, 'bg-rose-500') }}
+            {{ a.bloc('Par statut', stats.parStatut|default([]), total, 'bg-teal-500') }}
+            {{ a.bloc('Par gare', stats.parGare|default([]), total, 'bg-violet-500') }}
+        </div>
+        <div class="mt-4">
+            {{ a.bloc('Évolution par jour', stats.parJour|default([]), total, 'bg-blue-500') }}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{# ── Bloc de répartition : libellé + volume + barre de proportion (% du total) ── #}
+{% macro bloc(titre, items, total, barre) %}
+    {% set barre = barre|default('bg-blue-500') %}
+    <div class="card p-5">
+        <p class="text-sm font-medium text-muted-foreground mb-4">{{ titre }}</p>
+        {% if items|length == 0 %}
+            <p class="text-sm text-muted-foreground">—</p>
+        {% else %}
+            <div class="space-y-3">
+                {% for it in items %}
+                    {% set pct = total > 0 ? (it.nb / total * 100)|round : 0 %}
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="truncate pr-2">{{ it.libelle ?? it.label ?? '—' }}</span>
+                            <span class="tabular-nums text-muted-foreground shrink-0">{{ it.nb }} · {{ pct }}%</span>
+                        </div>
+                        <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div class="h-full rounded-full {{ barre }}" style="width: {{ (pct < 2 and it.nb > 0) ? 2 : pct }}%"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}

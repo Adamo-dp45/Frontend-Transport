@@ -1,0 +1,52 @@
+{#
+    Section « Suivi des cars » de Ma gare, isolée pour être rafraîchie EN DIRECT :
+    rendue par le dashboard (include) ET par l'endpoint AJAX gare.suivi.live (remplacement du
+    contenu de #suivi-cars-live toutes les ~45 s). Réutilise les macros de _gare.html.twig.
+#}
+{% from 'home/_gare.html.twig' import carItem, sectionHead %}
+{% set canShowVoyage = is_granted('VOYAGE_VOIR') %}
+{% set nbVers = suivi.versMaGare|default([])|length %}
+{% set nbDepuis = suivi.depuisMaGare|default([])|length %}
+
+<div class="mb-4 flex items-center justify-between gap-2">
+    {{ sectionHead('Suivi des cars', 'Cars en circulation desservant votre gare') }}
+    <span class="shrink-0 text-[11px] text-muted-foreground tabular-nums" title="Rafraîchi automatiquement">
+        Mis à jour à {{ 'now'|date('H:i:s') }}
+    </span>
+</div>
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+
+    {# Vers ma gare #}
+    <div class="card p-4">
+        <div class="mb-2 flex items-center justify-between">
+            <p class="flex items-center gap-2 text-sm font-medium">
+                <span class="size-2 rounded-full bg-emerald-500"></span> Vers ma gare
+            </p>
+            <span class="text-xs text-muted-foreground">{{ nbVers }} car(s)</span>
+        </div>
+        {% if nbVers > 0 %}
+        <ul class="divide-y divide-border">
+            {% for v in suivi.versMaGare %}<li>{{ carItem(v, 'vers', canShowVoyage) }}</li>{% endfor %}
+        </ul>
+        {% else %}
+        <p class="py-6 text-center text-sm text-muted-foreground">Aucun car en approche</p>
+        {% endif %}
+    </div>
+
+    {# Depuis ma gare #}
+    <div class="card p-4">
+        <div class="mb-2 flex items-center justify-between">
+            <p class="flex items-center gap-2 text-sm font-medium">
+                <span class="size-2 rounded-full bg-blue-500"></span> Depuis ma gare
+            </p>
+            <span class="text-xs text-muted-foreground">{{ nbDepuis }} car(s)</span>
+        </div>
+        {% if nbDepuis > 0 %}
+        <ul class="divide-y divide-border">
+            {% for v in suivi.depuisMaGare %}<li>{{ carItem(v, 'depuis', canShowVoyage) }}</li>{% endfor %}
+        </ul>
+        {% else %}
+        <p class="py-6 text-center text-sm text-muted-foreground">Aucun car au départ</p>
+        {% endif %}
+    </div>
+</div>

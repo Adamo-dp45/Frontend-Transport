@@ -665,6 +665,32 @@ final class HomeController extends AbstractController
     }
 
     /**
+     * Statistiques des alertes d'exploitation (volumes par famille/gravité/gare, résolution) — espace propriétaire.
+     */
+    #[Route('/stats/alertes', name: 'owner.stats.alertes', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function statsAlertes(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $stats = [];
+        try {
+            $stats = $this->api->item('/api/stats/alertes?' . $periode);
+        } catch (ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if ($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('home/alertes.html.twig', [
+            'stats' => $stats,
+            'debut' => $debut,
+            'fin' => $fin,
+        ]);
+    }
+
+    /**
      * Flux d'activité global (« qui a fait quoi » dans l'application) — espace propriétaire.
      */
     #[Route('/activite', name: 'owner.activite', methods: ['GET'])]
@@ -722,6 +748,22 @@ final class HomeController extends AbstractController
     public function demarrage(): Response
     {
         return $this->render('home/demarrage.html.twig', []);
+    }
+
+    /**
+     * Fragment « Suivi des cars » de Ma gare, pour le rafraîchissement en direct (AJAX, cf. modules/suivi.js).
+     */
+    #[Route('/ma-gare/suivi', name: 'gare.suivi.live', methods: ['GET'])]
+    public function gareSuiviLive(): Response
+    {
+        $suivi = ['versMaGare' => [], 'depuisMaGare' => []];
+        try {
+            $suivi = $this->api->item('/api/gares/me/suivi');
+        } catch (ApiException) {
+            // Non bloquant : on renvoie le fragment (éventuellement vide) plutôt qu'une erreur.
+        }
+
+        return $this->render('home/_suivi_cars.html.twig', ['suivi' => $suivi]);
     }
 
     #[Route('/ui', name: 'ui', methods: ['GET'])]

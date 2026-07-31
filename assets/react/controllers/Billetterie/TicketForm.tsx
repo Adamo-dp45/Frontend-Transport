@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "../../../lib/utils";
 import { printTicketsUnParUn } from "../../../lib/printTickets";
 import { Badge } from "../../../components/ui/badge";
@@ -30,6 +30,7 @@ import {
     Bus,
     Plus,
     ArrowRight,
+    RefreshCw,
 } from "lucide-react";
 import { flash } from "../../../elements/Alert"
 import PlanCar from "./PlanCar"
@@ -154,6 +155,9 @@ export default function TicketForm({
     );
     const [siegesData, setSiegesData] = useState<SiegesResponse | null>(null);
     const [loadingSieges, setLoadingSieges] = useState(false);
+    // Rafraîchissement AUTO du plan (ventes concurrentes) : horodatage + état discret.
+    const [lastRefresh, setLastRefresh] = useState<number | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
     const [selectedSieges, setSelectedSieges] = useState<Siege[]>([]);
     const [clientInfos, setClientInfos] = useState<Record<number, ClientInfo>>(
         {}
@@ -209,6 +213,7 @@ export default function TicketForm({
             if (!res.ok) throw new Error("Erreur réseau");
             const data: SiegesResponse = await res.json();
             setSiegesData(data);
+            setLastRefresh(Date.now());
         } catch {
             // setFlashError("Impossible de charger le plan des sièges.");
             flash("Impossible de charger le plan des sièges.", 'error', 5);
@@ -216,6 +221,58 @@ export default function TicketForm({
             setLoadingSieges(false);
         }
     }, []);
+
+    // « Occupé » pour la synchro : empêche un rafraîchissement auto de collisionner avec un
+    // chargement ou une soumission en cours (ref toujours à jour, sans re-render).
+    const busyRef = useRef(false);
+    busyRef.current = loadingSieges || submitting;
+
+    // Rafraîchissement SILENCIEUX du plan : met à jour l'état des sièges SANS effacer la sélection en
+    // cours, et retire de la sélection les sièges qu'une AUTRE vente vient de prendre (avec un avis).
+    const refreshSieges = useCallback(async (id: string, montee: string, descente: string) => {
+        setRefreshing(true);
+        try {
+            const res = await fetch(`/ticket/sieges/${id}?montee=${montee}&descente=${descente}`);
+            if (!res.ok) return;
+            const data: SiegesResponse = await res.json();
+            setSiegesData(data);
+            setLastRefresh(Date.now());
+            const parId = new Map(data.sieges.map((s) => [s.id, s]));
+            setSelectedSieges((prev) => {
+                const perdus: number[] = [];
+                const gardes = prev.filter((s) => {
+                    const maj = parId.get(s.id);
+                    const prisAilleurs = !!maj && maj.statut === "OCCUPE" && !!maj.occupantTicketId;
+                    if (prisAilleurs) { perdus.push(s.numero); return false; }
+                    return true;
+                });
+                if (perdus.length > 0) {
+                    flash(`Siège(s) ${perdus.join(", ")} pris par une autre vente : retiré(s) de votre sélection.`, 'error', 6);
+                    setClientInfos((ci) => {
+                        const next = { ...ci };
+                        prev.forEach((s) => { if (perdus.includes(s.numero)) delete next[s.id]; });
+                        return next;
+                    });
+                }
+                return gardes;
+            });
+        } catch {
+            // silencieux : le rafraîchissement de fond ne doit jamais gêner la saisie
+        } finally {
+            setRefreshing(false);
+        }
+    }, []);
+
+    // Polling ~30 s tant qu'un tronçon est ouvert (voyage non clôturé) ; en pause si l'onglet est
+    // masqué ou pendant un chargement / une soumission.
+    useEffect(() => {
+        if (!voyageId || !monteeId || !descenteId || selectedVoyage?.datearriveereelle) return;
+        const interval = setInterval(() => {
+            if (document.hidden || busyRef.current) return;
+            refreshSieges(voyageId, monteeId, descenteId);
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [voyageId, monteeId, descenteId, selectedVoyage?.datearriveereelle, refreshSieges]);
 
     /*
     useEffect(() => {
@@ -769,12 +826,33 @@ export default function TicketForm({
                     {/* Plan du véhicule */}
                     <Card>
                         <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <Bus className="h-4 w-4 text-blue-500" />
-                                Plan du véhicule
-                            </CardTitle>
+                            <div className="flex items-center justify-between gap-2">
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Bus className="h-4 w-4 text-blue-500" />
+                                    Plan du véhicule
+                                </CardTitle>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="hidden sm:inline tabular-nums">
+                                        {refreshing
+                                            ? "Actualisation…"
+                                            : lastRefresh
+                                                ? `À jour · ${new Date(lastRefresh).toLocaleTimeString("fr-FR")}`
+                                                : "—"}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => refreshSieges(voyageId, monteeId, descenteId)}
+                                        disabled={refreshing || loadingSieges}
+                                        title="Actualiser le plan"
+                                        aria-label="Actualiser le plan"
+                                        className="inline-flex items-center justify-center rounded-md border px-2 py-1 transition-colors hover:bg-muted disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+                                    </button>
+                                </div>
+                            </div>
                             <CardDescription>
-                                Cliquez sur les sièges disponibles pour les sélectionner.
+                                Cliquez sur les sièges disponibles pour les sélectionner. Le plan se met à jour automatiquement.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

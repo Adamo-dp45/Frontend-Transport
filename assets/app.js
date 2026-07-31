@@ -10,6 +10,7 @@ import { initTooltips } from './modules/tooltip.js'
 import { initRemoteSelects, initRemoteSelect } from './modules/tom-select-remote.js'
 import { initSearch } from './modules/search.js'
 import { initNotifications } from './modules/notifications.js'
+import { initSuiviLive } from './modules/suivi.js'
 
 // Exposés en global pour les scripts inline (ex. lignes de pièces AJOUTÉES dynamiquement dans
 // les formulaires appro/dépannage → il faut initialiser tom-select sur le nouveau select).
@@ -48,6 +49,7 @@ document.addEventListener('turbo:load', () => {
     initRemoteSelects()
     initSearch()
     initNotifications()
+    initSuiviLive()
     /*
         (() => {
             const badge     = document.getElementById('notifCount');
