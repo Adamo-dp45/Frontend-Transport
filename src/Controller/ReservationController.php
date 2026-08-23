@@ -289,7 +289,8 @@ final class ReservationController extends AbstractController
     }
 
     #[Route('/reservation/{id}/annuler', name: 'reservation.annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('RESERVATION_MODIFIER')]
+    // Permission DÉDIÉE : on touche une réservation PAYÉE. Cf. la garde de l'API.
+    #[IsGranted('RESERVATION_ANNULER')]
     public function annuler(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('annuler_reservation', $request->request->get('_token'))) {

@@ -4,6 +4,7 @@ namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -56,12 +57,21 @@ class EntrepriseFormType extends AbstractType
                     new NotBlank()
                 ]
             ])
-            ->add('anneecreation', TextType::class, [
+            /*
+                Champ DATE et non texte : la colonne est un 'DATE_IMMUTABLE' côté API. En texte, la
+                saisie partait telle quelle (« 2019 ») sans que le sérialiseur puisse en tirer une date.
+
+                'input' => 'string' et NON 'datetime_immutable' : ce formulaire n'est pas adossé à un
+                objet mais au TABLEAU renvoyé par l'API — la valeur entrante est une chaîne. En mode
+                objet, Symfony refuserait la donnée initiale dès l'affichage.
+            */
+            ->add('anneecreation', DateType::class, [
                 'label' => 'Année de création',
                 'required' => false,
-                'attr' => [
-                    'placeholder' => date('Y')
-                ]
+                'widget' => 'single_text',
+                'input' => 'string',
+                'input_format' => 'Y-m-d',
+                'html5' => true,
             ])
             // ── Contact ───────────────────────────────────────────────────
             ->add('email', EmailType::class, [

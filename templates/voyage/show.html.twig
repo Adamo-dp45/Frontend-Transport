@@ -9,7 +9,7 @@
 {# Planification (modifier / commercial / démarrer / supprimer) : gare de PROVENANCE (origine effective) uniquement (+ admin/central). #}
 {% set origineEffId = voyage.gareprovenance ? voyage.gareprovenance.id : voyage.ligne.gareorigine.id %}
 {% set peutPlanifierVoyage = is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or not app.user.gare or origineEffId == app.user.gare.id %}
-{% set cloture = voyage.datearriveereelle is defined and voyage.datearriveereelle != null %}
+{% set cloture = voyage.datearriveereelle != null %}
 
 {% block body %}
 <div class="max-w-[1200px] mx-auto">
@@ -54,7 +54,7 @@
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
                 Feuille de route
             </a>
-            <a href="{{ path('bordereau.chauffeur', {voyageId: voyage.id}) }}" target="_blank" class="btn btn-secondary">Bordereau chauffeur</a>
+            <a href="{{ path('bordereau.chauffeur', {voyageId: voyage.id}) }}" data-imprimer class="btn btn-secondary">Bordereau chauffeur</a>
             {# État du passage du car À MA GARE : arrivée / départ déjà horodatés ? (pilote la disparition des boutons) #}
             {% set monPassage = app.user.gare ? (voyage.passages ?? [])|filter(p => (p.gare.id ?? null) == app.user.gare.id)|first : null %}
             {% set arriveMarque = monPassage and monPassage.arriveeReelle %}
@@ -277,7 +277,7 @@
                 <div class="grid grid-cols-1 gap-y-3 mb-3">
                     {{ ui.field('Matricule', voyage.car.matricule, true) }}
                     {{ ui.field('Capacité', voyage.car.nbrsiege ~ ' places') }}
-                    {% if voyage.car.marque is defined and voyage.car.marque %}{{ ui.field('Marque', voyage.car.marque.libelle) }}{% endif %}
+                    {% if voyage.car.marque %}{{ ui.field('Marque', voyage.car.marque.libelle) }}{% endif %}
                 </div>
                 <a href="{{ path('car.show', { id: voyage.car.id }) }}" class="btn btn-secondary w-full justify-center">Voir la fiche véhicule</a>
                 {# Changer le car (ex. panne en route) — exploitation : toute gare de la route sauf terminus #}

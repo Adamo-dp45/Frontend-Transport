@@ -24,6 +24,8 @@ type Props = {
     queryParams: Record<string, string>
     voyages: Voyage[]
     canEdit: boolean
+    // Permission DÉDIÉE : l'annulation défait une réservation PAYÉE.
+    canAnnuler: boolean
     csrfConfirmer: string
     csrfEmettre: string
     csrfAnnuler: string
@@ -45,6 +47,7 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
+    canAnnuler: boolean,
     csrfConfirmer: string,
     csrfEmettre: string,
     csrfAnnuler: string,
@@ -179,7 +182,9 @@ function buildColumns(
                                 <a href={`/reservation/${r.id}`}>Voir</a>
                             </DropdownMenuItem>
 
-                            {canEdit && enAttente && peutAgir && <DropdownMenuSeparator />}
+                            {/* 'enAttente' seul ratait le cas CONFIRMEE-sans-billet : « Émettre le billet »
+                                se collait alors sous « Voir », sans trait. Le séparateur suit le GROUPE. */}
+                            {peutAgir && ((canEdit && (enAttente || aEmettre)) || (canAnnuler && enAttente)) && <DropdownMenuSeparator />}
 
                             {canEdit && enAttente && peutAgir && (
                                 <DropdownMenuItem asChild>
@@ -219,7 +224,7 @@ function buildColumns(
                                 </DropdownMenuItem>
                             )}
 
-                            {canEdit && enAttente && peutAgir && (
+                            {canAnnuler && enAttente && peutAgir && (
                                 <DropdownMenuItem asChild>
                                     <form
                                         method="POST"
@@ -245,11 +250,11 @@ function buildColumns(
     ]
 }
 
-export default function ReservationTable({ reservations, meta, queryParams, voyages, canEdit, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin }: Props) {
+export default function ReservationTable({ reservations, meta, queryParams, voyages, canEdit, canAnnuler, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin }: Props) {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin),
-        [queryParams, canEdit, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canAnnuler, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin),
+        [queryParams, canEdit, canAnnuler, csrfConfirmer, csrfEmettre, csrfAnnuler, userGareId, isAdmin]
     )
 
     const filters: ServerTableFilter[] = useMemo(() => [

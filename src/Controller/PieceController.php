@@ -204,18 +204,18 @@ final class PieceController extends AbstractController
                 'image' => $mediaObjectIri
             ];
 
+            /*
+                Références FACULTATIVES : clé TOUJOURS envoyée, à null quand rien n'est choisi. Une
+                clé absente d'un PATCH (merge-patch) signifie « ne touche pas » : les omettre
+                interdisait de retirer un type, une marque ou un modèle déjà posés.
+            */
             $marquepiece = $form->get('marquepiece')->getData();
-            if($marquepiece) {
-                $payload['marquepiece'] = '/api/marquepieces/' . $marquepiece;
-            }
             $typepiece = $form->get('typepiece')->getData();
-            if($typepiece) {
-                $payload['typepiece'] = '/api/typepieces/' . $typepiece;
-            }
             $model = $form->get('model')->getData();
-            if($model) {
-                $payload['model'] = '/api/models/' . $model;
-            }
+
+            $payload['marquepiece'] = $marquepiece ? '/api/marquepieces/' . $marquepiece : null;
+            $payload['typepiece'] = $typepiece ? '/api/typepieces/' . $typepiece : null;
+            $payload['model'] = $model ? '/api/models/' . $model : null;
 
             try {
                 $this->api->patch('/api/pieces/' . $id, $payload);
@@ -236,7 +236,9 @@ final class PieceController extends AbstractController
     }
 
     #[Route('/{id}/ajustement', name: 'ajustement', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('PIECE_MODIFIER')]
+    // Permission DÉDIÉE : cette opération écrit un mouvement de STOCK, ce n'est pas une
+    // modification de fiche. Cf. la garde de l'API.
+    #[IsGranted('PIECE_AJUSTER')]
     public function ajuster(int $id, Request $request): Response
     {
         try {

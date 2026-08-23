@@ -11,6 +11,9 @@
                 required
                 data-remote-select="tickets"
                 data-value="{{ bagage.ticket.id ?? '' }}"
+                {# 'is defined' INDISPENSABLE ici : ce partiel sert aussi au formulaire de CRÉATION,
+                   où 'bagage' est nul. Il ne protège pas d'un champ nul (que 'skip_null_values'
+                   couvre désormais) mais d'un OBJET ABSENT. #}
                 data-label="{% if bagage.ticket is defined and bagage.ticket %}{{ bagage.ticket.codeticket }} · {{ bagage.ticket.nomclient ?? 'Client anonyme' }}{% endif %}"
                 placeholder="-- Rechercher un billet (nom du client ou code) --"
             ></select>

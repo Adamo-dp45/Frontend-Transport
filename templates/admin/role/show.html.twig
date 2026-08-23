@@ -12,7 +12,9 @@
     {% set actions = permissionsParEntite[perm.entity]|merge([perm.action]) %}
     {% set permissionsParEntite = permissionsParEntite|merge({ (perm.entity): actions }) %}
 {% endfor %}
-{% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
+{# Fourni par le contrôleur : inclut les actions SPÉCIFIQUES (ex. DESISTER sur Ticket), qu'une
+   liste figée ici faisait disparaître de la fiche même quand le rôle les portait. #}
+{% set actionsOrdre = colonnes %}
 
 <div class="max-w-[1100px] mx-auto">
 

@@ -74,8 +74,11 @@
                             {% for role in user.roles %}{{ ui.badge(roleLabels[role] ?? role, roleTones[role] ?? 'zinc') }}{% endfor %}
                         </div>
                     </div>
-                    {% if user.gare is defined and user.gare is not null %}
-                    {{ ui.field('Gare', '<a href="' ~ path('gare.show', { id: user.gare.id }) ~ '" class="text-primary hover:underline">' ~ user.gare.libelle ~ (user.gare.ville is defined ? ' - ' ~ user.gare.ville : '') ~ '</a>', false, true) }}
+                    {% if user.gare is not null %}
+                    {# Test de VÉRITÉ et non 'is defined' : depuis 'skip_null_values: false', une ville
+                       non renseignée est PRÉSENTE à null — 'is defined' répondrait vrai et la
+                       concaténation afficherait « Gare d'Adjamé - », tiret orphelin compris. #}
+                    {{ ui.field('Gare', '<a href="' ~ path('gare.show', { id: user.gare.id }) ~ '" class="text-primary hover:underline">' ~ user.gare.libelle ~ (user.gare.ville ? ' - ' ~ user.gare.ville : '') ~ '</a>', false, true) }}
                     {% endif %}
                     <div class="min-w-0">
                         <p class="text-xs uppercase tracking-wide text-muted-foreground">Statut</p>
@@ -102,7 +105,12 @@
                             {% if r.description %}<p class="text-xs text-muted-foreground mt-0.5">{{ r.description }}</p>{% endif %}
                             <p class="text-xs text-muted-foreground mt-1">{{ r.permissions|length }} permission(s)</p>
                         </div>
+                        {# La fiche d'un rôle exige 'ROLE_VOIR'. Le SUPER ADMIN ne possède aucune
+                           permission RBAC (les rôles appartiennent aux compagnies, pas à la
+                           plateforme) : lui montrer ce lien le menait droit à un 403. #}
+                        {% if is_granted('ROLE_VOIR') %}
                         <a href="{{ path('admin.role.show', { id: r.id }) }}" class="shrink-0 text-xs text-primary hover:underline">Voir →</a>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -152,7 +160,7 @@
 
         {# Sidebar #}
         <div class="space-y-4">
-            {% if user.fileUrl is defined and user.fileUrl %}
+            {% if user.fileUrl %}
             <div class="card p-3">
                 <img src="{{ api_url ~ '/media' ~ user.fileUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="{{ user.prenom }} {{ user.nom }}" class="w-full h-auto object-cover rounded-md" />
             </div>
@@ -179,8 +187,11 @@
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
                 <div class="flex flex-col gap-2">
                     {% if is_granted('USER_MODIFIER') and not isTargetSuperAdmin %}
-                    <a href="{{ path('admin.user.edit', { id: user.id }) }}" class="btn btn-secondary w-full justify-center">Modifier</a>
-                    <a href="{{ path('admin.role.show', { id: user.id }) }}" class="btn btn-primary w-full justify-center">Gérer les rôles</a>
+                    {# « Gérer les rôles » pointait vers 'admin.role.show' en lui passant l'ID DE
+                       L'UTILISATEUR : la route attend un ID DE RÔLE, on tombait donc sur un rôle
+                       sans rapport, ou sur une 404. L'attribution des rôles se fait dans le
+                       formulaire d'édition de l'utilisateur (champ « Rôles attribués »). #}
+                    <a href="{{ path('admin.user.edit', { id: user.id }) }}" class="btn btn-primary w-full justify-center">Modifier le profil et les rôles</a>
                     {% endif %}
 
                     {% set isAdmin = 'ROLE_ADMIN' in user.roles %}

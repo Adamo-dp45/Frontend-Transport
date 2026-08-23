@@ -60,16 +60,17 @@
         </div>
 
         <div class="space-y-4">
-            {% if piece.image is defined and piece.image %}
+            {% if piece.image %}
             <div class="card p-3">
                 <img src="{{ api_url ~ '/media' ~ piece.image.contentUrl ~ '?w=320&h=240&fm=jpg&fit=crop' }}" alt="{{ piece.libelle }}" class="w-full h-auto object-cover rounded-md" />
             </div>
             {% endif %}
-            {% if is_granted('PIECE_MODIFIER') or is_granted('INVENTAIRE_VOIR') %}
+            {% if is_granted('PIECE_AJUSTER') or is_granted('INVENTAIRE_VOIR') %}
             <div class="card p-5">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
                 <div class="flex flex-col gap-2">
-                    {% if is_granted('PIECE_MODIFIER') %}
+                    {# Permission DÉDIÉE : l'ajustement écrit un mouvement de stock. #}
+                    {% if is_granted('PIECE_AJUSTER') %}
                     <a href="{{ path('piece.ajustement', { id: piece.id }) }}" class="btn btn-primary w-full justify-center">Ajuster le stock</a>
                     {% endif %}
                     {% if is_granted('INVENTAIRE_VOIR') %}

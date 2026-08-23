@@ -103,7 +103,7 @@
 
         {# Sidebar #}
         <div class="space-y-4">
-            {% if personnel.image is defined and personnel.image %}
+            {% if personnel.image %}
             <div class="card p-3">
                 <img src="{{ api_url ~ '/media' ~ personnel.image.contentUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="{{ personnel.prenom }} {{ personnel.nom }}" class="w-full h-auto object-cover rounded-md" />
             </div>

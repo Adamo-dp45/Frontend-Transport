@@ -47,7 +47,7 @@
             {% endif %}
             {# Reçu : gares (départ + arrivée) saisies + gare créatrice (départ) #}
             {% if is_granted('COURRIER_VOIR') and courrier.garedepart and courrier.garearrivee and peutAgirDepart %}
-            <a href="{{ path('courrier.print', { id: courrier.id }) }}" target="_blank" class="btn btn-secondary">
+            <a href="{{ path('courrier.print', { id: courrier.id }) }}" data-imprimer class="btn btn-secondary">
                 <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#print"></use></svg>
                 Imprimer le reçu
             </a>

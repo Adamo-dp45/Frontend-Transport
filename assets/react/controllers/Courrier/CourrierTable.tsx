@@ -6,6 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu"
+import { imprimerDocument } from "../../../lib/printTickets"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
 import { Button } from "../../../components/ui/button"
@@ -26,6 +27,8 @@ type Props = {
     gares: Gare[]
     voyages: Voyage[]
     canEdit: boolean
+    // Permission DÉDIÉE : la déclaration de perte engage la compagnie.
+    canDeclarerPerdu: boolean
     canDelete: boolean
     csrfDelete: string
     userGareId: number | null
@@ -52,6 +55,7 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
+    canDeclarerPerdu: boolean,
     canDelete: boolean,
     csrfDelete: string,
     userGareId: number | null,
@@ -183,7 +187,8 @@ function buildColumns(
                 const deletable = canDelete && courrier.statut === 'EN_ATTENTE' && peutAgirDepart
                 const livrable = canEdit && courrier.statut === 'RECEPTIONNE' && peutAgirArrivee
                 const annulable = canEdit && courrier.statut === 'EN_ATTENTE' && peutAgirDepart
-                const perduable = canEdit && courrier.statut === 'EN_TRANSIT' && peutAgirArrivee // perte : gare de destination uniquement
+                // Permission DÉDIÉE : déclarer une perte engage la compagnie, ce n'est pas « modifier ».
+                const perduable = canDeclarerPerdu && courrier.statut === 'EN_TRANSIT' && peutAgirArrivee // perte : gare de destination uniquement
                 // Reçu : gares (départ + arrivée) saisies + gare créatrice (départ). Cf. spec gardes de gare.
                 const imprimable = !!courrier.garedepart && !!courrier.garearrivee && peutAgirDepart
 
@@ -229,9 +234,12 @@ function buildColumns(
                             {imprimable && <DropdownMenuSeparator />}
                             {imprimable && (
                                 <DropdownMenuItem asChild>
-                                    <a href={`/courrier/${courrier.id}/print`} target="_blank">
+                                    {/* Impression EN PLACE (iframe cachée) : l'onglet obligeait
+                                        l'agent à revenir en arrière et lui faisait perdre ses
+                                        filtres et sa page courante. */}
+                                    <button type="button" onClick={() => imprimerDocument(`/courrier/${courrier.id}/print`)}>
                                         Imprimer le reçu
-                                    </a>
+                                    </button>
                                 </DropdownMenuItem>
                             )}
 
@@ -307,6 +315,7 @@ export default function CourrierTable({
     gares,
     voyages,
     canEdit,
+    canDeclarerPerdu,
     canDelete,
     csrfDelete,
     userGareId,
@@ -315,8 +324,8 @@ export default function CourrierTable({
 {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin),
-        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDeclarerPerdu, canDelete, csrfDelete, userGareId, isAdmin),
+        [queryParams, canEdit, canDeclarerPerdu, canDelete, csrfDelete, userGareId, isAdmin]
     )
     const filters: ServerTableFilter[] = useMemo(() => {
         const list: ServerTableFilter[] = [

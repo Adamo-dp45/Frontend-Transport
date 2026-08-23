@@ -85,7 +85,7 @@
     {% set items = tickets is defined ? tickets : [ticket] %}
     {% set ent = entreprise|default(null) %}
     {% set company = ent.libelle|default('Compagnie de transport') %}
-    {% set sigle = (ent.sigle is defined and ent.sigle) ? ent.sigle : company|slice(0, 4)|upper %}
+    {% set sigle = (ent.sigle) ? ent.sigle : company|slice(0, 4)|upper %}
     {% set phones = [ent.contact1 ?? null, ent.contact2 ?? null]|filter(p => p)|join(' / ') %}
 
     {% for ticket in items %}
@@ -114,7 +114,7 @@
             </tr>
         </table>
 
-        {% if ticket.statut is defined and ticket.statut in ['ANNULE', 'REPORTE'] %}
+        {% if ticket.statut in ['ANNULE', 'REPORTE'] %}
         <div class="banner">{{ ticket.statut == 'ANNULE' ? 'Billet annulé' : 'Billet reporté' }}</div>
         {% endif %}
 
@@ -138,7 +138,7 @@
         <div class="sep"></div>
         <div class="c nb">NB : Le ticket n'est pas remboursable</div>
 
-        {% if ticket.qrcode is defined and ticket.qrcode %}
+        {% if ticket.qrcode %}
         <div class="qr">
             <img src="{{ ticket.qrcode }}" alt="">
             <div class="qr-cap">Présentez ce billet à l'embarquement</div>

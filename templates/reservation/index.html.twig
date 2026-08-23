@@ -32,6 +32,7 @@
         queryParams: queryParams,
         voyages: voyages,
         canEdit: is_granted('RESERVATION_MODIFIER'),
+        canAnnuler: is_granted('RESERVATION_ANNULER'),
         csrfConfirmer: csrf_token('confirmer_reservation'),
         csrfEmettre: csrf_token('emettre_billet_reservation'),
         csrfAnnuler: csrf_token('annuler_reservation'),

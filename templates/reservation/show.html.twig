@@ -64,7 +64,7 @@
             {% if reservation.statut == 'A_REGULARISER' and is_granted('RESERVATION_MODIFIER') and peutAgir %}
             <div class="card p-6 border-amber-300 dark:border-amber-800">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-2">Régularisation (client absent au départ)</h2>
-                {% if reservation.penaliteexoneree is defined and reservation.penaliteexoneree %}
+                {% if reservation.penaliteexoneree %}
                     <p class="text-sm text-muted-foreground mb-4">
                         Cette réservation payée n'a pas été utilisée à temps, mais <strong>le départ avait été avancé</strong> après son paiement :
                         l'absence ne lui est pas imputable, elle est reportée <strong>sans pénalité</strong>. Seul un <strong>complément</strong>
@@ -125,10 +125,10 @@
                     {{ ui.field('État', reservation.etatpaiement) }}
                     {% if reservation.referencepaiement %}{{ ui.field('Référence', reservation.referencepaiement) }}{% endif %}
                     {% if reservation.datepaiement %}{{ ui.field('Payé le', reservation.datepaiement|date('d/m/Y H:i')) }}{% endif %}
-                    {% if reservation.penalitemontant is defined and reservation.penalitemontant > 0 %}
+                    {% if reservation.penalitemontant > 0 %}
                         {{ ui.field('Pénalité encaissée', (reservation.penalitemontant|number_format(0, ',', ' ')) ~ ' FCFA') }}
                     {% endif %}
-                    {% if reservation.montantcomplement is defined and reservation.montantcomplement > 0 %}
+                    {% if reservation.montantcomplement > 0 %}
                         {{ ui.field('Complément encaissé', (reservation.montantcomplement|number_format(0, ',', ' ')) ~ ' FCFA') }}
                     {% endif %}
                 </div>

@@ -172,15 +172,18 @@
     <section>
         <div class="mb-4">{{ t.sectionHead('Informations', 'Coordonnées de la gare') }}</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {{ t.infoCard('user', 'Chef de gare', gare.chefgare) }}
-            {{ t.infoCard('pin', 'Ville', gare.ville) }}
-            {{ t.infoCard('phone', 'Contact 1', gare.contact1) }}
-            {{ t.infoCard('phone', 'Contact 2', gare.contact2) }}
-            {% if gare.datecreation is defined and gare.datecreation %}
+            {# L'API OMET les champs nuls ('skip_null_values') : un contact non renseigné n'est pas
+               présent dans la charge, et Twig ('strict_variables') lève sur la clé absente. D'où le
+               '?? null' — la macro affiche « — » pour une valeur vide. #}
+            {{ t.infoCard('user', 'Chef de gare', gare.chefgare ?? null) }}
+            {{ t.infoCard('pin', 'Ville', gare.ville ?? null) }}
+            {{ t.infoCard('phone', 'Contact 1', gare.contact1 ?? null) }}
+            {{ t.infoCard('phone', 'Contact 2', gare.contact2 ?? null) }}
+            {% if gare.datecreation %}
             {{ t.infoCard('calendar', 'Date de création', gare.datecreation|date('d/m/Y')) }}
             {% endif %}
         </div>
-        {% if gare.description is defined and gare.description %}
+        {% if gare.description %}
         <div class="card mt-3 flex gap-3 p-4">
             <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
@@ -205,7 +208,7 @@
             {% for u in users %}
             <div class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30">
                 {# Avatar : photo réelle si dispo, sinon initiales #}
-                {% if u.fileUrl is defined and u.fileUrl %}
+                {% if u.fileUrl %}
                 <img src="{{ api_url ~ '/media' ~ u.fileUrl ~ '?w=72&h=72&fm=jpg&fit=crop' }}" alt="{{ u.prenom }} {{ u.nom }}" class="size-9 shrink-0 rounded-full object-cover" />
                 {% else %}
                 <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
@@ -304,10 +307,10 @@
                     sur l'horaire prévu, jamais une heure faussement sûre.
                 #}
                 {% set retard = v.retardMinutes is defined ? v.retardMinutes : null %}
-                {% if kind == 'vers' and v.eta is defined and v.eta %}
+                {% if kind == 'vers' and v.eta %}
                     <p class="mt-1 text-sm font-semibold leading-tight text-foreground">≈ {{ v.eta }}</p>
                     <p class="text-[10px] text-muted-foreground">arrivée estimée</p>
-                {% elseif v.heurePrevue is defined and v.heurePrevue %}
+                {% elseif v.heurePrevue %}
                     <p class="mt-1 text-[11px] text-muted-foreground">passage prévu {{ v.heurePrevue }}</p>
                 {% endif %}
                 {% if retard is not null %}
@@ -320,7 +323,7 @@
         </div>
 
         {# Mini-plan de ligne : noms des arrêts + 🚍 car à sa position · ⬤ ma gare #}
-        {% if v.nbArrets is defined and v.nbArrets > 1 %}
+        {% if v.nbArrets > 1 %}
         {% set carBg  = kind == 'vers' ? 'bg-emerald-600' : 'bg-blue-600' %}
         {% set lineOn = kind == 'vers' ? 'bg-emerald-500/60' : 'bg-blue-500/60' %}
         {% set dotOn  = kind == 'vers' ? 'bg-emerald-500/50' : 'bg-blue-500/50' %}

@@ -54,7 +54,8 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string):
                                 </DropdownMenuItem>
                             )}
 
-                            {canDelete && <DropdownMenuSeparator />}
+                            {/* Rien au-dessus sans 'canEdit' : le trait ouvrait alors le menu tout seul. */}
+                            {canEdit && canDelete && <DropdownMenuSeparator />}
 
                             {canDelete && (
                                 <DropdownMenuItem asChild>

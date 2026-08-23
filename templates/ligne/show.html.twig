@@ -46,11 +46,11 @@
                         {# Tronçon menant ici + HEURE DE PASSAGE estimée (heure de départ de la ligne +
                            cumul des tronçons) : c'est elle qui fixe la limite de présentation des passagers
                            montant à cet arrêt. L'origine n'a pas de tronçon mais garde son heure de départ. #}
-                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null %}
+                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is not null %}
                             {% set cumul = cumul + arret.dureeTronconMinutes %}
                         {% endif %}
-                        {% set aHeure = arret.ordre == 0 or (arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null) %}
-                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is defined and arret.dureeTronconMinutes is not null %}
+                        {% set aHeure = arret.ordre == 0 or (arret.dureeTronconMinutes is not null) %}
+                        {% if arret.ordre > 0 and arret.dureeTronconMinutes is not null %}
                             <span class="ml-2 text-xs font-normal text-muted-foreground tabular-nums">tronçon +{{ arret.dureeTronconMinutes }} min</span>
                         {% endif %}
                         {% if ligne.heuredepart and aHeure %}

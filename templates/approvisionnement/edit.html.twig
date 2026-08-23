@@ -20,7 +20,7 @@
             <select name="fournisseur" required class="input">
                 <option value="">-- Sélectionner un fournisseur --</option>
                 {% for f in fournisseurs %}
-                    <option value="{{ f.id }}" {{ approvisionnement.fournisseur.id is defined and approvisionnement.fournisseur.id == f.id ? 'selected' : '' }}>
+                    <option value="{{ f.id }}" {{ approvisionnement.fournisseur.id == f.id ? 'selected' : '' }}>
                         {{ f.libelle }}
                     </option>
                 {% endfor %}
@@ -70,7 +70,7 @@
                             <select name="detail_piece[]" class="piece-select input" required>
                                 <option value="">-- Pièce --</option>
                                 {% for p in pieces %}
-                                <option value="{{ p.id }}" data-prix="{{ p.prixunitaire }}" {{ detail.piece.id is defined and detail.piece.id == p.id ? 'selected' : '' }}>
+                                <option value="{{ p.id }}" data-prix="{{ p.prixunitaire }}" {{ detail.piece.id == p.id ? 'selected' : '' }}>
                                     {{ p.libelle }}
                                 </option>
                                 {% endfor %}

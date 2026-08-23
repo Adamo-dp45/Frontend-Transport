@@ -10,9 +10,23 @@
 
 <div class="mb-4 flex items-center justify-between gap-2">
     {{ sectionHead('Suivi des cars', 'Cars en circulation desservant votre gare') }}
-    <span class="shrink-0 text-[11px] text-muted-foreground tabular-nums" title="Rafraîchi automatiquement">
-        Mis à jour à {{ 'now'|date('H:i:s') }}
-    </span>
+    <div class="flex shrink-0 items-center gap-2">
+        <span class="text-[11px] text-muted-foreground tabular-nums" title="Rafraîchi automatiquement toutes les 45 secondes">
+            Mis à jour à {{ 'now'|date('H:i:s') }}
+        </span>
+        {# Le cycle automatique est de 45 s : trop long quand on attend un car annoncé d'une minute
+           à l'autre. Le bouton force la mise à jour sans recharger la page — 'data-suivi-refresh'
+           est repéré par modules/suivi.js, qui le recâble à chaque remplacement du fragment. #}
+        <button type="button"
+                data-suivi-refresh
+                class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition hover:bg-muted disabled:opacity-50"
+                title="Actualiser maintenant">
+            <svg class="size-3.5" data-suivi-icone fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M3.985 14.652H8.977v4.992M4.031 9.348a8.25 8.25 0 0 1 13.803-3.7l3.181 3.7M19.969 14.652a8.25 8.25 0 0 1-13.803 3.7L2.985 14.652" />
+            </svg>
+            Actualiser
+        </button>
+    </div>
 </div>
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
 

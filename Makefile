@@ -14,3 +14,10 @@ install: # vendor/autoload.php .. '-n' pour qu'il fait de manière silencieuse
 #	touch vendor/autoload.php
 
 # Pour le lancer 'make install' va lancer aussi 'vendor/autoload.php', si on a une connexion ssh 'make deploy' qui indique qu'il doit se connecter à ssh puis exécute 'cd..'
+
+# ---------------------------------------------------------------------------- Tests -----------
+.PHONY: test
+
+# Tests unitaires purs : aucune base, aucun noyau à démarrer.
+test:
+	php vendor/bin/phpunit

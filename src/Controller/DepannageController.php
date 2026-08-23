@@ -250,7 +250,9 @@ final class DepannageController extends AbstractController
     }
 
     #[Route('/{id}/annuler', name: 'annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('DEPANNAGE_MODIFIER')]
+    // Permission DÉDIÉE : cette opération écrit un mouvement de STOCK, ce n'est pas une
+    // modification de fiche. Cf. la garde de l'API.
+    #[IsGranted('DEPANNAGE_ANNULER')]
     public function annuler(int $id, Request $request): Response
     {
         if($this->isCsrfTokenValid('annuler_depannage', $request->request->get('_token'))) {

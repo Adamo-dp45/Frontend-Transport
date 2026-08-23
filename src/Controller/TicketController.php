@@ -253,19 +253,25 @@ final class TicketController extends AbstractController
              */
             $user = $this->getUser();
             /*
-                Le formulaire a besoin du voyage COMPLET (car, places, commercial, garecourante…), donc
-                on garde '/api/voyages'. Mais on n'offre que ceux où l'on peut encore embarquer : le car
-                ne doit pas avoir quitté la gare de vente. Cette décision appartient au serveur — elle
-                dépend de la position réelle du véhicule et du rôle de l'agent (le commercial vend depuis
-                le car) — d'où l'intersection avec '/api/voyages/reservables?usage=vente' plutôt qu'un
-                filtre reconstitué ici, qui redeviendrait faux à la prochaine évolution de la règle.
+                QUELS voyages : la décision appartient au serveur ('/api/voyages/reservables?usage=vente'),
+                car elle dépend de la position réelle du véhicule et du rôle de l'agent (le commercial
+                vend depuis le car). Un filtre reconstitué ici redeviendrait faux à la prochaine
+                évolution de la règle.
+
+                Puis on va chercher CES voyages-là en entier, le formulaire ayant besoin du car, des
+                places, du commercial et de la gare courante. On les demande PAR IDENTIFIANT :
+                auparavant on chargeait '/api/voyages' pour croiser les deux listes en mémoire, mais
+                cette collection est PAGINÉE (25, triés 'createdAt DESC') — les voyages les plus
+                anciennement créés, donc les plus imminents ou déjà en retard, tombaient hors de la
+                première page et le sélecteur les perdait. 'itemsPerPage' suit le nombre d'ids : la
+                borne vient de la liste du serveur, pas d'une valeur devinée.
             */
-            $voyages = $this->api->collection('/api/voyages?exists[datearriveereelle]=false');
             $embarquables = array_column($this->api->collection('/api/voyages/reservables', ['usage' => 'vente']), 'id');
-            $voyages = array_values(array_filter(
-                $voyages,
-                fn($v) => in_array($v['id'] ?? null, $embarquables, true)
-            ));
+            // Sans ce garde-fou, '?id[]=' vide ne filtrerait RIEN et renverrait tous les voyages.
+            $voyages = $embarquables === [] ? [] : $this->api->collection('/api/voyages', [
+                'id' => $embarquables,
+                'itemsPerPage' => count($embarquables),
+            ]);
             $gares = $this->api->collection('/api/gares');
             $beneficiaires = $this->api->collection('/api/beneficiaires');
             $userGare = $user->getGare();
@@ -337,7 +343,8 @@ final class TicketController extends AbstractController
      * Dans les deux cas, le siège du billet d'origine est libéré.
      */
     #[Route('/{id}/desister', name: 'desister', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('TICKET_MODIFIER')]
+    // Permission DÉDIÉE : rembourser n'est pas corriger. Cf. l'opération '/tickets/{id}/desister' côté API.
+    #[IsGranted('TICKET_DESISTER')]
     public function desister(int $id, Request $request): Response
     {
         // POST (JSON depuis React) : on relaie au processor de l'API

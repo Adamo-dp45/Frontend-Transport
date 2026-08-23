@@ -18,7 +18,7 @@
     <div class="space-y-4">
         <div class="card p-6 flex flex-col items-center gap-4">
             <div class="relative">
-                {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                {% if app.user.fileUrl %}
                 <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="Avatar" class="w-24 h-24 rounded-full object-cover ring-4 ring-primary/10" />
                 {% else %}
                 <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center ring-4 ring-primary/10">

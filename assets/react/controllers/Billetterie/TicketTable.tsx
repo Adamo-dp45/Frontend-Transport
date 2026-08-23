@@ -28,6 +28,8 @@ type Props = {
     voyages: Voyage[]
     gares: Gare[]
     canEdit: boolean,
+    // Permission DÉDIÉE au remboursement : corriger un billet et le rembourser ne vont plus ensemble.
+    canDesister: boolean,
     canDelete: boolean,
     csrfDelete: string
     userGareId: number | null   // gare de l'agent (null = central/admin sans gare)
@@ -40,6 +42,7 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
+    canDesister: boolean,
     canDelete: boolean,
     csrfDelete: string,
     userGareId: number | null,
@@ -236,6 +239,25 @@ function buildColumns(
                 const estCommercial = ticket.commercial != null && ticket.commercial.id === currentUserId
                 // peutAgir : actions du VENDEUR (imprimer, corriger l'identité), ouvertes AUSSI au commercial.
                 const peutAgir = peutGare || estCommercial
+
+                /*
+                    Une entrée par condition NOMMÉE : les séparateurs se calent ensuite dessus. Tant
+                    qu'ils reprenaient une condition approchante ('canEdit && peutAgir'), un voyage
+                    clôturé ou un car déjà parti laissait un trait suspendu sous « Voir », voire deux
+                    trais collés avant « Supprimer ».
+
+                    'modifiable' est décidé par le SERVEUR (TicketProvider) et vaut pour CE lecteur :
+                    la borne du commercial embarqué n'est pas celle de la gare — il vend en route et
+                    doit pouvoir se relire jusqu'à l'escale suivante. Il couvre déjà la clôture du
+                    voyage, d'où l'absence de test sur 'datearriveereelle' ici.
+                */
+                const peutModifier = canEdit && peutAgir && (ticket.modifiable ?? false)
+                // Désister (remboursement) : action de GARE, pas ouverte au commercial.
+                const peutDesister = canDesister && peutGare && ticket.statut === "VALIDE"
+                    && !ticket.voyage?.datearriveereelle && !ticket.monteedepassee
+                // Supprimer (retrait du livre) : action de GARE, pas ouverte au commercial.
+                const peutSupprimer = canDelete && peutGare
+
                 return (
                     <div className="flex gap-2 items-center">
                         <DropdownMenu>
@@ -250,25 +272,23 @@ function buildColumns(
                                     <a href={`/ticket/${ticket.id}`}>Voir</a>
                                 </DropdownMenuItem>
 
-                                {canEdit && peutAgir && <DropdownMenuSeparator />}
+                                {(peutModifier || peutDesister) && <DropdownMenuSeparator />}
 
-                                {canEdit && peutAgir && !ticket.voyage?.datearriveereelle && (
+                                {peutModifier && (
                                     <DropdownMenuItem asChild>
                                         <a href={`/ticket/${ticket.id}/modifier`}>Modifier</a>
                                     </DropdownMenuItem>
                                 )}
 
-                                {/* Désister (remboursement) : action de GARE, pas ouverte au commercial */}
-                                {canEdit && peutGare && ticket.statut === "VALIDE" && !ticket.voyage?.datearriveereelle && (
+                                {peutDesister && (
                                     <DropdownMenuItem asChild>
                                         <a href={`/ticket/${ticket.id}/desister`} className="text-orange-600 focus:text-orange-700">Désister</a>
                                     </DropdownMenuItem>
                                 )}
 
-                                {canDelete && peutGare && <DropdownMenuSeparator />}
+                                {peutSupprimer && <DropdownMenuSeparator />}
 
-                                {/* Supprimer (retrait du livre) : action de GARE, pas ouverte au commercial */}
-                                {canDelete && peutGare && (
+                                {peutSupprimer && (
                                     <DropdownMenuItem asChild>
                                         <form
                                             method="POST"
@@ -304,12 +324,12 @@ function buildColumns(
     ]
 }
 
-export default function TicketTable({tickets, meta, queryParams, voyages, gares, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId}: Props) {
+export default function TicketTable({tickets, meta, queryParams, voyages, gares, canEdit, canDesister, canDelete, csrfDelete, userGareId, isAdmin, currentUserId}: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId),
-        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin, currentUserId]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDesister, canDelete, csrfDelete, userGareId, isAdmin, currentUserId),
+        [queryParams, canEdit, canDesister, canDelete, csrfDelete, userGareId, isAdmin, currentUserId]
     )
     const filters: ServerTableFilter[] = useMemo(() => {
         const list: ServerTableFilter[] = [

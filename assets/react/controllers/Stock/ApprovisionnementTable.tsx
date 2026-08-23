@@ -22,6 +22,8 @@ type Props = {
     meta: ServerMeta
     queryParams: Record<string, string>
     canEdit: boolean,
+    // Permission DÉDIÉE : l'annulation retire du stock déjà entré (mouvements SORTIE).
+    canAnnuler: boolean,
     canDelete: boolean,
     csrfDelete: string
     csrfAnnuler: string
@@ -32,6 +34,7 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
+    canAnnuler: boolean,
     canDelete: boolean,
     csrfDelete: string,
     csrfAnnuler: string
@@ -110,7 +113,7 @@ function buildColumns(
                 const approvisionnement = row.original
                 const annule = approvisionnement.statut === 'ANNULE'
                 const editable = canEdit && !annule
-                const annulable = canEdit && !annule
+                const annulable = canAnnuler && !annule
                 const deletable = canDelete
 
                 return (
@@ -191,6 +194,7 @@ export default function ApprovisionnementTable({
     meta,
     queryParams,
     canEdit,
+    canAnnuler,
     canDelete,
     csrfDelete,
     csrfAnnuler
@@ -198,8 +202,8 @@ export default function ApprovisionnementTable({
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, csrfAnnuler),
-        [queryParams, canEdit, canDelete, csrfDelete, csrfAnnuler]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canAnnuler, canDelete, csrfDelete, csrfAnnuler),
+        [queryParams, canEdit, canAnnuler, canDelete, csrfDelete, csrfAnnuler]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

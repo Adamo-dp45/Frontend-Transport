@@ -24,6 +24,7 @@
         meta: meta,
         queryParams: queryParams,
         canEdit: is_granted('APPROVISIONNEMENT_MODIFIER'),
+        canAnnuler: is_granted('APPROVISIONNEMENT_ANNULER'),
         canDelete: is_granted('ROLE_ADMIN'),
         csrfDelete: csrf_token('delete_approvisionnement'),
         csrfAnnuler: csrf_token('annuler_approvisionnement')

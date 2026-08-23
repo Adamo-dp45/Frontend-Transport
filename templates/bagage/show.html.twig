@@ -35,9 +35,9 @@
         </a>
         {# Ticket de pesée : billet lié + gare créatrice (dépôt) #}
         {% if is_granted('BAGAGE_VOIR') and bagage.ticket and peutAgirDepart %}
-        <a href="{{ path('bagage.print', { id: bagage.id }) }}" target="_blank" class="btn btn-secondary">
+        <a href="{{ path('bagage.print', { id: bagage.id }) }}" data-imprimer class="btn btn-secondary">
             <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#print"></use></svg>
-            Ticket de pesée
+            Imprimer le reçu
         </a>
         {% endif %}
         {# Seul un bagage ENREGISTRE (pas encore embarqué) est modifiable — cf. BagageProcessor::handlePatch #}

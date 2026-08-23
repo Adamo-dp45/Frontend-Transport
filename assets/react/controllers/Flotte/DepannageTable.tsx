@@ -22,6 +22,8 @@ type Props = {
     meta: ServerMeta
     queryParams: Record<string, string>
     canEdit: boolean
+    // Permission DÉDIÉE : l'annulation restaure en stock les pièces consommées.
+    canAnnuler: boolean
     canDelete: boolean
     csrfDelete: string
     csrfAnnuler: string
@@ -51,6 +53,7 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
+    canAnnuler: boolean,
     canDelete: boolean,
     csrfDelete: string,
     csrfAnnuler: string
@@ -167,59 +170,53 @@ function buildColumns(
                             </DropdownMenuItem>
 
                             {enCours && canEdit && <>
-                                {canEdit && <DropdownMenuSeparator />}
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
                                     <a href={`/depannage/${depannage.id}/affecter/personnel`}>Affecté du personnel</a>
                                 </DropdownMenuItem>
-                                {canEdit && <DropdownMenuSeparator />}
-                                {canEdit && (
-                                    <DropdownMenuItem asChild>
-                                        <a href={`/depannage/${depannage.id}/modifier`}>Modifier</a>
-                                    </DropdownMenuItem>
-                                )}
-                                {canEdit && <DropdownMenuSeparator />}
-                                {canEdit && (
-                                    <DropdownMenuItem asChild>
-                                        <form
-                                            method="POST"
-                                            action={`/depannage/${depannage.id}/cloturer`}
-                                            onSubmit={(e) => {
-                                                if(!confirm("Clôturer ce dépannage ?")) {
-                                                    e.preventDefault()
-                                                }
-                                            }}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <a href={`/depannage/${depannage.id}/modifier`}>Modifier</a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <form
+                                        method="POST"
+                                        action={`/depannage/${depannage.id}/cloturer`}
+                                        onSubmit={(e) => {
+                                            if(!confirm("Clôturer ce dépannage ?")) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <button
+                                            type="submit"
+                                            className="w-full text-left text-orange-600 focus:text-orange-700"
                                         >
-                                            <button
-                                                type="submit"
-                                                className="w-full text-left text-orange-600 focus:text-orange-700"
-                                            >
-                                                Clôturer le dépannage
-                                            </button>
-                                        </form>
-                                    </DropdownMenuItem>
-                                )}
-                                {canEdit && <DropdownMenuSeparator />}
-                                {canEdit && (
-                                    <DropdownMenuItem asChild>
-                                        <form
-                                            method="POST"
-                                            action={`/depannage/${depannage.id}/annuler`}
-                                            onSubmit={(e) => {
-                                                if(!confirm("Annuler ce dépannage ? Le stock des pièces sera restauré.")) {
-                                                    e.preventDefault()
-                                                }
-                                            }}
+                                            Clôturer le dépannage
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                                {canAnnuler && <DropdownMenuSeparator />}
+                                {canAnnuler && <DropdownMenuItem asChild>
+                                    <form
+                                        method="POST"
+                                        action={`/depannage/${depannage.id}/annuler`}
+                                        onSubmit={(e) => {
+                                            if(!confirm("Annuler ce dépannage ? Le stock des pièces sera restauré.")) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <input type="hidden" name="_token" value={csrfAnnuler} />
+                                        <button
+                                            type="submit"
+                                            className="w-full text-left text-orange-600 focus:text-orange-700"
                                         >
-                                            <input type="hidden" name="_token" value={csrfAnnuler} />
-                                            <button
-                                                type="submit"
-                                                className="w-full text-left text-orange-600 focus:text-orange-700"
-                                            >
-                                                Annuler le dépannage
-                                            </button>
-                                        </form>
-                                    </DropdownMenuItem>
-                                )}
+                                            Annuler le dépannage
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>}
                             </>}
 
                             {canDelete && <DropdownMenuSeparator />}
@@ -257,6 +254,7 @@ export default function DepannageTable({
     meta,
     queryParams,
     canEdit,
+    canAnnuler,
     canDelete,
     csrfDelete,
     csrfAnnuler
@@ -264,8 +262,8 @@ export default function DepannageTable({
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, csrfAnnuler),
-        [queryParams, canEdit, canDelete, csrfDelete, csrfAnnuler]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canAnnuler, canDelete, csrfDelete, csrfAnnuler),
+        [queryParams, canEdit, canAnnuler, canDelete, csrfDelete, csrfAnnuler]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

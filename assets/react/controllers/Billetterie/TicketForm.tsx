@@ -556,34 +556,36 @@ export default function TicketForm({
             }
 
             if(data.created?.length > 0) {
-                if(data.created.length === 1) {
-                    // Rediriger vers le ticket créé
-                    // window.location.href = `/ticket/${data.created[0]}`; // window.location.href = `/ticket/${data.created[0]}/pdf`;
-                    window.open(`/ticket/${data.created[0]}/pdf`, `_blank`)
-                    await loadSieges(voyageId, monteeId, descenteId);
-                } else {
+                /*
+                    UN SEUL CHEMIN D'IMPRESSION, quel que soit le nombre de billets.
 
-                    /*
-                        UNE TÂCHE D'IMPRESSION PAR BILLET (et non un PDF groupé de N pages) : le pilote
-                        thermique coupe le plus souvent « en fin de document », un document unique
-                        faisait donc sortir les billets COLLÉS. L'envoi séquentiel via iframe évite
-                        aussi le blocage de pop-ups de l'ancienne approche multi-onglets.
-                    */
-                    try {
-                        await printTicketsUnParUn(data.created)
-                    } catch {
-                        flash("Erreur lors de l'impression des billets.", 'error');
-                    }
-                    /* Recharger le plan après l'ouverture des onglets
-                        setFlashSuccess(
-                            `${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` +
-                            `imprimez-les depuis la liste des tickets.`
-                        );
-                    */
-                    flash(`${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` + `imprimez-les depuis la liste des tickets.`, 'success'); // Vu que certains navigateurs bloquent 'window.open' si ce n'est pas déclenché directement par un clic utilisateur
+                    Le billet unique partait auparavant dans un ONGLET (`window.open` vers le PDF) :
+                    l'agent quittait le formulaire, devait fermer l'onglet puis y revenir, et perdait
+                    la sélection de sièges entre deux ventes — alors que la vente groupée, elle,
+                    imprimait sans bouger de la page. C'est le geste du guichet qui compte : vendre,
+                    couper, servir le suivant.
 
-                    await loadSieges(voyageId, monteeId, descenteId);
+                    UNE TÂCHE D'IMPRESSION PAR BILLET (et non un PDF groupé de N pages) : le pilote
+                    thermique coupe le plus souvent « en fin de document », un document unique
+                    faisait donc sortir les billets COLLÉS. L'iframe cachée évite en prime le blocage
+                    de pop-ups, que `window.open` subissait dès que l'appel n'était plus déclenché
+                    directement par un clic.
+                */
+                try {
+                    await printTicketsUnParUn(data.created)
+                } catch {
+                    flash("Erreur lors de l'impression. Réimprimez depuis la liste des tickets.", 'error');
                 }
+
+                flash(
+                    data.created.length === 1
+                        ? "Billet émis. L'impression est lancée."
+                        : `${data.created.length} billets émis. L'impression est lancée.`,
+                    'success'
+                );
+
+                // Le plan de sièges doit refléter les places qui viennent d'être vendues.
+                await loadSieges(voyageId, monteeId, descenteId);
             }
 
         } catch {

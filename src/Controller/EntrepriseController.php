@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Form\EntrepriseFormType;
+use App\Form\RegisterFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -40,6 +41,69 @@ final class EntrepriseController extends AbstractController
 
         return $this->render('admin/entreprise/index.html.twig', [
             'entreprises' => $entreprises['member']
+        ]);
+    }
+
+    /**
+     * Enregistre une nouvelle compagnie et son administrateur FONDATEUR.
+     *
+     * Anciennement l'inscription publique ('/inscription') : n'importe qui pouvait créer une
+     * entreprise et s'y nommer 'ROLE_ADMIN'. L'ouverture d'un compte relève de l'exploitant de la
+     * plateforme, elle vit donc ici, sous le même verrou que le reste de son espace.
+     *
+     * Déclaré AVANT '/{id}' n'est pas nécessaire ('{id}' n'accepte que des chiffres), mais la
+     * proximité avec le listing rend le parcours lisible.
+     */
+    #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function new(Request $request): Response
+    {
+        $form = $this->createForm(RegisterFormType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            $payload = [
+                'email' => $data['email'],
+                'nom' => $data['nom'],
+                'prenom' => $data['prenom'],
+                'password' => $data['password'],
+                'libelle' => $data['libelle'],
+                'contact1' => $data['contact1'],
+                'contact2' => $data['contact2'] ?? null,
+                'adresse' => $data['adresse'] ?? null,
+                'emailEntreprise' => $data['emailEntreprise'] ?? null,
+                'anneecreation' => $data['anneecreation']?->format('Y-m-d') ?? null,
+                'sigle' => $data['sigle'] ?? null,
+                'siteweb' => $data['siteweb'] ?? null,
+                'rccm' => $data['rccm'] ?? null,
+                'banque' => $data['banque'] ?? null,
+                'type' => $data['type'] ?? null,
+                'centreimpot' => $data['centreimpot'] ?? null,
+                'tauxtva' => $data['tauxtva'] ?? null,
+            ];
+
+            try {
+                // Côté API, '/api/register' exige lui aussi ROLE_SUPER_ADMIN : le jeton porté par
+                // 'ApiHelper' est celui du super admin connecté.
+                $this->api->post('/api/register', $payload);
+                $this->addFlash('success', sprintf(
+                    'La compagnie « %s » est enregistrée. Son administrateur peut se connecter avec %s.',
+                    $data['libelle'],
+                    $data['email']
+                ));
+
+                return $this->redirectToRoute('admin.entreprise.index');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, $form, 'admin.entreprise.new');
+                if ($response) {
+                    return $response;
+                }
+            }
+        }
+
+        return $this->render('admin/entreprise/new.html.twig', [
+            'form' => $form,
         ]);
     }
 
@@ -98,6 +162,15 @@ final class EntrepriseController extends AbstractController
             }
         }
 
+        /*
+            L'API sérialise 'anneecreation' en ISO 8601 complet ('2019-03-15T00:00:00+00:00') alors
+            que le champ date HTML attend 'Y-m-d'. Sans cette troncature, le formulaire s'ouvre avec
+            une année vide et l'enregistrement l'efface silencieusement.
+        */
+        if (!empty($entreprise['anneecreation'])) {
+            $entreprise['anneecreation'] = substr((string) $entreprise['anneecreation'], 0, 10);
+        }
+
         $form = $this->createForm(EntrepriseFormType::class, $entreprise);
         $form->handleRequest($request);
 
@@ -126,7 +199,9 @@ final class EntrepriseController extends AbstractController
                 'contact2' => $form->get('contact2')->getData(),
                 'adresse' => $form->get('adresse')->getData(),
                 'email' => $form->get('email')->getData(),
-                'anneecreation'=> $form->get('anneecreation')->getData(), // '?->format('Y-m-d\TH:i:s.v\Z')' si un champ date
+                // Déjà au format 'Y-m-d' (DateType en mode 'string') : le sérialiseur de l'API en
+                // fait un DateTimeImmutable sans ambiguïté.
+                'anneecreation' => $form->get('anneecreation')->getData() ?: null,
                 'sigle' => $form->get('sigle')->getData(),
                 'siteweb' => $form->get('siteweb')->getData(),
                 'rccm' => $form->get('rccm')->getData(),

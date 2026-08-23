@@ -29,7 +29,7 @@
 
         {# ── En-tête : avatar + identité ── #}
         <div class="flex items-center gap-4 px-6 py-5 border-b bg-muted/30">
-            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+            {% if app.user.fileUrl %}
                 <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=160&h=160&fm=jpg&fit=crop' }}" alt="Avatar"
                      class="h-14 w-14 rounded-full object-cover ring-2 ring-primary/10"/>
             {% else %}

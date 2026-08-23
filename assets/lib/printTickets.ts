@@ -22,8 +22,27 @@ const DELAI_ENTRE_TICKETS_MS = 800
  * pour que l'agent puisse l'imprimer à la main plutôt que de perdre le billet silencieusement.
  */
 export async function printTicketsUnParUn(ids: number[]): Promise<void> {
-    for (const id of ids) {
-        await printPdfViaIframe(`/ticket/${id}/pdf`)
+    await imprimerDocuments(ids.map(id => `/ticket/${id}/pdf`))
+}
+
+/**
+ * Imprime un document quelconque SANS quitter la page (reçu de bagage, bordereau de courrier…).
+ *
+ * Ces documents s'ouvraient dans un ONGLET : l'agent devait le fermer pour revenir à sa liste,
+ * et perdait son filtre et sa pagination au passage. Même mécanique que les billets — une iframe
+ * cachée, donc pas de navigation ni de blocage de pop-up.
+ *
+ * Suppose une réponse « Content-Disposition: inline » (c'est ce que produit PdfService) : en
+ * pièce jointe, le navigateur téléchargerait au lieu d'afficher, et il n'y aurait rien à imprimer.
+ */
+export function imprimerDocument(url: string): Promise<void> {
+    return printPdfViaIframe(url)
+}
+
+/** Plusieurs documents, séquentiellement : une tâche d'impression par document. */
+export async function imprimerDocuments(urls: string[]): Promise<void> {
+    for (const url of urls) {
+        await printPdfViaIframe(url)
         await pause(DELAI_ENTRE_TICKETS_MS)
     }
 }

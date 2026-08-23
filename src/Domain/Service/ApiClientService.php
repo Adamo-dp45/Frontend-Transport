@@ -239,7 +239,13 @@ class ApiClientService
             'Accept' => 'application/ld+json',
         ], $options['headers'] ?? []);
 
-        $publicEndpoints = ['/api/login_check', '/api/token/refresh', '/api/register', '/api/forgot', '/api/reset'];
+        /*
+            Routes atteignables SANS jeton. '/api/register' n'en fait PLUS partie : l'enregistrement
+            d'une compagnie exige désormais 'ROLE_SUPER_ADMIN' côté API, il faut donc lui transmettre
+            le jeton du super admin connecté. Tant qu'il figurait ici, l'en-tête 'Authorization' était
+            volontairement omis et le formulaire « Nouvelle compagnie » se prenait un 401.
+        */
+        $publicEndpoints = ['/api/login_check', '/api/token/refresh', '/api/forgot', '/api/reset'];
         $path = parse_url($endpoint, PHP_URL_PATH);
         if(!in_array($path, $publicEndpoints) && $token) {
             $headers['Authorization'] = 'Bearer ' . $token;

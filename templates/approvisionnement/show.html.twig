@@ -17,7 +17,7 @@
             </a>
             <div class="flex items-center gap-2 flex-wrap mb-0.5">
                 <p class="text-xs uppercase tracking-wide text-muted-foreground">Approvisionnement</p>
-                {% if approvisionnement.statut is defined and approvisionnement.statut == 'ANNULE' %}{{ ui.badge('Annulé', 'red') }}{% endif %}
+                {% if approvisionnement.statut == 'ANNULE' %}{{ ui.badge('Annulé', 'red') }}{% endif %}
             </div>
             <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Approvisionnement #{{ approvisionnement.id }}</h1>
             <p class="text-sm text-muted-foreground mt-1">Créé le {{ approvisionnement.createdAt|date('d/m/Y à H:i') }}</p>

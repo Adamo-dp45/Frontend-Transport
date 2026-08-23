@@ -92,6 +92,9 @@ final class RoleController extends AbstractController
         }
 
         return $this->render('admin/role/show.html.twig', [
+            // Même liste que la matrice d'édition : sans elle, une action spécifique accordée
+            // (ex. Ticket DESISTER) n'apparaissait nulle part sur la fiche du rôle.
+            'colonnes' => RoleFormType::colonnes(),
             'role' => $role
         ]);
     }
@@ -139,6 +142,9 @@ final class RoleController extends AbstractController
             'form' => $form,
             'entities' => $entities,
             'actions' => RoleFormType::ACTIONS,
+            // Colonnes de la matrice : les communes, puis les spécifiques. Calculées ICI parce qu'un
+            // 'set' fait dans une boucle Twig ne survit pas à la boucle.
+            'colonnes' => RoleFormType::colonnes(),
         ]);
     }
 
@@ -200,6 +206,9 @@ final class RoleController extends AbstractController
             'role' => $role,
             'entities' => $entities,
             'actions' => RoleFormType::ACTIONS,
+            // Colonnes de la matrice : les communes, puis les spécifiques. Calculées ICI parce qu'un
+            // 'set' fait dans une boucle Twig ne survit pas à la boucle.
+            'colonnes' => RoleFormType::colonnes(),
         ]);
     }
 

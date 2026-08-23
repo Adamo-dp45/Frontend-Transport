@@ -28,6 +28,7 @@
         models: models,
         apiUrl: api_url,
         canEdit: is_granted('PIECE_MODIFIER'),
+        canAjuster: is_granted('PIECE_AJUSTER'),
         canDelete: is_granted('PIECE_SUPPRIMER'),
         csrfDelete: csrf_token('delete_piece')
     }) }} class="mb-3 mt-3"

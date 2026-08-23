@@ -19,11 +19,13 @@ type Props = {
     personnels: Personnel[],
     apiUrl: string,
     canEdit: boolean,
+    // Suspendre est une décision RH : réservé à l'admin d'entreprise, pas à qui modifie la fiche.
+    canSuspendre: boolean,
     canDelete: boolean,
     csrfDelete: string
 }
 
-function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, apiUrl: string): ColumnDef<Personnel>[] {
+function buildColumns(canEdit: boolean, canSuspendre: boolean, canDelete: boolean, csrfDelete: string, apiUrl: string): ColumnDef<Personnel>[] {
     return [
         {
             accessorKey: "id",
@@ -142,8 +144,8 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
                                 </DropdownMenuItem>
                             )}
 
-                            {canEdit && <DropdownMenuSeparator />}
-                            {canEdit && (
+                            {canSuspendre && <DropdownMenuSeparator />}
+                            {canSuspendre && (
                                 <DropdownMenuItem asChild>
                                     <form method="post" action={`/personnel/${personnel.id}/suspendre`} onSubmit={(e) => {
                                             const action = personnel.statut === 'ACTIF' ? 'suspendre' : 'réactiver'
@@ -195,12 +197,12 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
     ]
 }
 
-export default function PersonnelTable({personnels, canEdit, canDelete, csrfDelete, apiUrl}: Props) {
+export default function PersonnelTable({personnels, canEdit, canSuspendre, canDelete, csrfDelete, apiUrl}: Props) {
     const columns = useMemo( /*
             - Pour éviter de recréer le tableau à chaque render
         */
-        () => buildColumns(canEdit, canDelete, csrfDelete, apiUrl),
-        [canEdit, canDelete, csrfDelete, apiUrl]
+        () => buildColumns(canEdit, canSuspendre, canDelete, csrfDelete, apiUrl),
+        [canEdit, canSuspendre, canDelete, csrfDelete, apiUrl]
     )
 
     const typeOptions = [...new Map(

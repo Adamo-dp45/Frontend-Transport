@@ -3,7 +3,6 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -12,7 +11,6 @@ use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -52,15 +50,13 @@ class RegisterFormType extends AbstractType
                     ),
                 ]
             ])
-            ->add('agreeTerms', CheckboxType::class, [
-                'mapped' => false,
-                'label' => 'J\'accepte les conditions d\'utilisation',
-                'constraints' => [
-                    new IsTrue(
-                        message: 'Vous devez accepter nos conditions.'
-                    ),
-                ],
-            ])
+            /*
+                'agreeTerms' RETIRÉ avec le passage de l'inscription publique à l'enregistrement par
+                le super admin : ce n'est plus le futur utilisateur qui remplit ce formulaire, mais
+                l'exploitant de la plateforme. Lui faire accepter des conditions au nom d'un tiers
+                n'aurait aucune valeur — et, le champ portant une contrainte 'IsTrue', le laisser
+                sans l'afficher aurait rendu le formulaire impossible à soumettre.
+            */
 
             # Entreprise ou utilise un 'EntrepriseType' --
             ->add('libelle', TextType::class, [

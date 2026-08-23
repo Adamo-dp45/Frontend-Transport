@@ -28,7 +28,7 @@
         </div>
         {% if is_granted('ENTREPRISE_MODIFIER') %}
         <div class="flex items-center gap-2 flex-wrap shrink-0">
-            <a href="{{ path('admin.entreprise.edit', { id: entreprise.id }) }}" class="btn btn-primary">
+            <a href="{{ path('admin.entreprise.edit') }}" class="btn btn-primary">
                 <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
                 Modifier
             </a>
@@ -72,7 +72,7 @@
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Identité</h2>
                 <div class="flex items-center justify-center py-3">
                     <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                        {% if entreprise.image is defined and entreprise.image %}
+                        {% if entreprise.image %}
                         <img src="{{ api_url ~ '/media' ~ entreprise.image.contentUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="{{ entreprise.libelle }}" class="w-full h-full object-cover" />
                         {% else %}
                         <span class="text-2xl font-semibold text-primary">{{ entreprise.sigle ? entreprise.sigle|upper|slice(0,2) : entreprise.libelle|upper|slice(0,2) }}</span>
@@ -122,7 +122,7 @@
             {% if is_granted('ENTREPRISE_MODIFIER') %}
             <div class="card p-5">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
-                <a href="{{ path('admin.entreprise.edit', { id: entreprise.id }) }}" class="btn btn-secondary w-full justify-center">Modifier l'entreprise</a>
+                <a href="{{ path('admin.entreprise.edit') }}" class="btn btn-secondary w-full justify-center">Modifier l'entreprise</a>
             </div>
             {% endif %}
         </div>

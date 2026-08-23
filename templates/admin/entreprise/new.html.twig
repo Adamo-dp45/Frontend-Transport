@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle compagnie{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Nouvelle compagnie</h1>
+        <p class="text-muted-foreground mt-2">
+            Enregistre la compagnie et le compte de son administrateur fondateur, qui pourra ensuite
+            créer ses gares, ses lignes et son équipe.
+        </p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <a href="{{ path('admin.entreprise.index') }}" class="btn btn-outline max-sm:flex-1 max-sm:justify-center">
+            Retour à la liste
+        </a>
+    </div>
+</div>
+
+<twig:Card>
+    <twig:Card:Content>
+        {{ form_errors(form) }}
+        {{ form_start(form) }}
+
+        <h2 class="text-2xl font-light mb-1">Administrateur fondateur</h2>
+        <p class="text-sm text-muted-foreground mb-4">
+            Ce compte reçoit le rôle d'administrateur de la compagnie. Communiquez-lui ses identifiants.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {{ form_row(form.email) }}
+            {{ form_row(form.nom) }}
+            {{ form_row(form.prenom) }}
+            {{ form_row(form.password.first) }}
+            {{ form_row(form.password.second) }}
+        </div>
+
+        <h2 class="text-2xl font-light mb-4">Informations de la compagnie</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {{ form_row(form.libelle) }}
+            {{ form_row(form.contact1) }}
+            {{ form_row(form.contact2) }}
+            {{ form_row(form.adresse) }}
+            {{ form_row(form.emailEntreprise) }}
+            {{ form_row(form.anneecreation) }}
+            {{ form_row(form.sigle) }}
+            {{ form_row(form.siteweb) }}
+            {{ form_row(form.rccm) }}
+            {{ form_row(form.banque) }}
+            {{ form_row(form.type) }}
+            {{ form_row(form.centreimpot) }}
+            {{ form_row(form.tauxtva) }}
+        </div>
+
+        <div class="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
+            <twig:Button type="submit">Enregistrer la compagnie</twig:Button>
+            <a href="{{ path('admin.entreprise.index') }}" class="btn btn-outline max-sm:justify-center">Annuler</a>
+        </div>
+        {{ form_end(form) }}
+    </twig:Card:Content>
+</twig:Card>
+{% endblock %}

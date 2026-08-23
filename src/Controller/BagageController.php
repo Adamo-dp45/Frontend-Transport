@@ -154,7 +154,8 @@ final class BagageController extends AbstractController
     }
 
     #[Route('/{id}/perdu', name: 'perdu', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('BAGAGE_MODIFIER')]
+    // Permission DÉDIÉE : déclarer une perte engage la compagnie. Cf. la garde de l'API.
+    #[IsGranted('BAGAGE_DECLARER_PERDU')]
     public function perdu(int $id): Response
     {
         try {

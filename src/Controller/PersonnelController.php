@@ -250,7 +250,8 @@ final class PersonnelController extends AbstractController
     }
 
     #[Route('/{id}/suspendre', name: 'suspendre', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('PERSONNEL_MODIFIER')]
+    // Réservé à l'ADMIN d'entreprise : décision RH, pas une modification de fiche (cf. la garde de l'API).
+    #[IsGranted('ROLE_ADMIN')]
     public function suspendre(int $id): Response
     {
         try {

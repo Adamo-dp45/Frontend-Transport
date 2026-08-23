@@ -34,14 +34,16 @@
     <div class="card p-6 mb-4">
         <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-            {{ ui.field('Chef de gare', gare.chefgare) }}
-            {{ ui.field('Ville', gare.ville) }}
-            {{ ui.field('Libellé', gare.libelle) }}
-            {{ ui.field('Contact 1', gare.contact1) }}
-            {{ ui.field('Contact 2', gare.contact2) }}
-            {% if gare.datecreation is defined and gare.datecreation %}{{ ui.field('Date de création', gare.datecreation|date('d/m/Y')) }}{% endif %}
+            {# L'API OMET les champs nuls : un contact ou une ville non renseignés sont ABSENTS de la
+               charge, et Twig ('strict_variables') lève sur la clé manquante. #}
+            {{ ui.field('Chef de gare', gare.chefgare ?? null) }}
+            {{ ui.field('Ville', gare.ville ?? null) }}
+            {{ ui.field('Libellé', gare.libelle ?? null) }}
+            {{ ui.field('Contact 1', gare.contact1 ?? null) }}
+            {{ ui.field('Contact 2', gare.contact2 ?? null) }}
+            {% if gare.datecreation %}{{ ui.field('Date de création', gare.datecreation|date('d/m/Y')) }}{% endif %}
         </div>
-        {% if gare.description is defined and gare.description %}
+        {% if gare.description %}
         <div class="mt-4 pt-4 border-t border-border">
             {{ ui.field('Description', gare.description) }}
         </div>

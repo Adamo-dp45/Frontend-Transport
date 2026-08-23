@@ -432,7 +432,14 @@ html.dark input[type="datetime-local"].input {
     cursor: not-allowed;
 }
 
-/* Menu déroulant */
+/* Le conteneur à défilement cesse de rogner le temps qu'un menu y soit ouvert (classe posée par
+   tom-select-remote.js). Le menu reste ainsi ancré à son champ, sans être enfermé. */
+.ts-laisse-deborder {
+    overflow: visible !important;
+}
+
+/* Menu déroulant. Rendu EN LIGNE, juste après son champ : il lui suffit de passer au-dessus du
+   contenu voisin (lignes de tableau, blocs du formulaire), pas du « chrome » de l'application. */
 .ts-dropdown {
     background-color: var(--popover);
     color: var(--popover-foreground);
@@ -441,6 +448,7 @@ html.dark input[type="datetime-local"].input {
     box-shadow: var(--shadow-md);
     margin-top: .25rem;
     overflow: hidden;
+    z-index: 50;
 }
 
 .ts-dropdown .option,

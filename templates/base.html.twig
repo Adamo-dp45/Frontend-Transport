@@ -389,7 +389,7 @@
                     <div class="dropdown-anchor">
                         <button class="sb-footer-user" id="sidebarUserBtn">
                         <div class="user-avatar">
-                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                            {% if app.user.fileUrl %}
                                 <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
                             {% else %}
                                 {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
@@ -496,7 +496,7 @@
 
                         <div class="dropdown-anchor">
                             <button class="topbar-avatar" id="profileBtn">
-                                {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                {% if app.user.fileUrl %}
                                     <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
                                 {% else %}
                                     {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
@@ -506,7 +506,7 @@
                                 <div class="dropdown-header">
                                     <div style="display:flex;align-items:center;gap:.625rem;">
                                         <div style="width:2.25rem;height:2.25rem;border-radius:9999px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary-fg);flex-shrink:0;">
-                                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                            {% if app.user.fileUrl %}
                                                 <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
                                             {% else %}
                                                 {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}

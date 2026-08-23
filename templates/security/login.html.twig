@@ -83,11 +83,6 @@
                     </twig:Button>
                 </form>
             </twig:Card:Content>
-            {% if is_granted('ROLE_SUPER_ADMIN') %}
-            <twig:Card:Footer>
-                <twig:Button as="a" href="{{ path('app_register') }}" variant="outline" class="w-full">S'inscrire</twig:Button>
-            </twig:Card:Footer>
-            {% endif %}
         </twig:Card>
     </div>
 </div>

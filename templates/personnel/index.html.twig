@@ -19,10 +19,13 @@
     </div>
 </div>
 
+{# 'canSuspendre' : suspendre un agent est une décision RH, réservée à l'admin d'entreprise
+   (cf. la garde de l'opération '/personnels/{id}/suspendre' côté API). #}
 <div {{ react_component('Personnel/PersonnelTable', {
         personnels: personnels,
         apiUrl: api_url,
         canEdit: is_granted('PERSONNEL_MODIFIER'),
+        canSuspendre: is_granted('ROLE_ADMIN'),
         canDelete: is_granted('PERSONNEL_SUPPRIMER'),
         csrfDelete: csrf_token('delete_personnel')
     }) }} class="mb-3"

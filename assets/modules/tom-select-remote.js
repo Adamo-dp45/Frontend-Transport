@@ -22,6 +22,23 @@ export function initRemoteSelect(selector, resource, options = {}) {
             valueField: 'value',
             labelField: 'label',
             searchField: 'label',
+            /*
+                Le menu reste RATTACHÉ AU CHAMP (pas au <body>) : ainsi il suit le champ au
+                défilement et reste correctement positionné. On lève simplement, le temps de
+                l'ouverture, le rognage du conteneur à défilement qui l'enfermait.
+
+                Ces sélecteurs vivent souvent dans une table à défilement horizontal
+                ('.overflow-x-auto', formulaires de dépannage et d'approvisionnement) : ce conteneur
+                coupait le menu, qu'il fallait alors atteindre en faisant défiler.
+            */
+            onDropdownOpen() {
+                this.input.closest('.overflow-x-auto, .overflow-y-auto, .overflow-auto')
+                    ?.classList.add('ts-laisse-deborder')
+            },
+            onDropdownClose() {
+                this.input.closest('.overflow-x-auto, .overflow-y-auto, .overflow-auto')
+                    ?.classList.remove('ts-laisse-deborder')
+            },
             placeholder: el.getAttribute('placeholder') ?? '-- Rechercher --',
             minChars: 0, /*
                 - '0' pour permettre le chargement sans saisie

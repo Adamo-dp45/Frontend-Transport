@@ -23,7 +23,7 @@
                 <select name="car" id="car" required class="input">
                     <option value="">-- Sélectionner un car --</option>
                     {% for c in cars %}
-                        <option value="{{ c.id }}" {{ depannage.car.id is defined and depannage.car.id == c.id ? 'selected' : '' }}>
+                        <option value="{{ c.id }}" {{ depannage.car.id == c.id ? 'selected' : '' }}>
                             {{ c.matricule }} - {{ c.marque.libelle ?? '' }}
                         </option>
                     {% endfor %}
@@ -40,7 +40,7 @@
                     <option value="">-- Sélectionner un type --</option>
                     {% for t in typepannes %}
                         <option value="{{ t.id }}"
-                            {{ depannage.typepanne is defined and depannage.typepanne.id == t.id ? 'selected' : '' }}>
+                            {{ depannage.typepanne.id == t.id ? 'selected' : '' }}>
                             {{ t.libelle }}
                         </option>
                     {% endfor %}
@@ -84,7 +84,7 @@
                         <select name="detail_piece[]" required class="input">
                             <option value="">-- Pièce --</option>
                             {% for p in pieces %}
-                                <option value="{{ p.id }}" {{ detail.piece.id is defined and detail.piece.id == p.id ? 'selected' : '' }}>
+                                <option value="{{ p.id }}" {{ detail.piece.id == p.id ? 'selected' : '' }}>
                                     {{ p.libelle }} (stock : {{ p.stockactuel ?? p.stockinitial }})
                                 </option>
                             {% endfor %}

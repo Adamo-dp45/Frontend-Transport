@@ -30,7 +30,7 @@
             </div>
             <div class="flex flex-col gap-4">
                 <div>{{ form_row(form.imageFile) }}</div>
-                {% if piece.image is defined and piece.image %}
+                {% if piece.image %}
                 <div>
                     <img src="{{ api_url ~ '/media' ~ piece.image.contentUrl ~ '?w=320&h=240&fm=jpg&fit=crop' }}" alt="" width="100%" height="auto" class="object-cover rounded" />
                 </div>

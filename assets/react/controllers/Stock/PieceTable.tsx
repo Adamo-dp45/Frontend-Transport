@@ -29,6 +29,8 @@ type Props = {
     models: Libelle[]
     apiUrl: string
     canEdit: boolean
+    // Permission DÉDIÉE : l'ajustement écrit un mouvement de stock, ce n'est pas « modifier ».
+    canAjuster: boolean
     canDelete: boolean
     csrfDelete: string
 }
@@ -39,6 +41,7 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     apiUrl: string,
     canEdit: boolean,
+    canAjuster: boolean,
     canDelete: boolean,
     csrfDelete: string
 ): ColumnDef<Piece>[] {
@@ -176,9 +179,9 @@ function buildColumns(
                                 <a href={`/piece/${piece.id}`}>Voir</a>
                             </DropdownMenuItem>
 
-                            {canEdit && <DropdownMenuSeparator />}
+                            {canAjuster && <DropdownMenuSeparator />}
 
-                            {canEdit && <DropdownMenuItem asChild>
+                            {canAjuster && <DropdownMenuItem asChild>
                                 <a href={`/piece/${piece.id}/ajustement`}>Ajuster le stock</a>
                             </DropdownMenuItem>}
 
@@ -230,14 +233,15 @@ export default function PieceTable({
     models,
     apiUrl,
     canEdit,
+    canAjuster,
     canDelete,
     csrfDelete
 }: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(() =>
-        buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, apiUrl, canEdit, canDelete, csrfDelete),
-        [queryParams, apiUrl, canEdit, canDelete, csrfDelete]
+        buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, apiUrl, canEdit, canAjuster, canDelete, csrfDelete),
+        [queryParams, apiUrl, canEdit, canAjuster, canDelete, csrfDelete]
     ) /*
         - Si la 'queryParams' change le hook recalcule ses fonctions
     */

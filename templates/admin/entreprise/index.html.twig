@@ -3,7 +3,17 @@
 {% block title %}La liste des entreprises{% endblock %}
 
 {% block body %}
-<h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2] mb-3">Gestion des entreprises</h1>
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des entreprises</h1>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <a href="{{ path('admin.entreprise.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvelle compagnie
+        </a>
+    </div>
+</div>
 
 <div {{ react_component('Administration/EntrepriseTable', {
         entreprises: entreprises

@@ -26,6 +26,7 @@
         voyages: voyages,
         gares: gares,
         canEdit: is_granted('TICKET_MODIFIER'),
+        canDesister: is_granted('TICKET_DESISTER'),
         canDelete: is_granted('ROLE_ADMIN'),
         csrfDelete: csrf_token('delete_ticket'),
         userGareId: app.user.gare ? app.user.gare.id : null,

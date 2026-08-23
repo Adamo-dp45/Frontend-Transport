@@ -213,18 +213,19 @@ final class CarController extends AbstractController
                 'plansieges' => $this->gridFromText($form->get('plansieges')->getData())
             ];
 
+            /*
+                Ces références sont FACULTATIVES : la clé est envoyée MÊME quand rien n'est choisi,
+                avec la valeur null. En PATCH (merge-patch), une clé ABSENTE veut dire « ne touche
+                pas » — les omettre rendait donc impossible de retirer une marque, un modèle ou un
+                type une fois posés : l'écran proposait « — Sélectionner — » sans aucun effet.
+            */
             $marque = $form->get('marque')->getData();
-            if($marque) {
-                $payload['marque'] = '/api/marques/' . $marque;
-            }
             $modelvehicule = $form->get('modelvehicule')->getData();
-            if($modelvehicule) {
-                $payload['modelvehicule'] = '/api/modelvehicules/' . $modelvehicule;
-            }
             $typevehicule = $form->get('typevehicule')->getData();
-            if($typevehicule) {
-                $payload['typevehicule'] = '/api/typevehicules/' . $typevehicule;
-            }
+
+            $payload['marque'] = $marque ? '/api/marques/' . $marque : null;
+            $payload['modelvehicule'] = $modelvehicule ? '/api/modelvehicules/' . $modelvehicule : null;
+            $payload['typevehicule'] = $typevehicule ? '/api/typevehicules/' . $typevehicule : null;
 
             try {
                 $this->api->patch('/api/cars/' . $id, $payload);

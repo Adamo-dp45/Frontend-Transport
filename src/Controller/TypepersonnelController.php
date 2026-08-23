@@ -42,23 +42,13 @@ final class TypepersonnelController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('TYPEPERSONNEL_VOIR')]
-    public function show(int $id): Response
-    {
-        try {
-            $typepersonnel = $this->api->item('/api/typepersonnels/' . $id);
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'typepersonnel.index');
-            if($response) {
-                return $response;
-            }
-        }
-
-        return $this->render('typepersonnel/show.html.twig', [
-            'typepersonnel' => $typepersonnel
-        ]);
-    }
+    /*
+        Pas de page de DÉTAIL pour ce référentiel : il ne porte qu'un libellé, le listing suffit et
+        la table React ne renvoie que vers « modifier » et « supprimer ». L'action 'show' qui
+        existait ici rendait 'typepersonnel/show.html.twig', un gabarit jamais écrit : la route
+        était donc joignable et répondait 500. Tous les référentiels comparables (Typepiece,
+        Typepanne, Typevehicule, Marquepiece, Model, Ville) n'ont d'ailleurs aucune action 'show'.
+    */
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
     #[IsGranted('TYPEPERSONNEL_CREER')]

@@ -19,7 +19,9 @@
     {{ form_end(form) }}
 </div>
 
-{% if personnel.image is defined and personnel.image %}
+{# 'is defined' INDISPENSABLE : ce partiel sert aussi au formulaire de CRÉATION, où la variable
+   'personnel' n'est PAS passée du tout. Rien à voir avec les champs nuls. #}
+{% if personnel is defined and personnel.image %}
 <div class="flex items-center gap-4 mb-6 p-4 card">
     <img src="{{ api_url ~ '/media' ~ personnel.image.contentUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="Photo actuelle" class="h-16 w-16 rounded-full object-cover ring-2 ring-border" />
     <div>

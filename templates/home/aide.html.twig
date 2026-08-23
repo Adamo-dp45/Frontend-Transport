@@ -66,7 +66,7 @@
                     {{ h.step(2, 'Choisissez le <strong>voyage</strong>, puis le trajet du client : gare de <strong>montée</strong> → gare de <strong>descente</strong>. Le prix s\'ajuste automatiquement selon ce trajet.') }}
                     {{ h.step(3, 'Sur le <strong>plan des sièges</strong>, cliquez un siège libre. Un siège peut être libre sur une portion du trajet et occupé sur une autre : l\'app vérifie la disponibilité <strong>sur le trajet choisi</strong>.') }}
                     {{ h.step(4, 'Renseignez si besoin le <strong>nom</strong> et le <strong>contact</strong> du client, appliquez une éventuelle remise/bénéficiaire, puis <strong>validez</strong>.') }}
-                    {{ h.step(5, 'Le billet est créé : utilisez le bouton <strong>« Imprimer »</strong> pour remettre le reçu au client.') }}
+                    {{ h.step(5, 'Le billet est créé : utilisez le bouton <strong>« Imprimer »</strong> pour remettre le reçu au client. L\'impression part <strong>sans quitter la page</strong> — vous gardez votre liste, vos filtres et votre place, et enchaînez la vente suivante.') }}
                 </ol>
                 {{ h.note('Si un passager descend plus tôt que prévu, déclarez-le « descendu » depuis le billet : son siège redevient vendable pour la suite du trajet.') }}
             {{ h.close() }}
@@ -81,6 +81,7 @@
                     {{ h.step('2', '<strong>Report</strong> — choisissez un autre voyage de la <strong>même ligne</strong> et un siège. Un nouveau billet ' ~ h.chip('Valide', 'emerald') ~ ' est créé (même trajet, même prix) ; l\'ancien passe ' ~ h.chip('Reporté', 'amber') ~ ' et libère son siège.') }}
                 </ol>
                 {{ h.warn('Un billet déjà annulé ou reporté ne peut plus être modifié. Les billets annulés/reportés ne comptent pas dans les recettes.') }}
+                {{ h.note('<strong>Jusqu\'à quand ?</strong> Jusqu\'au <strong>départ du car de la gare de montée</strong> du billet. Tant que le véhicule est à quai, le désistement reste ouvert — c\'est le moment où l\'on embarque, le passager est encore là. Une fois parti, ni la gare ni un administrateur ne peuvent plus revenir dessus. Le <strong>désistement est une action de gare</strong> : le commercial à bord ne rembourse pas, et il lui faut la permission dédiée « désister », distincte de « modifier ».') }}
             {{ h.close() }}
             {% endif %}
 
@@ -167,6 +168,7 @@
                     {{ h.step(2, '<strong>Faites avancer la position</strong> à chaque arrêt franchi (« le car est arrivé à… », « le car repart »). C\'est ce qui met à jour les trajets vendables. Si une gare réceptionne le car, la position avance toute seule.') }}
                     {{ h.step(3, '<strong>Vendez</strong> comme au guichet — trajet, siège, client, remise éventuelle — mais la <strong>montée est forcée à la position du car</strong>. Le billet porte votre nom, et un bagage peut être rattaché au billet.') }}
                     {{ h.step(4, '<strong>Vos recettes reviennent à votre gare d\'affectation</strong>, pas à la gare où le car se trouve au moment de la vente.') }}
+                    {{ h.step(5, '<strong>Vous pouvez vous relire</strong> : corriger le nom ou le téléphone sur <strong>un billet que vous avez vendu</strong>, tant que le car n\'a pas atteint l\'arrêt suivant. Vous encaissez après le départ, il fallait bien vous laisser le tronçon en cours. En revanche, un billet vendu <strong>au guichet</strong> ne vous appartient pas, et vous ne <strong>désistez jamais</strong> : rembourser reste un geste de gare.') }}
                 </ol>
                 {{ h.note('Un vendeur mobile dispose aussi d\'une <strong>application mobile dédiée</strong> (vente, bagages, reçu imprimable, « mes ventes » avec réimpression, manifeste des passagers) pour travailler depuis son téléphone à bord.') }}
             {{ h.close() }}
@@ -229,7 +231,7 @@
             {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}
             {{ h.open('admin', 'shield', 'Administration', 'Réservé aux administrateurs') }}
                 <ol class="space-y-3">
-                    {{ h.step(1, '<strong>Utilisateurs & rôles</strong> : créez des comptes et déléguez des droits. Un acteur de gare ne délègue que sur le périmètre de sa gare.') }}
+                    {{ h.step(1, '<strong>Utilisateurs & rôles</strong> : créez des comptes et déléguez des droits. Un acteur de gare ne délègue que sur le périmètre de sa gare. Au-delà des quatre cases habituelles (voir / créer / modifier / supprimer), certains gestes ont la <strong>leur</strong> : <strong>désister</strong> un billet, <strong>ajuster</strong> un stock, <strong>annuler</strong> un approvisionnement, un dépannage ou une réservation payée, <strong>déclarer perdu</strong> un colis ou un bagage. Cocher « modifier » ne les donne plus — un agent peut corriger une saisie sans toucher à la caisse ni à l\'inventaire.') }}
                     {{ h.step(2, '<strong>Gares & lignes</strong> : les lignes (suite ordonnée d\'arrêts) servent de base aux voyages et aux tarifs. Pour chaque arrêt, la <strong>durée du tronçon</strong> (temps depuis l\'arrêt précédent) détermine l\'<strong>heure de passage</strong> prévue du car — et donc les échéances des réservations.') }}
                     {{ h.step(3, '<strong>Flotte & stock</strong> : véhicules, dépannages, pièces, approvisionnements ; chaque mouvement de stock est tracé avec son auteur.') }}
                     {{ h.step(4, '<strong>Paramètres de l\'entreprise</strong> : réglez la <strong>remise</strong> maximale, la <strong>fidélité</strong> (seuil / récompense), la <strong>réservation</strong> (pénalité de no-show) et la <strong>recette</strong> (inclure ou non les courriers dans le chiffre d\'affaires).') }}
