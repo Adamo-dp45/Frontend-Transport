@@ -20,20 +20,27 @@
                 {{ ui.badge(statutLabels[reservation.statut] ?? reservation.statut, statutTones[reservation.statut] ?? 'slate') }}
             </h1>
         </div>
-        {% if is_granted('RESERVATION_MODIFIER') and peutAgir %}
+        {# Chaque geste porte SA permission : l'annulation défait une réservation payée et relève de
+           'RESERVATION_ANNULER', distincte de 'MODIFIER' depuis la séparation des actions. Sous la
+           seule garde extérieure, un profil sans ce droit voyait « Annuler » et récoltait un refus. #}
+        {% if peutAgir and (is_granted('RESERVATION_MODIFIER') or is_granted('RESERVATION_ANNULER')) %}
         <div class="flex items-center gap-2 flex-wrap shrink-0">
             {% if reservation.statut == 'EN_ATTENTE' %}
+            {% if is_granted('RESERVATION_MODIFIER') %}
             <form method="POST" action="{{ path('reservation.confirmer', {id: reservation.id}) }}"
                   onsubmit="return confirm('Encaisser le paiement ? La place sera payée ; le siège/billet s\'émet ensuite.')">
                 <input type="hidden" name="_token" value="{{ csrf_token('confirmer_reservation') }}">
                 <button type="submit" class="btn btn-primary">Encaisser (payer)</button>
             </form>
+            {% endif %}
+            {% if is_granted('RESERVATION_ANNULER') %}
             <form method="POST" action="{{ path('reservation.annuler', {id: reservation.id}) }}"
                   onsubmit="return confirm('Annuler cette réservation ?')">
                 <input type="hidden" name="_token" value="{{ csrf_token('annuler_reservation') }}">
                 <button type="submit" class="btn btn-danger">Annuler</button>
             </form>
-            {% elseif reservation.statut == 'CONFIRMEE' and not reservation.ticket %}
+            {% endif %}
+            {% elseif is_granted('RESERVATION_MODIFIER') and reservation.statut == 'CONFIRMEE' and not reservation.ticket %}
             <form method="POST" action="{{ path('reservation.emettre_billet', {id: reservation.id}) }}"
                   onsubmit="return confirm('Émettre le billet ? Un siège libre sera attribué au client (car requis).')">
                 <input type="hidden" name="_token" value="{{ csrf_token('emettre_billet_reservation') }}">

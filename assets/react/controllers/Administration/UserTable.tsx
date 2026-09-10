@@ -36,35 +36,6 @@ type Props = {
     gares?: { id: number; libelle: string; ville?: string }[]
 }
 
-/**
- * Périmètre de gestion (édition / suspension) — miroir frontend du UserManagementGuard backend.
- * super admin : tout ; admin entreprise : admins de gare + utilisateurs ; admin de gare / utilisateur :
- * uniquement les utilisateurs SIMPLES de SA gare. Jamais soi-même, ni le fondateur, ni un admin entreprise.
- */
-function canManageUser(
-    target: User,
-    currentUserId: number,
-    isSuperAdmin: boolean,
-    currentIsAdmin: boolean,
-    currentUserGareId: number | null
-): boolean {
-    if (target.id === currentUserId) return false
-    // Un super administrateur ne peut être ni suspendu ni modifié par autrui (même par un autre super admin) :
-    // miroir frontend du UserManagementGuard backend.
-    if (target.roles.includes('ROLE_SUPER_ADMIN')) return false
-    if (isSuperAdmin) return true
-    if (target.isFounder) return false
-    if (target.roles.includes('ROLE_ADMIN')) return false
-    if (currentIsAdmin) return true
-    // Acteur non-admin rattaché à une gare : utilisateurs simples de SA gare uniquement
-    if (currentUserGareId) {
-        if (target.roles.includes('ROLE_ADMIN_GARE')) return false
-        return !!target.gare && target.gare.id === currentUserGareId
-    }
-    // Utilisateur central sans gare (avec permissions sur User) : gère tout le monde restant
-    return true
-}
-
 function buildColumns(
     getSortToggleUrl: (f: string) => string,
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
@@ -72,7 +43,6 @@ function buildColumns(
     canEdit: boolean,
     currentUserId: number,
     currentUserGareId: number | null,
-    currentIsAdmin: boolean,
     csrfDelete: string,
     apiUrl: string,
     isSuperAdmin: boolean,
@@ -129,7 +99,7 @@ function buildColumns(
             id: 'role',
             header: 'Rôle',
             cell: ({ row }) => {
-                const isFounder = row.original.isFounder
+                const isFounder = row.original.founder
                 const isAdmin = row.original.roles.includes('ROLE_ADMIN')
                 const isAdminGare = row.original.roles.includes('ROLE_ADMIN_GARE')
                 const isSuperAdmin = row.original.roles.includes('ROLE_SUPER_ADMIN')
@@ -192,13 +162,16 @@ function buildColumns(
                 const isAdminGare = user.roles.includes('ROLE_ADMIN_GARE')
                 const hasGare = !!user.gare
                 // Périmètre de gestion aligné sur le backend (hiérarchie + périmètre gare)
-                const allowed = canManageUser(user, currentUserId, isSuperAdmin, currentIsAdmin, currentUserGareId)
+                // Verdict du SERVEUR (UserManagementGuard, posé par UserProvider) : hiérarchie,
+                // périmètre de gare et interdiction de se gérer soi-même. Ce fichier en tenait
+                // un « miroir » qui a fini par diverger de celui de la fiche utilisateur.
+                const allowed = user.gerable ?? false
                 const editable = allowed && canEdit && !isSuperAdmin // modification (USER_MODIFIER)
                 const suspendable = allowed && canSuspend                // suspension : admins entreprise/super/admin de gare uniquement
-                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder && !isAdminGare && (isAdmin || !hasGare) /*
+                const promouvable = currentUserIsFounder && !isSelf && !user.founder && !isAdminGare && (isAdmin || !hasGare) /*
                     - On ne peut pas promouvoir en administrateur entreprise si ce n'est pas le fondateur qui agit, si c'est soi même, si la cible est le fondateur, si elle est administrateur de gare, ou si elle est encore liée à une gare (il faut d'abord lui retirer sa gare). Le '(isAdmin || !hasGare)' laisse la rétrogradation possible pour un admin existant
                 */
-                const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.isFounder && !isAdmin /*
+                const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.founder && !isAdmin /*
                     - On.. gare si ce n'est pas un administrateur d'entreprise qui agit, si.. et si l'utilisateur est administrateur entreprise
                 */
                 return (
@@ -328,8 +301,8 @@ export default function UserTable({
 {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, currentUserGareId, isAdmin, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder),
-        [queryParams, canEdit, currentUserId, currentUserGareId, isAdmin, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, currentUserGareId, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder),
+        [queryParams, canEdit, currentUserId, currentUserGareId, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder]
     )
 
     const filters: ServerTableFilter[] = useMemo(() => {

@@ -27,14 +27,14 @@ class CarFormType extends AbstractType
             )
         );
         $modelvehicules = array_merge(
-            ['-- Sélectionner une modèle --' => null],
+            ['-- Sélectionner un modèle --' => null],
                 array_combine(
                 array_column($options['modelvehicules'], 'libelle'),
                 array_column($options['modelvehicules'], 'id')
             )
         );
         $typevehicules = array_merge(
-            ['-- Sélectionner une type --' => null],
+            ['-- Sélectionner un type --' => null],
                 array_combine(
                 array_column($options['typevehicules'], 'libelle'),
                 array_column($options['typevehicules'], 'id')

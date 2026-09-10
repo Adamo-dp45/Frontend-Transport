@@ -35,7 +35,8 @@
                 <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmer la livraison ?')">Confirmer la livraison</button>
             </form>
             {% endif %}
-            {% if is_granted('COURRIER_MODIFIER') and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
+            {# Permission DÉDIÉE : déclarer une perte engage la compagnie, ce n'est pas « modifier ». #}
+            {% if is_granted('COURRIER_DECLARER_PERDU') and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
             <form method="POST" action="{{ path('courrier.perdu', { id: courrier.id }) }}" class="inline">
                 <button type="submit" class="btn btn-warning" onclick="return confirm('Déclarer ce courrier comme perdu ?')">Déclarer perdu</button>
             </form>
@@ -137,7 +138,7 @@
                         <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ detail.montant|number_format(0, ',', ' ') }} FCFA</td>
                         <td class="px-4 py-3">{{ ui.badge(detail.statut == 'PERDU' ? 'Perdu' : 'Normal', detail.statut == 'PERDU' ? 'red' : 'green') }}</td>
                         <td class="px-4 py-3 text-right">
-                            {% if is_granted('COURRIER_MODIFIER') and detail.statut == 'NORMAL' and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
+                            {% if is_granted('COURRIER_DECLARER_PERDU') and detail.statut == 'NORMAL' and courrier.statut in ['EN_TRANSIT', 'RECEPTIONNE'] and peutAgirArrivee %}
                             <form method="post" action="{{ path('courrier.colis.perdu', { id: detail.id }) }}" class="inline" onsubmit="return confirm('Déclarer ce colis comme perdu ?')">
                                 <input type="hidden" name="courrier_id" value="{{ courrier.id }}">
                                 <button type="submit" class="text-xs text-red-600 hover:text-red-700 hover:underline">Déclarer perdu</button>

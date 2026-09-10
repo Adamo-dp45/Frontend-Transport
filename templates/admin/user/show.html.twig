@@ -18,7 +18,8 @@
         {% set permissionsParEntite = permissionsParEntite|merge({ (perm.entity): existing }) %}
     {% endfor %}
 {% endfor %}
-{% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
+{# Actions communes PUIS actions dediees : sans elles, une permission accordee (desister, ajuster, annuler, declarer perdu) restait invisible sur la fiche de l'utilisateur. #}
+{% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER', 'DESISTER', 'AJUSTER', 'ANNULER', 'DECLARER_PERDU'] %}
 {% set actionTones = { VOIR: 'blue', CREER: 'green', MODIFIER: 'orange', SUPPRIMER: 'red' } %}
 
 {% block body %}
@@ -39,7 +40,8 @@
             <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ user.prenom }} {{ user.nom }}</h1>
             <p class="text-sm text-muted-foreground mt-1">{{ user.email }}</p>
         </div>
-        {% if is_granted('USER_MODIFIER') and not isTargetSuperAdmin %}
+        {# Meme garde que le bloc « Actions » plus bas : 'gerable' vient du serveur. #}
+        {% if is_granted('USER_MODIFIER') and (user.gerable ?? false) %}
         <div class="flex items-center gap-2 flex-wrap shrink-0">
             <a href="{{ path('admin.user.edit', {id: user.id} ) }}" class="btn btn-primary">
                 <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
@@ -186,18 +188,28 @@
             <div class="card p-5">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
                 <div class="flex flex-col gap-2">
-                    {% if is_granted('USER_MODIFIER') and not isTargetSuperAdmin %}
                     {# « Gérer les rôles » pointait vers 'admin.role.show' en lui passant l'ID DE
                        L'UTILISATEUR : la route attend un ID DE RÔLE, on tombait donc sur un rôle
                        sans rapport, ou sur une 404. L'attribution des rôles se fait dans le
-                       formulaire d'édition de l'utilisateur (champ « Rôles attribués »). #}
+                       formulaire d'édition de l'utilisateur (champ « Rôles attribués »).
+
+                       'gerable' est décidé par le SERVEUR (UserManagementGuard, posé par UserProvider) :
+                       hiérarchie, périmètre de gare ET interdiction de se gérer soi-même. Cette fiche
+                       en tenait auparavant un reflet incomplet — il y manquait l'auto-gestion, si bien
+                       qu'on se proposait à soi-même « Modifier le profil et les rôles » pour un refus
+                       à l'enregistrement. Le profil personnel est une page à part. #}
+                    {% if is_granted('USER_MODIFIER') and (user.gerable ?? false) %}
                     <a href="{{ path('admin.user.edit', { id: user.id }) }}" class="btn btn-primary w-full justify-center">Modifier le profil et les rôles</a>
                     {% endif %}
 
                     {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
                     {% set isSelf  = app.user.id == user.id %}
 
-                    {% if is_granted('ROLE_ADMIN') and not isAdmin and not isSelf and not isTargetSuperAdmin %}
+                    {# Même garde serveur : l'opération '/users/{id}/suspendre' accepte ROLE_ADMIN,
+                       ROLE_SUPER_ADMIN et ROLE_ADMIN_GARE, puis 'SuspendreUserProcessor' applique
+                       'assertCanManage'. Exiger ROLE_ADMIN ici masquait l'action à un admin de gare
+                       que l'API autorise pourtant sur les agents de sa gare. #}
+                    {% if (is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN_GARE')) and (user.gerable ?? false) %}
                     <form method="POST" action="{{ path('admin.user.suspendre', { id: user.id }) }}" onsubmit="return confirm('{{ user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' }} cet utilisateur ?')">
                         <button type="submit" class="btn {{ user.statut == 'ACTIF' ? 'btn-warning' : 'btn-success' }} w-full justify-center">
                             {{ user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' }}
