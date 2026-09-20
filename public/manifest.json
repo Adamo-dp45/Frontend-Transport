@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "iTransport",
+  "short_name": "iTransport",
+  "description": "Gestion de compagnie de transport : billetterie, exploitation, courrier et bagages.",
+  "lang": "fr",
+  "dir": "ltr",
+  "scope": "/",
+  "start_url": "/?source=pwa",
+  "display": "minimal-ui",
+  "theme_color": "#f59e0b",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/images/192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}

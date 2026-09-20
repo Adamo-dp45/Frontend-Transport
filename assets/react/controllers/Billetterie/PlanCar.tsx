@@ -6,8 +6,9 @@ import { cn } from "../../../lib/utils"
  *  - désistement (`DesistementForm`)   → report, sélection d'un siège sur le voyage cible
  *  - fiche véhicule (`PlanCarReadonly`) → lecture seule
  *
- * Quatre états de siège : libre, sélectionné, occupé (barré, éventuellement libérable via la pastille
- * `↻`) et revendu (violet). Les fonctionnalités s'éteignent par les props : sans `onLiberer` aucun
+ * Cinq états de siège : libre, sélectionné, occupé (barré, éventuellement libérable via la pastille
+ * `↻`), revendu (violet) et vendu par une gare en AVAL (ambre pointillé, pastille `↓` — libre mais
+ * au prix d'une éviction). Les fonctionnalités s'éteignent par les props : sans `onLiberer` aucun
  * siège n'est libérable, `readonly` fige tout (fiche véhicule).
  *
  * Il n'y a PLUS de repère « réservé » par siège : une réservation retient une PLACE, jamais un siège
@@ -41,6 +42,29 @@ export interface SiegePlan {
         jamais mentir sur la vendabilité du tronçon affiché.
     */
     conflit?: boolean
+    /*
+        Siège VENDU EN AVAL : libre ici — la priorité amont n'est pas remise en cause — mais une gare
+        située plus bas sur la ligne l'a déjà vendu, et ce passager monte À L'INTÉRIEUR du tronçon
+        affiché. Le prendre l'évincerait.
+
+        Contrairement à 'conflit' (qui CONSTATE une éviction déjà produite, repère global au voyage),
+        celui-ci porte sur LE TRONÇON AFFICHÉ et sur une éviction qui n'a pas encore eu lieu : d'où
+        une couleur à part, assez visible pour qu'un agent qui a le choix prenne un autre siège. Le
+        siège reste CLIQUABLE : on prévient, on n'interdit pas.
+    */
+    venduAval?: boolean
+    avalNom?: string | null
+    avalMontee?: string | null
+    avalDescente?: string | null
+    avalNombre?: number
+}
+
+/** « Bouaké → Korhogo, M. Koffi (et 2 autres) » — de quoi décider sans ouvrir une autre page. */
+export function resumeAval(siege: SiegePlan): string {
+    const trajet = `${siege.avalMontee ?? "?"} → ${siege.avalDescente ?? "?"}`
+    const autres = (siege.avalNombre ?? 1) - 1
+
+    return `${trajet}${siege.avalNom ? `, ${siege.avalNom}` : ""}${autres > 0 ? ` (et ${autres} autre${autres > 1 ? "s" : ""})` : ""}`
 }
 
 // Générique sur le type de siège : chaque écran garde SON type (le 'Siege' riche du TicketForm, le
@@ -86,6 +110,10 @@ function SiegeCell({
     // Siège en CONFLIT (un billet évincé sur le voyage) → OVERLAY seul, jamais la couleur : le repère
     // est global au voyage et ne doit pas contredire l'occupation du tronçon affiché (cf. SiegePlan).
     const conflit = !!siege.conflit
+    // Siège déjà vendu par une gare AVAL : vendable, mais au prix d'une éviction. Contrairement au
+    // conflit, celui-ci porte bien sur CE tronçon → il mérite sa couleur (ambre), assez nette pour
+    // orienter le choix vers un autre siège quand il en reste.
+    const venduAval = !isOccupe && !!siege.venduAval
 
     return (
         <button
@@ -102,6 +130,7 @@ function SiegeCell({
                         : `Siège ${siege.numero} — ${siege.statut}`)
                     + (revendu ? " · déjà revendu" : "")
                     + (conflit ? " · conflit : un billet évincé sur ce voyage (passager à reloger)" : "")
+                    + (venduAval ? ` · déjà vendu par une gare en aval (${resumeAval(siege)}) : vous restez prioritaire, mais ce passager ne montera pas` : "")
             }
             className={cn(
                 // rounded-t-lg / rounded-b-sm : dossier (haut arrondi) + assise (bas plus carré) → forme de siège
@@ -116,15 +145,23 @@ function SiegeCell({
                     "cursor-not-allowed border-violet-300 bg-violet-100 text-violet-500 dark:border-violet-700 dark:bg-violet-950 dark:text-violet-400",
                 revendu && liberable &&
                     "cursor-pointer border-violet-300 bg-violet-100 text-violet-600 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-600 dark:border-violet-700 dark:bg-violet-950 dark:text-violet-300 dark:hover:border-amber-500 dark:hover:bg-amber-950 dark:hover:text-amber-300",
-                revendu && !isOccupe && !selected && (readonly
+                revendu && !venduAval && !isOccupe && !selected && (readonly
                     ? "border-violet-400 bg-violet-100 text-violet-700 dark:border-violet-600 dark:bg-violet-950 dark:text-violet-300"
                     : "cursor-pointer border-violet-400 bg-violet-100 text-violet-700 hover:border-violet-500 hover:bg-violet-200 hover:scale-105 dark:border-violet-600 dark:bg-violet-950 dark:text-violet-300 dark:hover:border-violet-500 dark:hover:bg-violet-900"),
+                /*
+                    ── VENDU EN AVAL → ambre, bordure en POINTILLÉS (le siège existe, sa disponibilité
+                    est « en pointillé »). Passe AVANT 'revendu' : la revente est un constat, l'alerte
+                    est une décision à prendre maintenant. Cliquable comme un siège libre.
+                */
+                venduAval && !selected && (readonly
+                    ? "border-dashed border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-300"
+                    : "cursor-pointer border-dashed border-amber-400 bg-amber-50 text-amber-700 hover:border-amber-500 hover:bg-amber-100 hover:scale-105 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-300 dark:hover:border-amber-500 dark:hover:bg-amber-900"),
                 // ── NON revendu (comportement normal) ──
                 !revendu && isOccupe && !liberable &&
                     "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500",
                 !revendu && liberable &&
                     "cursor-pointer border-gray-200 bg-gray-100 text-gray-400 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:border-amber-500 dark:hover:bg-amber-950 dark:hover:text-amber-300",
-                !revendu && !isOccupe && !selected && (readonly
+                !revendu && !venduAval && !isOccupe && !selected && (readonly
                     ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                     : "cursor-pointer border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100 hover:scale-105 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-900")
             )}
@@ -155,6 +192,16 @@ function SiegeCell({
             {conflit && (
                 <span className="absolute -top-1.5 -left-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-bold leading-none text-white shadow-sm ring-1 ring-white dark:ring-gray-900" aria-hidden>
                     !
+                </span>
+            )}
+            {/*
+                PASTILLE « vendu en aval » — angle DROIT, libre ici : ce siège est LIBRE, il ne porte
+                donc jamais le '↻' de libération (réservé aux occupés). La flèche descendante se lit
+                « vendu plus bas sur la ligne », et la couleur reprend celle du siège.
+            */}
+            {venduAval && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold leading-none text-white shadow-sm ring-1 ring-white dark:ring-gray-900" aria-hidden>
+                    ↓
                 </span>
             )}
         </button>
@@ -200,6 +247,7 @@ export default function PlanCar<T extends SiegePlan>({
     const hasOccupe = sieges.some((s) => s.statut === "OCCUPE")
     const hasRevendu = sieges.some((s) => !!s.revendu)
     const hasConflit = sieges.some((s) => !!s.conflit)
+    const hasVenduAval = sieges.some((s) => !!s.venduAval && s.statut !== "OCCUPE")
 
     const renderSeat = (s: T) => (
         <SiegeCell
@@ -294,6 +342,14 @@ export default function PlanCar<T extends SiegePlan>({
                             <span className="flex items-center gap-1.5">
                                 <span className="inline-block size-4 shrink-0 rounded-t-md rounded-b-sm border-2 border-violet-400 bg-violet-100 dark:border-violet-600 dark:bg-violet-950" />
                                 Revendu
+                            </span>
+                        )}
+                        {hasVenduAval && (
+                            <span className="flex items-center gap-1.5">
+                                <span className="relative inline-block size-4 shrink-0 rounded-t-md rounded-b-sm border-2 border-dashed border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950">
+                                    <span className="absolute -top-1.5 -right-1.5 flex size-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold leading-none text-white ring-1 ring-white dark:ring-gray-900" aria-hidden>↓</span>
+                                </span>
+                                <span>Vendu par une gare en aval <span className="text-muted-foreground">· libre pour vous, mais ce passager sera évincé</span></span>
                             </span>
                         )}
                         {hasConflit && (

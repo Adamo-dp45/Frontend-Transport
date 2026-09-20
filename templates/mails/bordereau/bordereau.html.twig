@@ -367,6 +367,49 @@
         </table>
     </div>
 
+    {# ── RÉPARTITION PAR DESTINATION ──
+       « Abidjan → Bouaké : 4 ». La liste nominative des passagers étant masquée de ce document, c'est
+       ici que se lit le détail de la vente : ce qu'on annonce au chauffeur, ce qu'on recompte à
+       l'embarquement, et ce qui explique la caisse — dix courts trajets et dix bouts en bout ne font
+       pas la même recette. L'ordre est celui des arrêts de la ligne (posé par 'BordereauProvider') :
+       c'est l'ordre dans lequel le car s'arrête, donc celui dans lequel on appelle les passagers.
+       Accès défensif : un bordereau servi par une version antérieure de l'API n'a pas le champ. #}
+    {% set destinations = bordereau.destinations ?? [] %}
+    <div class="section-title">
+        Répartition par destination
+        <span class="right-info">{{ destinations|length }} destination(s) · {{ bordereau.nbtickets }} billet(s)</span>
+    </div>
+    <div class="table-wrapper">
+        {% if destinations is empty %}
+            <div class="empty-msg">Aucun billet émis depuis cette gare sur ce voyage.</div>
+        {% else %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:8%;">#</th>
+                        <th>Trajet</th>
+                        <th class="right" style="width:22%;">Billets</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in destinations %}
+                    <tr{% if loop.index is even %} class="even"{% endif %}>
+                        <td class="num">{{ loop.index }}</td>
+                        <td class="bold">{{ d.depart }} &#8594; {{ d.destination }}</td>
+                        <td class="right bold">{{ d.nbtickets }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total des billets émis depuis {{ bordereau.gare.libelle }}</td>
+                        <td class="right">{{ bordereau.nbtickets }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endif %}
+    </div>
+
     {# ── CARGO DÉPOSÉ À CETTE GARE (comptes seuls, hors recette) : aide de réconciliation gare → car ── #}
     <div class="section-title">
         Cargo chargé depuis cette gare

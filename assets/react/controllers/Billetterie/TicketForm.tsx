@@ -72,6 +72,13 @@ interface Siege {
     revendu?: boolean;
     // Siège en conflit : ≥2 billets dont un évincé (priorité amont) → overlay d'alerte, cf. PlanCar
     conflit?: boolean;
+    // Siège déjà vendu par une gare AVAL : libre ici (priorité amont), mais le prendre évince ce
+    // passager. Avertissement, jamais un blocage — cf. PlanCar et Siege::$venduAval côté API.
+    venduAval?: boolean;
+    avalNom?: string | null;
+    avalMontee?: string | null;
+    avalDescente?: string | null;
+    avalNombre?: number;
 }
 
 interface SiegesResponse {
@@ -367,6 +374,22 @@ export default function TicketForm({
                     'error'
                 );
                 return prev;
+            }
+            /*
+                AVERTISSEMENT, pas un refus : la priorité amont est la règle, elle ne se discute pas
+                ici. Mais un agent qui prend ce siège au hasard prive un passager déjà vendu de sa
+                place — alors qu'un siège voisin ferait l'affaire. La couleur du plan le disait déjà ;
+                ce rappel s'adresse à celui qui clique sans regarder la légende.
+            */
+            if (siege.venduAval) {
+                flash(
+                    `Siège ${siege.numero} déjà vendu par ${siege.avalMontee ?? "une gare en aval"}`
+                    + `${siege.avalDescente ? `, jusqu'à ${siege.avalDescente}` : ""}. `
+                    + `Vous restez prioritaire, mais ce passager ne montera pas : `
+                    + `prenez un autre siège s'il en reste.`,
+                    'warning',
+                    8
+                );
             }
             setClientInfos((ci) => ({
                 ...ci,

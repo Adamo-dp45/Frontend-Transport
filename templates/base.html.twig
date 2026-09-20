@@ -21,6 +21,7 @@
                 document.documentElement.classList.add('sidebar-pre-collapsed');
             }
         </script>
+        {{ include('partials/pwa.html.twig') }}
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
         {% endblock %}

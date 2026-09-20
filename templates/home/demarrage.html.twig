@@ -222,6 +222,23 @@
                 {{ g.step(4, '<strong>Vendez normalement</strong> — même écran que le guichet : trajet, siège, client, encaissement. Le billet porte votre nom.') }}
                 {{ g.step(5, '<strong>Vos ventes reviennent à votre gare d\'affectation</strong>, pas à la gare où le car se trouve au moment de la vente. Votre recette est ainsi rattachée à votre équipe d\'origine.') }}
             </ol>
+
+            <h3 class="mt-6 mb-2 text-sm font-semibold">Vendre sans réseau</h3>
+            <p class="text-sm leading-relaxed mb-4">
+                Le car traverse des zones sans couverture. L'application mobile continue d'y travailler
+                seule, puis rattrape le serveur dès que le réseau revient. Ce qu'il faut expliquer au
+                vendeur tient en quatre points.
+            </p>
+            <ol class="space-y-3">
+                {{ g.step(1, '<strong>Ouvrez le voyage pendant que vous avez du réseau</strong> — c\'est ce geste qui prépare l\'appareil : plan du car, tarifs, grille des bagages, en-tête de la compagnie. Sans cette préparation, l\'application <strong>refuse</strong> de vendre hors réseau plutôt que d\'inventer un prix.') }}
+                {{ g.step(2, '<strong>Vendez, imprimez, remettez le reçu normalement.</strong> Le billet porte un code <strong>définitif</strong> dès l\'impression : il ne changera pas. Le passager repart avec un reçu valable, sans rien attendre.') }}
+                {{ g.step(3, '<strong>Un bandeau vous dit ce qui n\'est pas encore remonté</strong>, et l\'écran « Opérations hors ligne » détaille chaque geste avec son sort. Une opération refusée y reste visible <strong>avec son motif</strong> : c\'est ce que vous montrerez à votre gare.') }}
+                {{ g.step(4, '<strong>La remontée se fait toute seule</strong> au retour du réseau — vous n\'avez rien à déclencher. Un bouton de synchronisation reste disponible si vous voulez forcer.') }}
+            </ol>
+            {{ g.note('Hors réseau vous pouvez aussi <strong>enregistrer un bagage</strong>, <strong>faire avancer la position</strong>, <strong>déclarer le départ d\'une gare</strong>, consulter le <strong>manifeste</strong> et <strong>réimprimer</strong> un reçu perdu. Restent réservés au réseau : corriger un billet ou un bagage, et <strong>désister</strong> — rembourser engage la caisse d\'une gare.') }}
+            {{ g.warn('Un siège affiché libre peut avoir été vendu par une gare pendant que vous rouliez. C\'est assumé : la vente est acceptée, et c\'est la <strong>priorité à la gare amont</strong> qui tranche ensuite qui monte. Le billet évincé se voit à la gare, et se reloge sur un autre départ.') }}
+            {{ g.note('Le <strong>prix</strong> inscrit sur un billet vendu hors réseau est celui de la grille embarquée. Si un tarif a changé pendant le trajet, la grille du serveur l\'emporte à la remontée et l\'écart est <strong>signalé</strong> pour que la gare régularise avec le client.') }}
+
             {{ g.note('Un agent peut être à la fois guichetier et commercial. Quand il accompagne un car, un rappel s\'affiche sur <strong>Ma gare</strong> pour basculer vers son espace commercial.') }}
         {{ g.close() }}
 

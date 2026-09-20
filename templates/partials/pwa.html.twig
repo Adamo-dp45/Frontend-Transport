@@ -1,0 +1,43 @@
+{# ═══ PROGRESSIVE WEB APP — manifeste, thème et service worker ═══
+
+   MUTUALISÉ, et c'est le point : ce bloc doit être dans les DEUX gabarits racines. Il ne vivait que
+   dans 'base.html.twig', or la CONNEXION étend 'app-base.html.twig' — c'est-à-dire la toute première
+   page qu'un utilisateur voit, celle où le navigateur propose naturellement d'installer. L'invite
+   n'y apparaissait jamais. Un bloc dupliqué aurait fini par diverger ; celui-ci est inclus.
+
+   Chemins ABSOLUS, jamais relatifs : './manifest.json' se résout par rapport à l'URL DE LA PAGE. Sur
+   '/voyages/12/modifier' il pointait vers '/voyages/12/manifest.json' → 404, donc aucun manifeste et
+   aucune installation possible ailleurs que sur l'accueil. Même piège, en pire, pour le service
+   worker : son URL fixe son PÉRIMÈTRE, et un worker enregistré depuis '/voyages/12/sw.js' ne
+   couvrirait que cette branche — quand il n'échoue pas tout court. #}
+<link rel="manifest" href="{{ asset('manifest.json') }}">
+<meta name="theme-color" content="#f59e0b">
+{# iOS ignore le manifeste : il lui faut son icône et ses métas à lui. #}
+<link rel="apple-touch-icon" href="{{ asset('images/192.png') }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="iTransport">
+<script>
+    window.addEventListener("load", () => { /*
+        - Vu que le 'service worker' demande beaucoup de ressource donc on n'attend la fin du chargement
+    */
+        if("serviceWorker" in navigator) {
+            /*
+                'basePath' et non 'asset()' : un service worker doit venir de la MÊME ORIGINE que la
+                page (une URL de CDN serait refusée par le navigateur), et 'asset()' peut être
+                configuré pour pointer ailleurs. 'basePath' vaut '' à la racine et '/sous-dossier'
+                sinon — donc '/sw.js' ou '/sous-dossier/sw.js'.
+
+                'scope' explicite : le périmètre par défaut est le dossier du script. Il vaut déjà la
+                racine ici, mais l'écrire évite qu'un déplacement du fichier ampute silencieusement
+                la couverture.
+
+                '.catch' : sans lui, un échec (404, page servie en clair, worker désactivé) part en
+                rejet de promesse non capturé — un bruit rouge en console qui ne dit pas de quoi il
+                s'agit.
+            */
+            navigator.serviceWorker
+                .register("{{ app.request.basePath }}/sw.js", { scope: "{{ app.request.basePath }}/" })
+                .catch((e) => console.warn("Service worker non enregistré :", e))
+        }
+    })
+</script>
