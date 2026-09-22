@@ -464,6 +464,42 @@ final class VoyageController extends AbstractController
         return $this->redirectToRoute('voyage.show', ['id' => $id]);
     }
 
+    /**
+     * Un administrateur consigne le passage d'une gare que personne n'a pointée.
+     *
+     * La réception exige que les arrêts en amont aient été pointés — sans quoi une gare en aval, en
+     * réceptionnant trop tôt, ferme les ventes et les réservations de celles qu'elle survole. Reste
+     * l'oubli : cette action est la seule porte de sortie, et elle demande l'HEURE RÉELLE du passage
+     * parce que c'est précisément le trou qu'on répare.
+     *
+     * Elle ne réceptionne PAS les colis : la gare le fera elle-même (cf. `RattraperPassageProcessor`).
+     */
+    #[Route('/{id}/rattraper-passage', name: 'rattraper_passage', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function rattraperPassage(int $id, Request $request): Response
+    {
+        if ($this->isCsrfTokenValid('voyage_rattraper_passage', $request->request->get('_token'))) {
+            $gareId = (int) $request->request->get('gare');
+            $arrivee = (string) $request->request->get('arrivee');
+
+            try {
+                $this->api->patch('/api/voyages/' . $id . '/rattraper-passage', [
+                    'gare' => '/api/gares/' . $gareId,
+                    // 'datetime-local' rend « 2026-09-21T14:30 » : l'API attend une date complète.
+                    'arrivee' => $arrivee === '' ? null : (new \DateTimeImmutable($arrivee))->format(DATE_ATOM),
+                ]);
+                $this->addFlash('success', 'Passage consigné : les gares suivantes peuvent réceptionner. Les colis de cette gare restent à réceptionner par elle.');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'voyage.show', ['id' => $id]);
+                if ($response) {
+                    return $response;
+                }
+            }
+        }
+
+        return $this->redirectToRoute('voyage.show', ['id' => $id]);
+    }
+
     #[Route('/{id}/repartir', name: 'repartir', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('ROLE_USER')]
     public function repartir(int $id, Request $request): Response

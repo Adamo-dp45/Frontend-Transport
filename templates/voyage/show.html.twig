@@ -204,6 +204,44 @@
                             <span>Départ <strong class="text-foreground">{{ depart ?? '—' }}</strong></span>
                             {% if arret is not null %}<span>Arrêt <strong class="text-foreground">{{ arret }} min</strong></span>{% endif %}
                         </div>
+
+                        {#
+                            RATTRAPAGE d'un passage jamais pointé — réservé à l'administrateur.
+
+                            Une gare en aval ne peut plus réceptionner tant qu'un arrêt en amont n'a
+                            pas été pointé : c'est ce qui empêche une réception prématurée de fermer
+                            les ventes et les réservations des gares survolées. Reste l'oubli, et
+                            c'est ici qu'on le répare — sur la frise, à l'endroit exact du trou.
+
+                            L'heure est demandée parce que c'est elle qu'on répare : prendre
+                            l'instant de la correction placerait l'arrivée après celle des gares
+                            déjà pointées et fausserait tous les retards. L'API refuse d'ailleurs
+                            toute heure qui ne s'insère pas entre les passages connus.
+                        #}
+                        {% if is_granted('ROLE_ADMIN') and not cloture and voyage.datedepartreelle
+                              and (h.role ?? '') == 'intermediaire' and arrivee is null %}
+                        <details class="mt-1.5 text-xs">
+                            <summary class="cursor-pointer text-amber-700 hover:underline dark:text-amber-400">
+                                Passage non pointé — rattraper
+                            </summary>
+                            <form method="POST" action="{{ path('voyage.rattraper_passage', { id: voyage.id }) }}"
+                                  class="mt-2 flex flex-wrap items-end gap-2 rounded-md border border-amber-200 bg-amber-50/60 p-2.5 dark:border-amber-900 dark:bg-amber-950/20"
+                                  onsubmit="return confirm('Consigner le passage du car à {{ h.libelle|e('js') }} à l\'heure indiquée ? Les gares suivantes pourront alors réceptionner. Les colis de cette gare ne sont PAS réceptionnés : elle le fera elle-même.')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('voyage_rattraper_passage') }}">
+                                <input type="hidden" name="gare" value="{{ h.id }}">
+                                <label class="flex flex-col gap-1">
+                                    <span class="text-[10px] uppercase tracking-wide text-muted-foreground">Heure réelle du passage</span>
+                                    <input type="datetime-local" name="arrivee" required
+                                           max="{{ 'now'|date('Y-m-d\\TH:i') }}"
+                                           value="{{ 'now'|date('Y-m-d\\TH:i') }}"
+                                           class="rounded-md border bg-background px-2 py-1 text-xs">
+                                </label>
+                                <button type="submit" class="rounded-md bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700">
+                                    Consigner
+                                </button>
+                            </form>
+                        </details>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -425,7 +463,7 @@
                 {% else %}
                 {% set tones = {
                     VOYAGE_CAR: 'bg-blue-500', VOYAGE_COMMERCIAL: 'bg-violet-500', VOYAGE_POSITION: 'bg-emerald-500',
-                    VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500'
+                    VOYAGE_RECEPTION: 'bg-amber-500', VOYAGE_PASSAGE_RATTRAPE: 'bg-orange-600', VOYAGE_CLOTURE: 'bg-red-500', VOYAGE_PERSONNEL: 'bg-sky-500'
                 } %}
                 <ul class="px-6 py-4">
                     {% for a in activites %}
