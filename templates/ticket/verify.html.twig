@@ -38,6 +38,10 @@
                         <p class="font-mono font-medium">{{ ticket.voyage.codevoyage ?? '—' }}</p>
                     </div>
                     <div>
+                        <p class="text-muted-foreground text-xs mb-0.5">N° de départ</p>
+                        <p class="font-medium">{{ ticket.voyage.numerodepart ?? '—' }}</p>
+                    </div>
+                    <div>
                         <p class="text-muted-foreground text-xs mb-0.5">Date de départ</p>
                         <p class="font-medium">
                             {{ ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('d/m/Y à H:i') : '—' }}

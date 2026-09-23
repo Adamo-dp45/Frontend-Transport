@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
+
+{% set modes = {
+    'ESPECES': 'Espèces',
+    'MOBILE_MONEY': 'Mobile Money',
+    'VIREMENT': 'Virement',
+    'CHEQUE': 'Chèque'
+} %}
+
+{% block title %}Dépense - {{ depense.libelle ?? depense.typedepense.libelle }}{% endblock %}
+
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('depense.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux dépenses
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Dépense</p>
+                {{ ui.badge(depense.typedepense.libelle, 'zinc') }}
+                {# La portée se lit d'un coup d'œil : une charge de siège n'est imputée à personne. #}
+                {{ depense.gare
+                    ? ui.badge(depense.gare.libelle, 'blue')
+                    : ui.badge('Siège', 'purple') }}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">
+                {{ depense.montant|number_format(0, ',', ' ') }} <span class="text-xl text-muted-foreground">FCFA</span>
+            </h1>
+            <p class="text-sm text-muted-foreground mt-1">
+                #{{ depense.id }} · Engagée le {{ depense.datedepense|date('d/m/Y à H:i') }}
+                · Saisie le {{ depense.createdAt|date('d/m/Y') }}
+            </p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            {% if is_granted('DEPENSE_MODIFIER') %}
+            <a href="{{ path('depense.edit', {id: depense.id}) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+            {% endif %}
+            {% if is_granted('ROLE_ADMIN') %}
+            <form method="POST" action="{{ path('depense.delete', {id: depense.id}) }}"
+                  onsubmit="return confirm('Mettre cette dépense de {{ depense.montant|number_format(0, ',', ' ') }} FCFA à la corbeille ? Elle sortira du bénéfice.');">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_depense') }}">
+                <button class="btn btn-secondary">Supprimer</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Poste', depense.typedepense.libelle) }}
+                    {{ ui.field('Montant', (depense.montant|number_format(0, ',', ' ')) ~ ' FCFA') }}
+                    {{ ui.field('Objet', depense.libelle) }}
+                    {{ ui.field('Bénéficiaire', depense.beneficiaire) }}
+                    {{ ui.field('Mode de règlement', modes[depense.modereglement] ?? depense.modereglement) }}
+                    {{ ui.field('Imputation', depense.gare ? depense.gare.libelle : 'Siège (entreprise)') }}
+                    {% if depense.fournisseur %}
+                        {{ ui.field('Fournisseur', depense.fournisseur.libelle) }}
+                    {% endif %}
+                    {% if depense.voyage %}
+                        {# Le crochet des frais de route : renseigné, il rattache la charge à un départ. #}
+                        {{ ui.field('Voyage', depense.voyage.codevoyage) }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Justificatif</h2>
+                {% if depense.justificatif %}
+                    <a href="{{ depense.justificatif.contentUrl }}" target="_blank" rel="noopener" class="btn btn-secondary w-full justify-center">
+                        Consulter le justificatif
+                    </a>
+                {% else %}
+                    <p class="text-sm text-muted-foreground">Aucun justificatif joint.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

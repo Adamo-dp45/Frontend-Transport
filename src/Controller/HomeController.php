@@ -162,6 +162,7 @@ final class HomeController extends AbstractController
                 'recettesBagages' => $financiere['recettesBagages'] ?? 0,
                 'coutDepannages' => $financiere['coutDepannages'] ?? 0,
                 'coutApprovisionnements' => $financiere['coutApprovisionnements'] ?? 0,
+                'coutDepenses' => $financiere['coutDepenses'] ?? 0,
                 'beneficeNet' => $financiere['beneficeNet'] ?? 0,
                 'recettesParJour' => $financiere['recettesParJour'] ?? [],
                 'coutsParJour' => $financiere['coutsParJour'] ?? []
@@ -217,6 +218,7 @@ final class HomeController extends AbstractController
             'recettesReservations' => $financiere['recettesReservations'] ?? 0,
             'recettesCourriers' => $financiere['recettesCourriers'] ?? 0,
             'recettesBagages' => $financiere['recettesBagages'] ?? 0,
+            'coutDepenses' => $financiere['coutDepenses'] ?? 0,
             'beneficeNet' => $financiere['beneficeNet'] ?? 0,
             'recettesParJour' => $financiere['recettesParJour'] ?? [],
         ];
@@ -313,6 +315,50 @@ final class HomeController extends AbstractController
 
         return $this->render('home/departs.html.twig', [
             'departs' => $departs,
+            'debut' => $debut,
+            'fin' => $fin
+        ]);
+    }
+
+    /**
+     * Où part l'argent : par poste, par gare (avec la recette en regard), par mois, par mode de
+     * règlement. La charge porte aussi ce que le résultat par gare ne déduit PAS — dépannages et
+     * approvisionnements, qui ne sont rattachés à aucune gare.
+     */
+    #[Route('/stats/depenses', name: 'owner.stats.depenses', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function depensesStats(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $depenses = [];
+        try {
+            $depenses = $this->api->item('/api/stats/depenses?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        // Re-normalisation, comme les autres écrans de stats : une clé absente ferait tomber le
+        // gabarit en 500 ('strict_variables'), pas afficher un tiret.
+        $depenses = [
+            'total' => $depenses['total'] ?? 0,
+            'nb' => $depenses['nb'] ?? 0,
+            'totalGares' => $depenses['totalGares'] ?? 0,
+            'totalSiege' => $depenses['totalSiege'] ?? 0,
+            'nonImputeAUneGare' => $depenses['nonImputeAUneGare'] ?? 0,
+            'coutDepannages' => $depenses['coutDepannages'] ?? 0,
+            'coutApprovisionnements' => $depenses['coutApprovisionnements'] ?? 0,
+            'parType' => $depenses['parType'] ?? [],
+            'parGare' => $depenses['parGare'] ?? [],
+            'parMois' => $depenses['parMois'] ?? [],
+            'parMode' => $depenses['parMode'] ?? [],
+        ];
+
+        return $this->render('home/depenses.html.twig', [
+            'depenses' => $depenses,
             'debut' => $debut,
             'fin' => $fin
         ]);

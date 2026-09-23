@@ -34,6 +34,8 @@ interface TicketRef {
 interface VoyageCible {
     id: number
     codevoyage: string
+    /** « Départ 2 » : ce qu'on annoncera au client relogé. */
+    numerodepart: number
     provenance: string
     destination: string
     datedepartprevue: string
@@ -303,6 +305,7 @@ export default function DesistementForm({ ticket, voyagesCible }: DesistementFor
                                 <SelectContent>
                                     {voyagesCible.map((v) => (
                                         <SelectItem key={v.id} value={String(v.id)}>
+                                            <span className="mr-2 font-semibold">Départ {v.numerodepart}</span>
                                             <span className="font-mono text-xs text-gray-500 mr-2">{v.codevoyage}</span>
                                             {new Date(v.datedepartprevue).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                                             <span className="ml-2 text-xs text-gray-400">· {v.car?.matricule ?? "Aucun car"}</span>

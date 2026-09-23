@@ -194,7 +194,12 @@
                             {{ termine ? 'Clôturé' : (parti ? 'En route' : 'À quai') }}
                         </span>
                     </div>
-                    <p class="mt-0.5 font-mono text-xs text-muted-foreground">{{ v.codevoyage }}</p>
+                    {# Une journée de départs se désigne par son numéro avant son code : c'est ce
+                       que porte le billet que le passager présente au guichet. #}
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                        <span class="font-medium text-foreground">Départ {{ v.numerodepart ?? '—' }}</span>
+                        · <span class="font-mono">{{ v.codevoyage }}</span>
+                    </p>
                 </div>
 
                 {# Chiffres de LA gare sur ce voyage #}

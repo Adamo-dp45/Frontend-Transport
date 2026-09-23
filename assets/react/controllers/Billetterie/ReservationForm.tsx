@@ -16,6 +16,8 @@ interface VoyageRef {
     provenance: string
     destination: string
     codevoyage: string
+    /** « Départ 2 » : le repère que le client annonce au guichet. */
+    numerodepart: number
     /** Passage du car à la gare de l'agent — l'heure qui compte au guichet. Null si l'agent n'a pas de gare. */
     heurepassage?: string | null
     datedepartprevue?: string | null
@@ -148,6 +150,7 @@ export default function ReservationForm({ voyages, userGareId, userGareLibelle }
                             <SelectContent>
                                 {voyages.map((v) => (
                                     <SelectItem key={v.id} value={String(v.id)}>
+                                        <span className="mr-2 font-semibold">Départ {v.numerodepart}</span>
                                         <span className="font-mono text-xs text-gray-500 mr-2">{v.codevoyage}</span>
                                         {v.provenance} → {v.destination}
                                         {/* Heure de passage à VOTRE gare, pas le départ du voyage :

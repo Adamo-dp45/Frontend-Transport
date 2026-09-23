@@ -60,6 +60,7 @@
                     {{ ui.field('Téléphone', reservation.contactclient ?? '—') }}
                     {{ ui.field('Trajet', (reservation.gare.libelle ?? '—') ~ ' → ' ~ (reservation.garedescente.libelle ?? '—')) }}
                     {{ ui.field('Voyage', reservation.voyage.codevoyage ?? '—') }}
+                    {{ ui.field('N° de départ', reservation.voyage.numerodepart ?? '—') }}
                     {{ ui.field('Prix', (reservation.prix|number_format(0, ',', ' ')) ~ ' FCFA') }}
                     {{ ui.field('Source', reservation.source) }}
                     {% if reservation.statut == 'EN_ATTENTE' %}
@@ -95,7 +96,7 @@
                            le départ du voyage : c'est à celle-là qu'il devra se présenter. #}
                         {% for v in reportVoyages %}
                             <option value="{{ v.id }}" data-car="{{ v.car ? '1' : '0' }}">
-                                {{ v.codevoyage }} · {{ v.datedepartprevue }}{{ v.enRoute ? ' · en route' : '' }}{{ v.car ? ' · car ' ~ v.car : ' · (pas de car)' }}
+                                Départ {{ v.numerodepart ?? '—' }} · {{ v.codevoyage }} · {{ v.datedepartprevue }}{{ v.enRoute ? ' · en route' : '' }}{{ v.car ? ' · car ' ~ v.car : ' · (pas de car)' }}
                             </option>
                         {% endfor %}
                     </select>

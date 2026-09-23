@@ -41,6 +41,8 @@ interface Voyage {
     provenance: string;
     destination: string;
     codevoyage: string;
+    /** « Départ 2 » : le repère que le client annonce au guichet. */
+    numerodepart: number;
     placestotal: number;
     car?: {
         id: number;
@@ -683,6 +685,7 @@ export default function TicketForm({
                             <SelectContent>
                                 {voyages.map((v) => (
                                     <SelectItem key={v.id} value={String(v.id)}>
+                                        <span className="mr-2 font-semibold">Départ {v.numerodepart}</span>
                                         <span className="font-mono text-xs text-gray-500 mr-2">
                                             {v.codevoyage}
                                         </span>

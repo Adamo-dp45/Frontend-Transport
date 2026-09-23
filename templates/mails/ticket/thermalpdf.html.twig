@@ -93,6 +93,8 @@
     {% set descente = ticket.garedescente.libelle ?? ticket.voyage.destination %}
     {% set tarif = (ticket.prix + (ticket.remise ?? 0))|number_format(0, ',', ' ') %}
     {% set codevoyage = ticket.voyage.codevoyage ?? '—' %}
+    {# Numéro de départ DU JOUR : c'est lui que le passager entend appeler au quai. #}
+    {% set numerodepart = ticket.voyage.numerodepart ?? '—' %}
     {% set seat = ticket.siege.numero ?? '—' %}
     {% set vehicule = ticket.vehicule ?? '—' %}
     {% set depart = ticket.voyage.datedepartprevue ? ticket.voyage.datedepartprevue|date('d/m/Y - H:i') : '—' %}
@@ -126,14 +128,22 @@
 
         <table class="grid">
             <tr>
-                <td class="box"><span class="k">VOYAGE</span><span class="code">{{ codevoyage }}</span></td>
+                <td class="box"><span class="k">DÉPART</span><span class="v">{{ numerodepart }}</span></td>
                 <td class="gap"></td>
                 <td class="box"><span class="k">SIÈGE</span><span class="v">{{ seat }}</span></td>
             </tr>
         </table>
 
         <div class="c tarif">TARIF : {{ tarif }} FCFA</div>
+        {#
+            Le VÉHICULE a cédé sa ligne au CODE VOYAGE, que la case du haut a laissé partir pour
+            afficher le numéro de départ. Rien n'est perdu : l'immatriculation reste sur le bordereau
+            chauffeur et sur la fiche du voyage, et le passager ne la lisait pas — il monte dans le
+            car qu'on lui désigne, au départ qu'on lui a annoncé. Conservé en commentaire : le format
+            d'impression se règle sur du papier, pas sur un écran.
         <div class="c vehicule">Véhicule : {{ vehicule }}</div>
+        #}
+        <div class="c vehicule">Voyage : {{ codevoyage }}</div>
 
         <div class="sep"></div>
         <div class="c nb">NB : Le ticket n'est pas remboursable</div>
@@ -170,13 +180,16 @@
         <div class="c s-route">{{ montee }} &#8211; {{ descente }}</div>
         <table class="s-grid">
             <tr>
-                <td class="box">VOYAGE <b>{{ codevoyage }}</b></td>
+                <td class="box">DÉPART <b>{{ numerodepart }}</b></td>
                 <td class="gap"></td>
                 <td class="box">SIÈGE <b>{{ seat }}</b></td>
             </tr>
         </table>
         <div class="c s-row">Tarif : {{ tarif }} FCFA</div>
+        {# Idem sur la souche (cf. le billet ci-dessus).
         <div class="c s-row">Véhicule : {{ vehicule }}</div>
+        #}
+        <div class="c s-row">Voyage : {{ codevoyage }}</div>
 
     </div>
     {% endfor %}

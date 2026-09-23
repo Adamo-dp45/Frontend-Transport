@@ -34,6 +34,7 @@
                     {% if is_granted('TICKET_VOIR') %}{{ h.toc('commercial', 'Vendre à bord (commercial)') }}{% endif %}
                     {% if is_granted('COURRIER_VOIR') %}{{ h.toc('courrier', 'Envoyer un courrier') }}{% endif %}
                     {% if is_granted('BAGAGE_VOIR') %}{{ h.toc('bagage', 'Enregistrer un bagage') }}{% endif %}
+                    {% if is_granted('DEPENSE_VOIR') %}{{ h.toc('depense', 'Enregistrer une dépense') }}{% endif %}
                     {% if not is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('alertes', 'Alertes & notifications') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
@@ -185,6 +186,20 @@
                     {{ h.step(4, 'À destination, confirmez la <strong>livraison</strong> au destinataire depuis la fiche.') }}
                 </ol>
                 {{ h.warn('Un colis peut être déclaré ' ~ h.chip('Perdu', 'rose') ~ ' individuellement ; si tous les colis sont perdus, le courrier l\'est aussi. Déclarer le <strong>courrier perdu</strong> passe tous ses colis en perdu. Un reçu réimprimé d\'un envoi perdu/annulé porte un bandeau de statut.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Dépense #}
+            {% if is_granted('DEPENSE_VOIR') %}
+            {{ h.open('depense', 'money', 'Enregistrer une dépense', 'Module Dépenses') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'Ouvrez <strong>Finances</strong> → <strong>Dépense</strong> → « Nouvelle dépense ».') }}
+                    {{ h.step(2, 'Choisissez le <strong>poste</strong> (carburant, péage, salaires…), saisissez le <strong>montant</strong> et la <strong>date à laquelle la charge a été engagée</strong> — pas celle de la saisie.') }}
+                    {{ h.step(3, 'Indiquez le <strong>mode de règlement</strong> et, si vous en avez un, joignez le <strong>justificatif</strong> : photo du reçu ou facture en PDF.') }}
+                    {{ h.step(4, 'Validez. La dépense est imputée à <strong>votre gare</strong> et vient en déduction de son résultat.') }}
+                </ol>
+                {{ h.note('Les dépenses du <strong>siège</strong> (loyer, salaires de la direction) ne sont imputées à aucune gare : seul un administrateur les saisit et les voit.') }}
+                {{ h.warn('Ne ressaisissez pas ici un <strong>achat de pièces</strong> ou un <strong>dépannage</strong> : ils portent déjà leur coût dans leurs modules et seraient comptés deux fois. Le résultat de votre gare déduit vos dépenses, mais pas ces deux postes, qui sont portés par la compagnie. Seul un administrateur peut mettre une dépense à la corbeille.') }}
             {{ h.close() }}
             {% endif %}
 

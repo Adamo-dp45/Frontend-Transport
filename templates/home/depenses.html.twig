@@ -1,0 +1,170 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% set modes = {
+    'ESPECES': 'Espèces',
+    'MOBILE_MONEY': 'Mobile Money',
+    'VIREMENT': 'Virement',
+    'CHEQUE': 'Chèque'
+} %}
+
+{% block title %}Dépenses{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Dépenses', 'Où part l\'argent', 'owner.stats.depenses', debut, fin) }}
+
+{# ── Vue d'ensemble ──────────────────────────────────────────────── #}
+<section class="mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-600 to-orange-700 p-5 text-white shadow-sm lg:col-span-2">
+            <div class="relative">
+                <p class="text-[11px] font-medium uppercase tracking-wider text-orange-100 mb-1.5">Dépenses saisies</p>
+                <p class="text-3xl font-semibold tracking-tight leading-none">
+                    {{ depenses.total|number_format(0, ',', ' ') }}<span class="text-base font-normal text-orange-100 ml-1">FCFA</span>
+                </p>
+                <p class="text-xs text-orange-100/90 mt-3">{{ depenses.nb }} dépense(s) sur la période — gares et siège</p>
+            </div>
+        </div>
+        {{ s.kpi('Gares', depenses.totalGares|number_format(0, ',', ' '), 'FCFA', 'blue', 'building', 'Imputées à un guichet') }}
+        {{ s.kpi('Siège', depenses.totalSiege|number_format(0, ',', ' '), 'FCFA', 'violet', 'wallet', 'Loyer, salaires de la direction') }}
+    </div>
+
+    {#
+        RÉCONCILIATION — deux totaux exacts plutôt qu'un chiffre unique qui prétendrait tout couvrir.
+        Ce bloc dit ce que la page ne compte PAS : les dépannages et les achats de pièces sont de
+        vraies charges, mais ils ne sont rattachés à aucune gare et vivent dans leurs modules.
+    #}
+    <div class="card p-5 border-dashed">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <p class="text-sm font-medium">Charges non imputées à une gare</p>
+                <p class="text-xs text-muted-foreground mt-1">
+                    Dépannages {{ depenses.coutDepannages|number_format(0, ',', ' ') }} FCFA
+                    · Approvisionnements {{ depenses.coutApprovisionnements|number_format(0, ',', ' ') }} FCFA.
+                    Elles pèsent sur le bénéfice de l'entreprise mais ne peuvent être déduites d'aucun résultat de gare.
+                </p>
+            </div>
+            <p class="text-2xl font-semibold tabular-nums shrink-0">
+                {{ depenses.nonImputeAUneGare|number_format(0, ',', ' ') }}
+                <span class="text-sm font-normal text-muted-foreground">FCFA</span>
+            </p>
+        </div>
+    </div>
+</section>
+
+{# ── Par poste ───────────────────────────────────────────────────── #}
+<section class="mb-10">
+    {{ s.sectionTitle('Par poste', 'Le détail de ce qui sort') }}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card p-5">
+            {% if depenses.parType|length > 0 %}
+            <canvas id="chartDepensesType" height="180"
+                data-values="{{ depenses.parType | map(t => {libelle: t.libelle, montant: t.montant}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucune dépense sur la période</p>{% endif %}
+        </div>
+        <div class="card overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-muted/50 text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-2.5 text-left font-medium">Poste</th>
+                        <th class="px-4 py-2.5 text-right font-medium">Nombre</th>
+                        <th class="px-4 py-2.5 text-right font-medium">Montant</th>
+                        <th class="px-4 py-2.5 text-right font-medium">Part</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for t in depenses.parType %}
+                    <tr>
+                        <td class="px-4 py-2.5">{{ t.libelle }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ t.nb }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums font-medium">{{ t.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ t.part }} %</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucune dépense</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{# ── Par gare ────────────────────────────────────────────────────── #}
+<section class="mb-10">
+    {{ s.sectionTitle('Par gare', 'Ce que chaque gare encaisse, dépense et garde') }}
+    <div class="card overflow-hidden mb-3">
+        <table class="w-full text-sm">
+            <thead class="bg-muted/50 text-muted-foreground">
+                <tr>
+                    <th class="px-4 py-2.5 text-left font-medium">Gare</th>
+                    <th class="px-4 py-2.5 text-right font-medium">Recette</th>
+                    <th class="px-4 py-2.5 text-right font-medium">Dépenses</th>
+                    <th class="px-4 py-2.5 text-right font-medium">Résultat</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for g in depenses.parGare %}
+                <tr>
+                    <td class="px-4 py-2.5">
+                        {{ g.libelle }}
+                        {% if g.gareId is null %}<span class="ml-1 text-xs text-muted-foreground">· entreprise</span>{% endif %}
+                    </td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ g.recette|number_format(0, ',', ' ') }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ g.depenses|number_format(0, ',', ' ') }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums font-medium {{ g.resultat < 0 ? 'text-rose-500' : 'text-emerald-600' }}">
+                        {{ g.resultat|number_format(0, ',', ' ') }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucune donnée</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {#
+        On n'écrit jamais « bénéfice » sur une ligne de gare : les deux postes rappelés plus haut
+        n'y sont pas déduits, faute d'être rattachés à une gare.
+    #}
+    <p class="text-xs text-muted-foreground">
+        Résultat = recettes de la gare − dépenses qui lui sont imputées. Les dépannages et les achats de
+        pièces, portés par l'entreprise, n'y sont pas déduits.
+    </p>
+</section>
+
+{# ── Évolution et règlement ──────────────────────────────────────── #}
+<section class="mb-4">
+    {{ s.sectionTitle('Évolution', 'Le rythme des charges, et comment elles sont réglées') }}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card p-5 lg:col-span-2">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Dépenses par mois</p>
+            {% if depenses.parMois|length > 0 %}
+            <canvas id="chartDepensesMois" height="140"
+                data-values="{{ depenses.parMois | map(m => {label: m.label, montant: m.montant}) | json_encode }}"></canvas>
+            {% else %}<p class="text-sm text-muted-foreground py-6 text-center">Aucune dépense sur la période</p>{% endif %}
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Mode de règlement</p>
+            <div class="space-y-3">
+                {% for m in depenses.parMode %}
+                <div>
+                    <div class="flex items-center justify-between text-sm mb-1">
+                        <span>{{ modes[m.mode] ?? m.mode }}</span>
+                        <span class="tabular-nums font-medium">{{ m.montant|number_format(0, ',', ' ') }}</span>
+                    </div>
+                    <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-full rounded-full bg-orange-500" style="width: {{ depenses.total > 0 ? (m.montant / depenses.total * 100)|round : 0 }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-sm text-muted-foreground py-6 text-center">Aucune dépense</p>
+                {% endfor %}
+            </div>
+            {% if depenses.parMode|length > 0 %}
+            <p class="text-xs text-muted-foreground mt-4 pt-3 border-t border-border">
+                Les règlements en espèces sortent de la caisse d'une gare.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

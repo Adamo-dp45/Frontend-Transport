@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Les dépenses{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Dépenses</h1>
+        <p class="text-muted-foreground text-sm">Les charges d'exploitation : carburant, péage, salaires, loyer, imprévus.</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('DEPENSE_CREER') %}
+        <a href="{{ path('depense.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouvelle dépense
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Finance/DepenseTable', {
+        depenses: items,
+        meta: meta,
+        queryParams: queryParams,
+        types: types,
+        gares: gares,
+        canEdit: is_granted('DEPENSE_MODIFIER'),
+        canDelete: is_granted('ROLE_ADMIN'),
+        csrfDelete: csrf_token('delete_depense')
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

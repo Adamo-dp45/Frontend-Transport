@@ -34,6 +34,8 @@ final class QuickCreateController extends AbstractController
         'modelvehicule' => ['path' => '/api/modelvehicules', 'permission' => 'MODELVEHICULE_CREER'],
         // Personnel / RH
         'typepersonnel' => ['path' => '/api/typepersonnels', 'permission' => 'TYPEPERSONNEL_CREER'],
+        // Finances
+        'typedepense'   => ['path' => '/api/typedepenses',   'permission' => 'TYPEDEPENSE_CREER'],
         // Exploitation — la ville se crée avec "nom"
         'ville'         => ['path' => '/api/villes',         'permission' => 'VILLE_CREER', 'field' => 'nom'],
     ];

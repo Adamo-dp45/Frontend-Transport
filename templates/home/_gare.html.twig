@@ -116,6 +116,43 @@
             </div>
         </div>
 
+        {#
+            ── Ce que la gare GARDE ──
+            On écrit « résultat d'exploitation » et jamais « bénéfice » : les dépannages et les
+            achats de pièces sont portés par l'entreprise, sans rattachement à une gare, ils ne
+            peuvent donc pas être déduits ici. Le champ 'perimetre' de l'API le dit, la note en bas
+            de bloc le répète à l'agent.
+        #}
+        {% set dep = stats.depenses.montant ?? 0 %}
+        {% set net = stats.resultat.net ?? (stats.recetteTotale - dep) %}
+        <div class="card mt-4 p-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <p class="text-xs font-medium text-muted-foreground">Résultat d'exploitation · {{ periodes[periode]|lower }}</p>
+                    <p class="mt-1 text-2xl font-semibold tabular-nums {{ net < 0 ? 'text-rose-500' : 'text-emerald-600' }}">
+                        {{ net|number_format(0, ',', ' ') }} <span class="text-sm font-normal text-muted-foreground">FCFA</span>
+                    </p>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        {{ stats.recetteTotale|number_format(0, ',', ' ') }} encaissés
+                        − {{ dep|number_format(0, ',', ' ') }} dépensés ({{ stats.depenses.count ?? 0 }} dépense(s))
+                    </p>
+                </div>
+                {% if (stats.depenses.parType ?? [])|length > 0 %}
+                <div class="text-xs text-muted-foreground text-right space-y-0.5">
+                    {# !! pas de variable 't' ici : c'est l'alias des macros de ce fichier ('{% import _self as t %}'),
+                       une boucle qui l'écrase transforme 't.libelle' en appel de macro inexistante. #}
+                    {% for poste in stats.depenses.parType|slice(0, 4) %}
+                    <p>{{ poste.libelle }} <span class="tabular-nums font-medium text-foreground">{{ poste.montant|number_format(0, ',', ' ') }}</span></p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <p class="mt-3 border-t border-border pt-2 text-xs text-muted-foreground">
+                Recettes de la gare moins les dépenses qui lui sont imputées. Les dépannages et les achats
+                de pièces, portés par l'entreprise, n'y sont pas déduits.
+            </p>
+        </div>
+
         {# ── Ventilation par canal de vente (guichet / commercial rattaché / réservation payée) ── #}
         {% set cg = stats.canaux.guichet ?? 0 %}
         {% set cc = stats.canaux.commercial ?? 0 %}
@@ -277,6 +314,8 @@
             <div class="min-w-0 flex-1">
                 <p class="text-sm leading-tight">
                     <span class="font-semibold">{{ v.car ?: v.codevoyage }}</span>
+                    {# Le numéro du jour : c'est sous ce nom que la gare annonce le car à ses passagers. #}
+                    {% if v.numerodepart is defined and v.numerodepart %}<span class="ml-1 text-xs text-muted-foreground">· Départ {{ v.numerodepart }}</span>{% endif %}
                     {% if v.car %}<span class="ml-1 font-mono text-xs text-muted-foreground">{{ v.codevoyage }}</span>{% endif %}
                 </p>
                 <p class="truncate text-xs text-muted-foreground">{{ v.provenance }} → {{ v.destination }}</p>

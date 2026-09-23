@@ -34,11 +34,12 @@
 {% if financiere %}
 <section class="mb-10">
     {{ s.sectionTitle('Financier') }}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
         {{ s.kpi('Recettes totales', financiere.recettesTotales|number_format(0, ',', ' '), 'FCFA', 'emerald', 'money') }}
         {{ s.kpi('Coût dépannages', financiere.coutDepannages|number_format(0, ',', ' '), 'FCFA', 'rose', 'truck') }}
         {{ s.kpi('Coût approvisionnements', financiere.coutApprovisionnements|number_format(0, ',', ' '), 'FCFA', 'amber', 'box') }}
-        {{ s.kpi('Bénéfice net', financiere.beneficeNet|number_format(0, ',', ' '), 'FCFA', 'violet', 'wallet', '', financiere.beneficeNet < 0 ? 'text-rose-500' : 'text-emerald-600') }}
+        {{ s.kpi('Dépenses', (financiere.coutDepenses ?? 0)|number_format(0, ',', ' '), 'FCFA', 'orange', 'expense', 'Carburant, salaires, péage…') }}
+        {{ s.kpi('Bénéfice net', financiere.beneficeNet|number_format(0, ',', ' '), 'FCFA', 'violet', 'wallet', 'Recettes − les trois postes', financiere.beneficeNet < 0 ? 'text-rose-500' : 'text-emerald-600') }}
     </div>
 
     {# Détail recettes #}
@@ -68,7 +69,7 @@
         </div>
         <div class="card p-5">
             <p class="text-sm font-medium text-muted-foreground mb-4">Coûts par jour</p>
-            <canvas id="chartCouts" height="120" data-values="{{ financiere.coutsParJour | map(c => {label: c.label, depannage: c.depannage, approvisionnement: c.approvisionnement}) | json_encode }}"></canvas>
+            <canvas id="chartCouts" height="120" data-values="{{ financiere.coutsParJour | map(c => {label: c.label, depannage: c.depannage, approvisionnement: c.approvisionnement, depense: c.depense}) | json_encode }}"></canvas>
         </div>
     </div>
 </section>

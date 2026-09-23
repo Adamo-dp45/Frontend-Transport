@@ -266,6 +266,13 @@ document.addEventListener('turbo:load', () => {
                     data: data.map(c => c.approvisionnement),
                     borderWidth: 1.5,
                     borderRadius: 4,
+                },
+                {
+                    // Le 3e poste du bénéfice : les charges saisies (carburant, salaires, péage…).
+                    label: 'Dépenses',
+                    data: data.map(c => c.depense),
+                    borderWidth: 1.5,
+                    borderRadius: 4,
                 }
             ],
             options: {
@@ -317,6 +324,46 @@ document.addEventListener('turbo:load', () => {
                     y: { grid: { display: false } },
                 }
             }
+        })
+    }
+
+    // ----- Dépenses ----- //
+    const chartDepensesType = document.getElementById('chartDepensesType')
+    if (chartDepensesType) {
+        const data = JSON.parse(chartDepensesType.dataset.values)
+        createChart({
+            element: chartDepensesType,
+            type: 'bar',
+            labels: data.map(t => t.libelle),
+            datasets: [{ label: 'Montant', data: data.map(t => t.montant), backgroundColor: 'rgba(234,88,12,0.75)', borderRadius: 4 }],
+            options: {
+                // Barres horizontales : les libellés de poste (« Entretien courant ») ne tiennent
+                // pas sous une barre verticale.
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.x.toLocaleString()} FCFA` } },
+                },
+                scales: { x: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } }, y: { grid: { display: false } } },
+            },
+        })
+    }
+
+    const chartDepensesMois = document.getElementById('chartDepensesMois')
+    if (chartDepensesMois) {
+        const data = JSON.parse(chartDepensesMois.dataset.values)
+        createChart({
+            element: chartDepensesMois,
+            type: 'bar',
+            labels: data.map(m => m.label),
+            datasets: [{ label: 'Dépenses', data: data.map(m => m.montant), backgroundColor: 'rgba(234,88,12,0.75)', borderRadius: 4 }],
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString()} FCFA` } },
+                },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } }, x: { grid: { display: false } } },
+            },
         })
     }
 

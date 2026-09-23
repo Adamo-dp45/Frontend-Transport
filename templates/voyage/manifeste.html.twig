@@ -21,6 +21,7 @@
             <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Feuille de route</h1>
             <p class="text-sm text-muted-foreground mt-1">
                 <span class="font-mono">{{ m.voyage.codevoyage }}</span> ·
+                <span class="font-medium text-foreground">Départ {{ m.voyage.numerodepart ?? '—' }}</span> ·
                 {{ m.voyage.provenance }} → {{ m.voyage.destination }}
                 {% if m.voyage.car %} · {{ m.voyage.car }}{% endif %}
                 {% if m.voyage.datedepartprevue %} · {{ m.voyage.datedepartprevue }}{% endif %}

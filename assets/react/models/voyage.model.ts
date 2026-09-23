@@ -17,6 +17,10 @@ interface LigneRef {
 export interface Voyage {
     id: number
     codevoyage: string
+    // Numéro de départ DU JOUR (« DÉPART 4 » sur le billet) : compteur par ligne + gare de départ +
+    // jour, attribué par le serveur. C'est le repère du guichet et du quai — le code voyage, lui,
+    // identifie le départ pour l'exploitation.
+    numerodepart: number
     provenance: string
     destination: string
     datedepartprevue: string       // départ prévu

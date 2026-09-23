@@ -24,7 +24,8 @@
                 <p class="text-xs text-emerald-100/90 mt-3">Billets · réservations · courriers · bagages sur la période</p>
             </div>
         </div>
-        {{ s.kpi('Bénéfice net', (financiere.beneficeNet ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Recettes − coûts (dépannages, appro.)', (financiere.beneficeNet ?? 0) < 0 ? 'text-rose-500' : 'text-emerald-600') }}
+        {# Le sous-titre énumère les postes déduits : il devient faux dès qu'on en ajoute un. #}
+        {{ s.kpi('Bénéfice net', (financiere.beneficeNet ?? 0)|number_format(0, ',', ' '), 'FCFA', 'violet', 'money', 'Recettes − dépannages, appro. et dépenses', (financiere.beneficeNet ?? 0) < 0 ? 'text-rose-500' : 'text-emerald-600') }}
         {{ s.kpi('Part réservations', ventesBillets > 0 ? (rR / ventesBillets * 100)|round : 0, '%', 'teal', 'chart', 'Des ventes de billets') }}
     </div>
 

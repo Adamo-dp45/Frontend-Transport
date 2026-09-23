@@ -40,6 +40,8 @@
         <tr><td class="k">Passager</td><td class="v">{{ reservation.nomclient ?? '—' }}</td></tr>
         <tr><td class="k">Téléphone</td><td class="v">{{ reservation.contactclient ?? '—' }}</td></tr>
         <tr><td class="k">Voyage</td><td class="v">{{ reservation.codevoyage ?? '—' }}</td></tr>
+        {# Le client présentera ce bon au guichet : le numéro de départ est ce que l'agent appelle. #}
+        <tr><td class="k">N&deg; de départ</td><td class="v">{{ reservation.numerodepart ?? '—' }}</td></tr>
         <tr><td class="k">Départ prévu</td><td class="v">{{ reservation.datedepartprevue ? reservation.datedepartprevue|date('d/m/Y H:i') : '—' }}</td></tr>
         <tr><td class="k">Montant payé</td><td class="v">{{ reservation.montant ? (reservation.montant|number_format(0, ',', ' ')) ~ ' FCFA' : '—' }}</td></tr>
     </table>

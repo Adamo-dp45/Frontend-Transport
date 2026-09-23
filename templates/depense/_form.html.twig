@@ -1,0 +1,40 @@
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            {{ form_row(form.datedepense) }}
+            {{ form_row(form.montant) }}
+            {{ form_row(form.typedepense) }}
+            {{ form_row(form.modereglement) }}
+        </div>
+
+        {# Le sélecteur d'imputation n'existe que pour qui peut imputer ailleurs que dans sa gare :
+           pour un agent rattaché, le serveur pose sa gare lui-même. #}
+        {% if form.gare is defined %}
+        <div class="mb-3">
+            {{ form_row(form.gare) }}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            {{ form_row(form.libelle) }}
+            {{ form_row(form.beneficiaire) }}
+            {{ form_row(form.fournisseur) }}
+            {{ form_row(form.justificatifFile) }}
+        </div>
+
+        {% if depense is defined and depense.justificatif %}
+        <p class="text-sm text-muted-foreground mb-3">
+            Justificatif actuel :
+            <a href="{{ depense.justificatif.contentUrl }}" target="_blank" rel="noopener" class="text-primary hover:underline">consulter</a>
+            — il est conservé si vous ne déposez pas de nouveau fichier.
+        </p>
+        {% endif %}
+
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+            <a href="{{ path('depense.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

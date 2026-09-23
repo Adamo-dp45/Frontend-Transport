@@ -82,11 +82,13 @@ class ApiUser implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         // L'admin de gare ne bypasse QUE pour ses entités bornées par gare (Voyage, Ticket, Courrier,
-        // Bagage, User). Sur les entités entreprise-wide il n'a AUCUN bypass (même pas en lecture) → les
+        // Bagage, User, Depense). Sur les entités entreprise-wide il n'a AUCUN bypass (même pas en lecture) → les
         // écrans de configuration entreprise sont masqués. Les selects continuent de marcher (les contrôleurs
         // chargent les listes via l'API, ouvertes en lecture par 'or is_granted(ROLE_USER)' côté backend).
+        // !! MIROIR de 'GareScopedEntities::ENTITIES' (backend) : les deux listes doivent rester
+        // d'accord, sinon l'écran promet ce que le serveur refuse — ou masque ce qu'il autorise.
         if(in_array('ROLE_ADMIN_GARE', $this->getRoles(), true)) {
-            $gareScoped = ['VOYAGE', 'TICKET', 'RESERVATION', 'COURRIER', 'BAGAGE', 'USER', 'ROLE'];
+            $gareScoped = ['VOYAGE', 'TICKET', 'RESERVATION', 'COURRIER', 'BAGAGE', 'USER', 'ROLE', 'DEPENSE'];
             if(in_array(strtoupper($entity), $gareScoped, true)) {
                 return true;
             }
