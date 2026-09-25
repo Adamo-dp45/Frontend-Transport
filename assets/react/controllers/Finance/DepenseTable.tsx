@@ -68,9 +68,23 @@ function buildColumns(
         {
             accessorKey: 'libelle',
             header: 'Objet',
-            cell: ({ row }) => row.original.libelle
-                ? <span>{row.original.libelle}</span>
-                : <span className="text-muted-foreground">—</span>
+            // Le départ rattaché se lit AVEC l'objet plutöt que dans une colonne à lui : une charge sur
+            // dix porte des frais de route, une colonne dédiée serait vide neuf lignes sur dix.
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2 min-w-0">
+                    {row.original.libelle
+                        ? <span className="truncate">{row.original.libelle}</span>
+                        : <span className="text-muted-foreground">—</span>}
+                    {row.original.voyage && (
+                        <Badge
+                            className="shrink-0 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                            title="Frais de route rattachés à ce départ"
+                        >
+                            {row.original.voyage.codevoyage}
+                        </Badge>
+                    )}
+                </div>
+            )
         },
         {
             // La PORTÉE se lit d'un coup d'œil : une charge de siège n'est imputée à aucune gare.

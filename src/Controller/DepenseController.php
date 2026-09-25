@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
+use App\Domain\Service\EtiquetteDepart;
 use App\Form\DepenseFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,7 +29,8 @@ final class DepenseController extends AbstractController
 {
     public function __construct(
         private readonly ApiHelper $api,
-        private readonly ApiExceptionHandlerHelper $apiExceptionHandler
+        private readonly ApiExceptionHandlerHelper $apiExceptionHandler,
+        private readonly EtiquetteDepart $etiquette
     )
     {
     }
@@ -62,10 +64,16 @@ final class DepenseController extends AbstractController
             }
         }
 
+        $refs = $this->refs();
+
         return $this->render('depense/index.html.twig', array_merge($data, [
-            'types' => $this->refs()['types'],
-            'gares' => $this->refs()['gares']
-        ]));
+            'types' => $refs['types'],
+            'gares' => $refs['gares'],
+            'canDelete' => $this->peutMettreEnCorbeille()
+        ])); /*
+            - 'refs()' appelé UNE fois : les deux appels précédents refaisaient trois requêtes HTTP à
+              l'API pour en jeter la moitié à chaque affichage de la liste
+        */
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
@@ -144,7 +152,8 @@ final class DepenseController extends AbstractController
             'libelle' => $depense['libelle'] ?? null,
             'beneficiaire' => $depense['beneficiaire'] ?? null,
             'fournisseur' => $depense['fournisseur']['id'] ?? null,
-        ], $this->optionsFormulaire($refs));
+            'voyage' => $depense['voyage']['id'] ?? null,
+        ], $this->optionsFormulaire($refs, $depense));
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
@@ -175,13 +184,20 @@ final class DepenseController extends AbstractController
     }
 
     /**
-     * Mise en corbeille réservée à l'administrateur d'entreprise, comme côté API : une sortie
-     * d'argent est un document, la permission 'SUPPRIMER' seule ne suffit pas.
+     * Mise en corbeille réservée aux ADMINISTRATEURS, comme côté API : une sortie d'argent est un
+     * document, la permission 'SUPPRIMER' seule ne suffit pas.
      */
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id, Request $request): Response
     {
+        if(!$this->peutMettreEnCorbeille()) {
+            throw $this->createAccessDeniedException(); /*
+                - Un attribut '#[IsGranted]' ne prend qu'un rôle à la fois : la règle en compte trois
+                  et sert aussi à décider de l'affichage du bouton. Une seule méthode pour les deux,
+                  sinon l'écran et la route finissent par dire l'inverse l'un de l'autre
+            */
+        }
+
         if($this->isCsrfTokenValid('delete_depense', $request->request->get('_token'))) {
             try {
                 $this->api->patch('/api/depenses/' . $id . '/remove');
@@ -208,13 +224,37 @@ final class DepenseController extends AbstractController
             || $this->getUser()?->getGare() === null;
     }
 
-    private function optionsFormulaire(array $refs): array
+    /**
+     * Qui peut mettre une dépense à la corbeille. Miroir exact de l'opération 'Remove_Depense' de
+     * l'API : les administrateurs, l'ADMIN DE GARE compris — il tient les charges de sa gare, et
+     * l'API le borne de toute façon à sa propre gare ('GareScopeExtension' s'applique aussi à
+     * l'item, une dépense étrangère répond 404). La permission 'SUPPRIMER' ne suffit pas : un
+     * guichetier corrige un montant, il n'efface pas une pièce.
+     */
+    private function peutMettreEnCorbeille(): bool
+    {
+        return $this->isGranted('ROLE_ADMIN')
+            || $this->isGranted('ROLE_SUPER_ADMIN')
+            || $this->isGranted('ROLE_ADMIN_GARE');
+    }
+
+    /** @param array<string, mixed>|null $depense la dépense en cours de modification, s'il y en a une */
+    private function optionsFormulaire(array $refs, ?array $depense = null): array
     {
         return [
             'types' => $refs['types'],
             'gares' => $refs['gares'],
             'fournisseurs' => $refs['fournisseurs'],
             'peutImputerLibrement' => $this->peutImputerLibrement(),
+            /*
+                Le départ déjà rattaché : son id ET son étiquette. Sans l'étiquette, le sélecteur
+                distant afficherait un champ vide sur une dépense qui porte pourtant un voyage — il
+                n'a chargé aucune option au premier rendu, il ne peut pas résoudre l'id tout seul.
+            */
+            'voyage_initial_value' => $depense['voyage']['id'] ?? null,
+            'voyage_initial_label' => isset($depense['voyage'])
+                ? $this->etiquette->pour($depense['voyage'])
+                : null,
         ];
     }
 
@@ -250,6 +290,10 @@ final class DepenseController extends AbstractController
         $fournisseur = $form->get('fournisseur')->getData();
         $payload['fournisseur'] = $fournisseur ? '/api/fournisseurs/' . $fournisseur : null;
 
+        // Le départ rattaché (frais de route). Vide = charge de structure, rattachée à rien.
+        $voyage = $form->get('voyage')->getData();
+        $payload['voyage'] = $voyage ? '/api/voyages/' . $voyage : null;
+
         /*
             La gare n'est envoyée QUE si l'acteur peut en décider. Pour un agent rattaché, le champ
             n'existe pas dans le formulaire et le serveur impute sa gare lui-même — c'est une seule
@@ -284,10 +328,11 @@ final class DepenseController extends AbstractController
         ];
     }
 
-    private function collectionOuVide(string $endpoint): array
+
+    private function collectionOuVide(string $endpoint, array $query = []): array
     {
         try {
-            return $this->api->collection($endpoint);
+            return $this->api->collection($endpoint, $query);
         } catch(ApiException) {
             return [];
         }

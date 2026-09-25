@@ -107,6 +107,28 @@
                 · Bagages {{ recette_bagages|number_format(0, ',', ' ') }}
             </p>
         </div>
+        {# LES DÉPENSES DU VOYAGE face à la recette : c'est le seul endroit où le résultat d'UN départ
+           se lit. La carte ne s'affiche pas à qui n'a pas accès aux dépenses — l'API répond null, et
+           un « 0 FCFA » serait un chiffre faux, pas une absence. #}
+        {% if depenses_lisibles %}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Dépenses du voyage</p>
+            <p class="text-2xl font-semibold tabular-nums {{ total_depenses_voyage > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground' }} mt-0.5">
+                {{ total_depenses_voyage|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span>
+            </p>
+            {% if total_depenses_voyage > 0 %}
+            <p class="text-[11px] text-muted-foreground mt-1 leading-snug">
+                Résultat du départ
+                <span class="font-semibold tabular-nums {{ resultat_voyage < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400' }}">
+                    {{ resultat_voyage|number_format(0, ',', ' ') }} FCFA
+                </span>
+                · {{ depenses_voyage|length }} charge(s)
+            </p>
+            {% else %}
+            <p class="text-[11px] text-muted-foreground mt-1 leading-snug">Aucune charge rattachée à ce départ</p>
+            {% endif %}
+        </div>
+        {% endif %}
         {{ ui.stat('Tickets vendus', nbr_tickets, null, 'sur ' ~ voyage.placestotal ~ ' places') }}
         <div class="card p-4">
             <p class="text-xs text-muted-foreground">Remplissage</p>
@@ -408,10 +430,31 @@
             </section>
 
             {# Billets émis #}
+            {#
+                LA PASTILLE COMPTE CE QUE LE RESTE DE L'APPLICATION COMPTE : les billets VALIDE, comme
+                'voyage.ticketsCount' et comme la recette. Elle affichait 'voyage.tickets|length', donc
+                les DÉSISTEMENTS avec — 43 ici quand la liste des voyages annonçait 41 pour le même
+                départ, sans que rien ne dise lequel des deux nombres était le bon.
+                Les désistements restent LISTÉS (ils font partie de l'histoire du départ) mais à part,
+                et chaque ligne porte désormais son statut : un désisté était jusqu'ici indistinguable
+                d'un passager qui monte.
+            #}
+            {# 'bil' et NON 't' : ligne 280, '{% import _self as t %}' fait de 't' l'ALIAS DES MACROS
+               de ce fichier, et cet alias GAGNE contre le paramètre d'une fonction fléchée — Twig lit
+               alors 't.statut' comme un appel de macro et lève « Macro "statut" is not defined », au
+               RENDU seulement ('lint:twig' n'y voit rien). Déjà rencontré dans 'home/_gare.html.twig'
+               avec une boucle '{% for t in ... %}'. Ne jamais nommer 't' une variable de gabarit. #}
+            {% set billetsValides = voyage.tickets|filter(bil => bil.statut == 'VALIDE')|length %}
+            {% set billetsAnnules = voyage.tickets|length - billetsValides %}
             <section class="card overflow-hidden">
                 <header class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Billets émis</h2>
-                    {{ t.pill(voyage.tickets|length) }}
+                    <div class="flex items-center gap-2">
+                        {{ t.pill(billetsValides) }}
+                        {% if billetsAnnules > 0 %}
+                        <span class="text-xs text-muted-foreground">· {{ billetsAnnules }} désisté(s)</span>
+                        {% endif %}
+                    </div>
                 </header>
                 {% if voyage.tickets is empty %}
                 <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun billet émis pour ce voyage</div>
@@ -425,12 +468,15 @@
                                 <th class="text-left px-6 py-2.5 font-medium">Tronçon</th>
                                 <th class="text-left px-6 py-2.5 font-medium">Place</th>
                                 <th class="text-right px-6 py-2.5 font-medium">Prix</th>
+                                <th class="text-left px-6 py-2.5 font-medium">Statut</th>
                                 <th class="w-12"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border">
+                            {% set ticketStatutTones  = { VALIDE: 'green', ANNULE: 'red', REPORTE: 'amber' } %}
+                            {% set ticketStatutLabels = { VALIDE: 'Valide', ANNULE: 'Désisté', REPORTE: 'Reporté' } %}
                             {% for ticket in voyage.tickets %}
-                            <tr class="hover:bg-muted/20 transition-colors">
+                            <tr class="hover:bg-muted/20 transition-colors {{ ticket.statut != 'VALIDE' ? 'opacity-60' : '' }}">
                                 <td class="px-6 py-3 font-mono text-xs font-semibold">{{ ticket.codeticket ?? '—' }}</td>
                                 <td class="px-6 py-3">
                                     <p class="font-medium">{{ ticket.nomclient ?? '—' }}</p>
@@ -443,6 +489,7 @@
                                 </td>
                                 <td class="px-6 py-3 font-semibold tabular-nums">{{ ticket.siege.numero }}</td>
                                 <td class="px-6 py-3 text-right tabular-nums font-semibold">{{ ticket.prix is defined ? ticket.prix|number_format(0, ',', ' ') ~ ' FCFA' : '—' }}</td>
+                                <td class="px-6 py-3">{{ ui.badge(ticketStatutLabels[ticket.statut] ?? ticket.statut, ticketStatutTones[ticket.statut] ?? 'zinc') }}</td>
                                 <td class="px-6 py-3 text-right">
                                     {% if ticket.id is defined %}<a href="{{ path('ticket.show', { id: ticket.id }) }}" class="text-xs text-primary hover:underline">Voir</a>{% endif %}
                                 </td>
@@ -489,12 +536,25 @@
 
     {# ════════════════ Colis transportés ════════════════ #}
 
+    {#
+        Même règle que pour les billets : la pastille et le total ne comptent que ce que la recette
+        compte — tout sauf ANNULE, PERDU compris (un bagage perdu a bien été payé ; l'indemnisation
+        est une autre écriture, qui n'existe pas encore). Le total sommait TOUS les bagages, annulés
+        inclus, et ne tombait donc pas d'accord avec la carte « Recette » du haut de page.
+    #}
+    {% set bagagesRetenus = voyage.bagages|filter(b => b.statut != 'ANNULE') %}
+    {% set bagagesComptes = bagagesRetenus|length %}
+    {% set bagagesAnnules = voyage.bagages|length - bagagesComptes %}
+
     {# Bagages #}
     <section class="card overflow-hidden mt-6">
         <header class="flex items-center justify-between px-6 py-4 border-b border-border">
             <div class="flex items-center gap-2.5">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Bagages</h2>
-                {{ t.pill(voyage.bagages|length) }}
+                {{ t.pill(bagagesComptes) }}
+                {% if bagagesAnnules > 0 %}
+                <span class="text-xs text-muted-foreground">· {{ bagagesAnnules }} annulé(s)</span>
+                {% endif %}
             </div>
             {% if is_granted('BAGAGE_CREER') and voyage.datearriveereelle is null %}
             <a href="{{ path('bagage.new') }}?voyage={{ voyage.id }}" class="btn btn-primary btn-sm">
@@ -544,7 +604,7 @@
                 <tfoot>
                     <tr class="border-t border-border bg-muted/20">
                         <td colspan="5" class="px-4 py-3 text-right font-semibold">Total bagages</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ voyage.bagages|map(b => b.montant)|reduce((carry, v) => carry + v, 0)|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ bagagesRetenus|map(b => b.montant)|reduce((carry, v) => carry + v, 0)|number_format(0, ',', ' ') }} FCFA</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
@@ -553,12 +613,18 @@
         {% endif %}
     </section>
 
+    {% set courriersComptes = voyage.courriers|filter(c => c.statut != 'ANNULE')|length %}
+    {% set courriersAnnules = voyage.courriers|length - courriersComptes %}
+
     {# Courriers #}
     <section class="card overflow-hidden mt-6">
         <header class="flex items-center justify-between px-6 py-4 border-b border-border">
             <div class="flex items-center gap-2.5">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Courriers</h2>
-                {{ t.pill(voyage.courriers|length) }}
+                {{ t.pill(courriersComptes) }}
+                {% if courriersAnnules > 0 %}
+                <span class="text-xs text-muted-foreground">· {{ courriersAnnules }} annulé(s)</span>
+                {% endif %}
             </div>
             {% if is_granted('COURRIER_CREER') and voyage.datearriveereelle is null %}
             <a href="{{ path('courrier.new') }}?voyage={{ voyage.id }}" class="btn btn-primary btn-sm">
@@ -606,5 +672,79 @@
         </div>
         {% endif %}
     </section>
+
+    {# ════════════════ Dépenses du voyage ════════════════ #}
+    {% if depenses_lisibles and depenses_voyage|length > 0 %}
+    <section class="card overflow-hidden mt-6">
+        <header class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dépenses du voyage</h2>
+                {{ t.pill(depenses_voyage|length) }}
+            </div>
+            {% if is_granted('DEPENSE_CREER') %}
+            <a href="{{ path('depense.new') }}" class="btn btn-primary btn-sm">
+                <svg class="h-3 w-3" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+                Ajouter
+            </a>
+            {% endif %}
+        </header>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                        <th class="text-left px-4 py-2.5 font-medium">Date</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Poste</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Objet</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Bénéficiaire</th>
+                        <th class="text-left px-4 py-2.5 font-medium">Imputation</th>
+                        <th class="text-right px-4 py-2.5 font-medium">Montant</th>
+                        <th class="text-right px-4 py-2.5 font-medium"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for d in depenses_voyage %}
+                    <tr class="hover:bg-muted/20 transition-colors">
+                        <td class="px-4 py-3 tabular-nums">{{ d.datedepense|date('d/m/Y') }}</td>
+                        <td class="px-4 py-3">{{ d.typedepense ?: '—' }}</td>
+                        <td class="px-4 py-3">{{ d.libelle ?: '—' }}</td>
+                        <td class="px-4 py-3">{{ d.beneficiaire ?: '—' }}</td>
+                        {# L'IMPUTATION ne change pas parce que la LECTURE s'ouvre : la charge reste
+                           portée par sa gare dans tous les résultats par gare. #}
+                        <td class="px-4 py-3">
+                            {{ d.gare
+                                ? ui.badge(d.gare, 'blue')
+                                : ui.badge('Siège', 'purple') }}
+                        </td>
+                        <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ d.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="px-4 py-3 text-right"><a href="{{ path('depense.show', { id: d.id }) }}" class="text-xs text-primary hover:underline">Voir</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="bg-muted/30 border-t-2 border-border">
+                        <td class="px-4 py-3 font-semibold" colspan="5">Total des dépenses du voyage</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ total_depenses_voyage|number_format(0, ',', ' ') }} FCFA</td>
+                        <td></td>
+                    </tr>
+                    <tr class="border-t border-border">
+                        <td class="px-4 py-3 text-muted-foreground" colspan="5">Recette du départ moins ses dépenses</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold {{ resultat_voyage < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400' }}">
+                            {{ resultat_voyage|number_format(0, ',', ' ') }} FCFA
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {# Toutes les charges RATTACHÉES à ce départ sont là, quelle que soit la gare qui les a
+           engagées : ce sont des données du départ. Ce qui n'y est pas, ce sont les charges qu'on ne
+           rattache à aucun départ — gasoil du parc, salaires, loyer — et qu'aucune clé de répartition
+           honnête ne saurait y ramener. D'où « résultat du départ » et jamais « bénéfice ». #}
+        <p class="px-6 py-3 text-xs text-muted-foreground border-t border-border">
+            Seules les charges explicitement rattachées à ce départ sont comptées, toutes gares confondues.
+            Ce n'est pas le coût complet du voyage.
+        </p>
+    </section>
+    {% endif %}
 </div>
 {% endblock %}

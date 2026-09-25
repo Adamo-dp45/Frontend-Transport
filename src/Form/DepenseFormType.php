@@ -2,6 +2,7 @@
 
 namespace App\Form;
 
+use App\Form\RemoteChoiceType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -21,6 +22,13 @@ use Symfony\Component\Validator\Constraints\Positive;
  * Le champ GARE n'est proposé que si l'acteur peut imputer ailleurs que chez lui (option
  * 'peutImputerLibrement') : pour un agent rattaché, le serveur force sa gare et refuse toute autre
  * imputation — lui montrer un sélecteur qu'il ne peut pas utiliser produirait un refus incompris.
+ *
+ * Le champ VOYAGE rattache la charge à UN DÉPART — le cas d'usage type étant les frais de route
+ * (forfait remis à l'équipage), mais rien ne le restreint à ce poste : un péage, un dépannage payé
+ * sur la route, une amende y ont leur place. Il reste FACULTATIF, et c'est le point à ne pas perdre
+ * de vue : la grande majorité des charges — loyer, salaires, gasoil du parc — ne se rattache à aucun
+ * départ, et rendre le champ obligatoire forcerait à inventer un rattachement. Renseigné, il permet
+ * de dériver le résultat d'un départ (recette moins ses dépenses) sans ajouter la moindre colonne.
  */
 class DepenseFormType extends AbstractType
 {
@@ -82,6 +90,15 @@ class DepenseFormType extends AbstractType
                 'required' => false,
                 'help' => 'À renseigner seulement si le bénéficiaire est un fournisseur déjà enregistré.',
             ])
+            ->add('voyage', RemoteChoiceType::class, [
+                'label' => 'Départ concerné',
+                'resource' => 'voyages_frais_route',
+                'required' => false,
+                'initial_value' => $options['voyage_initial_value'],
+                'initial_label' => $options['voyage_initial_label'],
+                'placeholder_text' => '-- Aucun (charge de structure) --',
+                'help' => "Rattache la charge à un départ : frais de route remis à l'équipage, péage, imprévu de la route. À l'ouverture, les départs des derniers jours ; tapez un code ou une gare pour en atteindre un plus ancien.",
+            ])
             ->add('justificatifFile', FileType::class, [
                 'label' => 'Justificatif',
                 'required' => false,
@@ -114,6 +131,9 @@ class DepenseFormType extends AbstractType
             'gares' => [],
             'fournisseurs' => [],
             'peutImputerLibrement' => false,
+            // Édition : l'id déjà rattaché et son étiquette, pour afficher la sélection sans requête.
+            'voyage_initial_value' => null,
+            'voyage_initial_label' => null,
         ]);
     }
 }

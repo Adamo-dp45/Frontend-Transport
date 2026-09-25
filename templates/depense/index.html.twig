@@ -27,7 +27,7 @@
         types: types,
         gares: gares,
         canEdit: is_granted('DEPENSE_MODIFIER'),
-        canDelete: is_granted('ROLE_ADMIN'),
+        canDelete: canDelete,
         csrfDelete: csrf_token('delete_depense')
     }) }} class="mb-3"
 >

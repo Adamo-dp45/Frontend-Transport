@@ -43,7 +43,8 @@
                 Modifier
             </a>
             {% endif %}
-            {% if is_granted('ROLE_ADMIN') %}
+            {# Les administrateurs, l'admin de gare compris : miroir de 'Remove_Depense' côté API. #}
+            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}
             <form method="POST" action="{{ path('depense.delete', {id: depense.id}) }}"
                   onsubmit="return confirm('Mettre cette dépense de {{ depense.montant|number_format(0, ',', ' ') }} FCFA à la corbeille ? Elle sortira du bénéfice.');">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_depense') }}">

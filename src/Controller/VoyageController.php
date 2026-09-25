@@ -63,13 +63,15 @@ final class VoyageController extends AbstractController
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
             $tickets = $this->api->collection('/api/tickets', [
-                // Le filtre API est 'voyage.id' (pas 'voyage') : sinon le param est IGNORÉ et on récupère
-                // TOUS les billets → « Tickets vendus » et l'occupation étaient faussés.
+                // Le filtre API est 'voyage.id' (pas 'voyage') : sinon le param est IGNORÉ et on
+                // récupère TOUS les billets.
                 'voyage.id' => $id,
                 'statut' => 'VALIDE',
                 'itemsPerPage' => 500
             ]); /*
-                - Ou.. pagination et 'statut=VALIDE' vu que les billets désistés ne comptent ni dans la recette ni dans l'occupation
+                - Cette liste sert le TABLEAU « billets émis ». Elle reste bornée par le périmètre de
+                  gare, et c'est voulu : une liste nominative de passagers n'a pas à s'ouvrir parce
+                  qu'on ouvre des totaux. Les CHIFFRES, eux, ne viennent plus d'ici (cf. ci-dessous)
             */
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
@@ -78,75 +80,54 @@ final class VoyageController extends AbstractController
             }
         }
 
-        // Calcul recette côté Symfony : billets (hors réservation) + réservations + courriers + bagages.
-        // On scinde les billets déjà chargés : ceux issus d'un bon de réservation (t.reservation non nul)
-        // sont comptés à part (canal réservation), comme dans le manifeste — pas de double-comptage.
-        $recetteBillets = 0;
-        $recetteReservations = 0;
-        foreach ($tickets as $t) {
-            if (empty($t['reservation'])) {
-                $recetteBillets += (int) ($t['prix'] ?? 0);
-            } else {
-                $recetteReservations += (int) ($t['prix'] ?? 0);
-            }
-        }
-
         /*
-            Réservations PAYÉES dont le billet n'est PAS encore émis. Elles étaient totalement absentes
-            de cette page, qui ne lisait que les billets : la recette du voyage était sous-estimée du
-            montant déjà encaissé, et le car paraissait moins rempli qu'il ne le sera. Le manifeste,
-            lui, les comptait déjà — d'où l'écart entre les deux écrans.
-            Celles qui ONT un billet sont déjà comptées ci-dessus, via ce billet.
-        */
-        $reservationsSansBillet = [];
-        try {
-            foreach ($this->api->collection('/api/reservations', ['voyage.id' => $id]) as $r) {
-                if (($r['etatpaiement'] ?? null) === 'PAYE' && empty($r['ticket'])) {
-                    $reservationsSansBillet[] = $r;
-                    $recetteReservations += (int) ($r['prix'] ?? 0);
-                }
-            }
-        } catch(ApiException) {
-            // non bloquant : la page reste affichable sans ce complément
-        }
-        $recetteCourriers = 0;
-        $recetteBagages = 0;
-        try {
-            foreach ($this->api->collection('/api/courriers', ['voyage.id' => $id, 'itemsPerPage' => 500]) as $c) {
-                if (($c['statut'] ?? '') !== 'ANNULE') {
-                    $recetteCourriers += (int) ($c['montant'] ?? 0);
-                }
-            }
-            foreach ($this->api->collection('/api/bagages', ['voyage.id' => $id, 'itemsPerPage' => 500]) as $b) {
-                if (!in_array($b['statut'] ?? '', ['ANNULE', 'PERDU'], true)) {
-                    $recetteBagages += (int) ($b['montant'] ?? 0);
-                }
-            }
-        } catch (ApiException) {
-            // pas bloquant : on affiche au moins la recette billets
-        }
-        $recette = $recetteBillets + $recetteReservations + $recetteCourriers + $recetteBagages;
-        $nbrTickets = count($tickets);
-        $placestotal = (int)($voyage['placestotal'] ?? 0);
+            LES CHIFFRES DU DÉPART VIENNENT DU SERVEUR, plus d'une addition faite ici.
 
-        // ── Occupation PAR TRONÇON ─────────────────────────────────────────
-        // On récupère les arrêts ordonnés de la ligne pour situer chaque ticket
+            Cette page composait sa recette et son remplissage en additionnant les collections d'API
+            ('/api/tickets?voyage.id=', '/api/bagages?voyage.id=', '/api/reservations?voyage.id='). Or
+            'GareScopeExtension' filtre ces collections : le MÊME départ affichait 38 000 FCFA au chef
+            d'Adjamé et 30 000 au chef de Korhogo, l'écart étant une réservation payée Adjamé → Bouaké
+            dont aucune des deux gares n'est Korhogo. Deux personnes ne lisaient pas le même départ, et
+            rien ne le signalait.
+
+            Les règles se dupliquaient par la même occasion : on comptait ici les bagages PERDU hors
+            recette et on oubliait les frais de suivi d'un courrier, quand les repositories faisaient
+            l'inverse. Tout cela vit désormais dans 'VoyageResultatService' côté API, servi HORS
+            périmètre de gare et verrouillé par 'tests/Api/ResultatVoyageTest.php'.
+        */
+        $r = [];
+        try {
+            $r = $this->api->item('/api/voyages/' . $id . '/resultat');
+        } catch(ApiException) {
+            // La fiche reste affichable sans ses totaux plutôt que de tomber sur un 500.
+        }
+
+        $recette = (int) ($r['recette'] ?? 0);
+        $totalDepenses = $r['depenses'] ?? null;
+        /*
+            NULL et non 0 : sans 'DEPENSE_VOIR', l'API répond « je ne te le dis pas ». Un zéro ferait
+            lire un résultat égal à la recette, c'est-à-dire un chiffre faux. L'écran masque le bloc.
+        */
+        $depensesLisibles = $totalDepenses !== null;
+
+        $nbrTickets = count($tickets);
+
+        // ── Arrêts de la ligne ─────────────────────────────────────────────
+        // Toujours nécessaires ici : ils portent l'avancement du commercial et la détection d'une gare
+        // en amont de la provenance. L'occupation, elle, ne se calcule plus à partir d'eux.
         $ordreParGare = [];
-        $labelsParOrdre = []; // ordre => libellé gare
-        $arrets = [];         // arrêts ordonnés (id, libelle, ordre) — pour l'avancement du commercial
+        $arrets = [];
         try {
             if(!empty($voyage['ligne']['id'])) {
                 $ligne = $this->api->item('/api/lignes/' . $voyage['ligne']['id']);
                 foreach($ligne['arrets'] ?? [] as $a) {
                     $ordreParGare[$a['gare']['id']] = $a['ordre'];
-                    $labelsParOrdre[$a['ordre']] = $a['gare']['libelle'];
                     $arrets[] = ['id' => $a['gare']['id'], 'libelle' => $a['gare']['libelle'], 'ordre' => $a['ordre']];
                 }
-                ksort($labelsParOrdre);
                 usort($arrets, fn($x, $y) => $x['ordre'] <=> $y['ordre']);
             }
         } catch(ApiException) {
-            // ligne indisponible -> repli plus bas
+            // ligne indisponible : l'écran se passe de l'avancement
         }
 
         // Départ partiel : la gare de l'agent est-elle EN AMONT de la provenance effective du voyage ?
@@ -161,70 +142,21 @@ final class VoyageController extends AbstractController
             $gareEnAmont = true;
         }
 
-        $segments = [];      // [{depart, arrivee, occupees, taux}]
-        $picOccupation = 0;  // tronçon le plus chargé
-
-        if(count($labelsParOrdre) >= 2) {
-            $ordres = array_keys($labelsParOrdre);
-            $maxOrdre = (int) end($ordres);
-            $labels = array_values($labelsParOrdre);
-
-            // Un ticket [montée, descente) couvre les segments montée..descente-1
-            $occSegment = array_fill(0, $maxOrdre, 0);
-            foreach($tickets as $t) {
-                $m = $ordreParGare[$t['gare']['id'] ?? null] ?? null;
-                // Descente EFFECTIVE : réelle si le passager est descendu en route (siège revendu),
-                // sinon vendue. Aligné sur Ticket::getGaredescenteEffective() = garedescentereelle ?? garedescente
-                // → un siège libéré et revendu n'est pas compté deux fois sur le segment chevauchant.
-                $descenteId = $t['garedescentereelle']['id'] ?? ($t['garedescente']['id'] ?? null);
-                $d = $descenteId !== null
-                    ? ($ordreParGare[$descenteId] ?? $maxOrdre)
-                    : $maxOrdre; // ancien ticket sans descente = jusqu'au terminus
-                if($m === null) {
-                    continue;
-                }
-                for($i = $m; $i < $d; $i++) {
-                    if(isset($occSegment[$i])) {
-                        $occSegment[$i]++;
-                    }
-                }
-            }
-
-            // Les réservations payées sans billet occuperont bien une place : le billet sera émis
-            // avant le départ. Aucun siège ne leur est encore attribué, elles comptent donc comme
-            // une place pleine sur tout leur tronçon.
-            foreach($reservationsSansBillet as $r) {
-                $m = $ordreParGare[$r['gare']['id'] ?? null] ?? null;
-                $d = $ordreParGare[$r['garedescente']['id'] ?? null] ?? $maxOrdre;
-                if($m === null) {
-                    continue;
-                }
-                for($i = $m; $i < $d; $i++) {
-                    if(isset($occSegment[$i])) {
-                        $occSegment[$i]++;
-                    }
-                }
-            }
-
-            for($i = 0; $i < $maxOrdre; $i++) {
-                $occ = $occSegment[$i] ?? 0;
-                $segments[] = [
-                    'depart' => $labels[$i] ?? '?',
-                    'arrivee' => $labels[$i + 1] ?? '?',
-                    'occupees' => $occ,
-                    'taux' => $placestotal > 0 ? (int) round(($occ / $placestotal) * 100) : 0,
-                ];
-                $picOccupation = max($picOccupation, $occ);
-            }
-        } else {
-            // Pas d'info ligne (repli) : on compte les tickets
-            // Sans ligne, on ne sait pas découper en segments : repli sur un total, réservations
-            // payées comprises pour rester cohérent avec la branche ci-dessus.
-            $picOccupation = $nbrTickets + count($reservationsSansBillet);
-        }
-
-        $placesRestantes = max(0, $placestotal - $picOccupation);
-        $tauxRemplissage = $placestotal > 0 ? (int) round(($picOccupation / $placestotal) * 100) : 0;
+        /*
+            Les tronçons arrivent calculés par 'CapaciteService', l'autorité de la capacité — la règle
+            que le README désigne comme la plus facile à faire régresser (on compte des SIÈGES sur des
+            intervalles, et un billet évincé n'occupe rien). On ne fait ici que renommer les clés pour
+            le gabarit, qui parle d'« occupees ».
+        */
+        $segments = array_map(
+            static fn (array $t): array => [
+                'depart' => $t['depart'],
+                'arrivee' => $t['arrivee'],
+                'occupees' => $t['occupation'],
+                'taux' => $t['taux'],
+            ],
+            $r['troncons'] ?? []
+        );
 
         // Journal d'activité du voyage (qui a fait quoi : changement de car, commercial, réception…)
         $activites = [];
@@ -242,14 +174,18 @@ final class VoyageController extends AbstractController
         return $this->render('voyage/show.html.twig', [
             'voyage' => $voyage,
             'recette' => $recette,
-            'recette_billets' => $recetteBillets,
-            'recette_reservations' => $recetteReservations,
-            'recette_courriers' => $recetteCourriers,
-            'recette_bagages' => $recetteBagages,
+            'recette_billets' => (int) ($r['billets'] ?? 0),
+            'recette_reservations' => (int) ($r['reservations'] ?? 0),
+            'recette_courriers' => (int) ($r['courriers'] ?? 0),
+            'recette_bagages' => (int) ($r['bagages'] ?? 0),
+            'depenses_voyage' => $r['lignesDepenses'] ?? [],
+            'total_depenses_voyage' => (int) ($totalDepenses ?? 0),
+            'depenses_lisibles' => $depensesLisibles,
+            'resultat_voyage' => $r['resultat'] ?? null,
             'nbr_tickets' => $nbrTickets,
-            'taux_remplissage' => $tauxRemplissage,
-            'places_occupees' => $picOccupation,
-            'places_restantes' => $placesRestantes,
+            'taux_remplissage' => (int) ($r['tauxRemplissage'] ?? 0),
+            'places_occupees' => (int) ($r['picOccupation'] ?? 0),
+            'places_restantes' => (int) ($r['placesRestantes'] ?? 0),
             'segments' => $segments,
             'arrets' => $arrets,
             'activites' => $activites,

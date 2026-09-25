@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Domain\Helper\ApiHelper;
+use App\Domain\Service\EtiquetteDepart;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +25,8 @@ final class SearchController extends AbstractController
     ];
 
     public function __construct(
-        private readonly ApiHelper $api
+        private readonly ApiHelper $api,
+        private readonly EtiquetteDepart $etiquette
     )
     {
     }
@@ -51,6 +53,11 @@ final class SearchController extends AbstractController
         // Cas spécial : seulement les cars DISPONIBLES (affectation à un voyage/dépannage).
         if ($resource === 'cars_disponibles') {
             return $this->searchCarsDisponibles($q, $limit);
+        }
+
+        // Cas spécial : les départs auxquels rattacher des FRAIS DE ROUTE.
+        if ($resource === 'voyages_frais_route') {
+            return $this->searchVoyagesFraisRoute($q, $limit);
         }
 
         if(!isset(self::RESOURCES[$resource])) {
@@ -241,6 +248,84 @@ final class SearchController extends AbstractController
                 ];
             }, $cars);
             return $this->json($results);
+        } catch (ApiException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Les départs auxquels rattacher des FRAIS DE ROUTE (le forfait remis à l'équipage).
+     *
+     * AUCUN FILTRE D'ÉTAT, et c'est délibéré. Un voyage n'a d'ailleurs pas de statut : son état se
+     * déduit de trois horodatages ('datedepartreelle' nul = pas encore parti, 'datearriveereelle'
+     * renseigné = clôturé). Or les trois états sont légitimes ici :
+     *  - à VENIR : le cas normal, on remet le forfait juste avant le départ ;
+     *  - EN COURS : un complément téléphoné depuis la route, une panne à payer sur place ;
+     *  - CLÔTURÉ : le cas le plus fréquent à la saisie, en réalité — l'agent régularise le lendemain,
+     *    reçu en main, et le car est rentré depuis longtemps.
+     * Écarter les voyages clôturés ôterait donc de la liste exactement ce qu'on vient y chercher. Les
+     * voyages MIS EN CORBEILLE, eux, sont déjà absents : 'EntrepriseScopeExtension' filtre 'deletedAt'.
+     *
+     * DEUX RÉGIMES, parce qu'un sélecteur distant sert deux gestes distincts :
+     *  - saisie vide (préchargement à l'ouverture) : les départs AUTOUR D'AUJOURD'HUI, les plus
+     *    récents d'abord. C'est le départ du matin qu'on cherche neuf fois sur dix, il doit être là
+     *    sans taper une lettre ;
+     *  - saisie d'au moins 2 caractères : recherche par CODE ou par PROVENANCE, SANS la fenêtre de
+     *    dates. C'est ce qui rend atteignable la régularisation d'un départ du mois dernier — une
+     *    fenêtre fixe l'aurait rendue impossible, et c'est tout l'intérêt du distant sur un select.
+     *
+     * Le périmètre de gare reste tenu par l'API ('GareScopeExtension' sur 'Voyage') : un agent ne voit
+     * que les départs de sa gare, ici comme ailleurs.
+     */
+    private function searchVoyagesFraisRoute(string $q, int $limit): JsonResponse
+    {
+        if ($q !== '' && mb_strlen($q) < 2) {
+            return $this->json([]);
+        }
+
+        $commun = [
+            'order' => ['datedepartprevue' => 'desc'],
+            'itemsPerPage' => $limit,
+            'page' => 1,
+        ];
+
+        try {
+            if ($q === '') {
+                $aujourdhui = new \DateTimeImmutable('today');
+                $voyages = $this->api->collection('/api/voyages', array_merge($commun, [
+                    'datedepartprevue' => [
+                        'after' => $aujourdhui->modify('-7 days')->format('Y-m-d'),
+                        'before' => $aujourdhui->modify('+2 days')->format('Y-m-d'),
+                    ],
+                ]));
+            } else {
+                /*
+                    Fusion par id de deux recherches : le code et la provenance. ApiPlatform combine
+                    ses filtres en ET, un seul appel avec les deux critères ne rendrait donc que les
+                    voyages dont le code ET la provenance correspondent — soit presque jamais rien.
+                */
+                $parId = [];
+                foreach (['codevoyage', 'provenance'] as $critere) {
+                    foreach ($this->api->collection('/api/voyages', array_merge($commun, [$critere => $q])) as $v) {
+                        $parId[$v['id']] = $v;
+                    }
+                }
+                $voyages = array_values($parId);
+                usort(
+                    $voyages,
+                    static fn (array $a, array $b): int => ($b['datedepartprevue'] ?? '') <=> ($a['datedepartprevue'] ?? '')
+                );
+                $voyages = array_slice($voyages, 0, $limit);
+            }
+
+            return $this->json(array_map(
+                fn (array $v): array => [
+                    'value' => (string) $v['id'],
+                    'label' => $this->etiquette->pour($v),
+                    'raw' => $v,
+                ],
+                $voyages
+            ));
         } catch (ApiException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
         }

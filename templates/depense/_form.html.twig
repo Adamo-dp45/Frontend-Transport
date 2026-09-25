@@ -22,6 +22,14 @@
             {{ form_row(form.justificatifFile) }}
         </div>
 
+        {# LE DÉPART RATTACHÉ, à part et en pleine largeur : l'étiquette d'un départ est longue, et le
+           champ ne concerne qu'une charge sur dix. Sélecteur DISTANT ('voyages_frais_route') : il
+           précharge les départs des derniers jours à l'ouverture, et la saisie va chercher au-delà —
+           une liste entière n'aurait tenu ni à l'écran ni en mémoire. #}
+        <div class="mb-3">
+            {{ form_row(form.voyage) }}
+        </div>
+
         {% if depense is defined and depense.justificatif %}
         <p class="text-sm text-muted-foreground mb-3">
             Justificatif actuel :
