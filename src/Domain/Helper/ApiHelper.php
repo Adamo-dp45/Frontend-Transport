@@ -132,7 +132,10 @@ class ApiHelper
         ];
     }
 
-    public function postMediaObject(UploadedFile $file)
+    /**
+     * `$prive` range le fichier côté API dans un dossier interdit au serveur web (justificatif) : il n'aura pas de `contentUrl` et ne se lira que par la route de la fiche qui le porte. Sans lui, c'est une image PUBLIQUE (logo, photo, pièce) — un PDF y est refusé. Cf. le docbloc de `MediaObject` au BK.
+     */
+    public function postMediaObject(UploadedFile $file, bool $prive = false)
     {
         $formFields = [
             'file' => new DataPart(
@@ -141,6 +144,9 @@ class ApiHelper
                 contentType: $file->getMimeType() ?? 'application/octet-stream',
             )
         ];
+        if($prive) {
+            $formFields['prive'] = '1';
+        }
         $formData = new FormDataPart($formFields);
         $token = $this->api->getToken();
 

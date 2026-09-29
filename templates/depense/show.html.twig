@@ -80,7 +80,8 @@
             <div class="card p-6">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Justificatif</h2>
                 {% if depense.justificatif %}
-                    <a href="{{ depense.justificatif.contentUrl }}" target="_blank" rel="noopener" class="btn btn-secondary w-full justify-center">
+                    {# Par le RELAIS du front : le fichier est privé côté API et n'a pas d'URL (cf. DepenseController::justificatif). #}
+                    <a href="{{ path('depense.justificatif', {id: depense.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary w-full justify-center">
                         Consulter le justificatif
                     </a>
                 {% else %}

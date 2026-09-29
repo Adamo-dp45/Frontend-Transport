@@ -13,7 +13,7 @@ import { useMemo } from "react"
 import { Badge } from "../../../components/ui/badge"
 import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useServerTable"
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
-import { formatDate } from "../../../lib/functions"
+import { formatDate, vignetteTableau } from "../../../lib/functions"
 import { ServerDataTable } from "../../components/server/server-data-table"
 import { Piece } from "../../models/piece.model"
 import { Libelle } from "../../models/libelle.model"
@@ -139,12 +139,11 @@ function buildColumns(
             header: "",
             cell: ({ row }) => {
                 const p = row.original
-                const imageUrl = p.image?.contentUrl
                 return (
                     <div className="flex items-center justify-center">
                         {p.image ? (
                             <img
-                                src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
+                                src={vignetteTableau(apiUrl, p.image.contentUrl)}
                                 alt={p.libelle}
                                 className="h-8 w-8 rounded-full object-cover shrink-0"
                             />

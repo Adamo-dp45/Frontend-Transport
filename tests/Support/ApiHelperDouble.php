@@ -65,6 +65,12 @@ final class ApiHelperDouble extends ApiHelper
         return is_array($data) ? $data : null;
     }
 
+    /** Un fichier : la table porte `['body' => …, 'content_type' => …, 'status' => 200]`, comme le vrai. */
+    public function raw(string $endpoint, array $query = [], array $headers = []): array
+    {
+        return $this->reponse($endpoint);
+    }
+
     /**
      * Un chemin absent lève une `ApiException` 404 plutôt que de rendre un tableau vide : les
      * contrôleurs entourent leurs appels de `try/catch`, et un silence ferait passer pour « rendu

@@ -475,7 +475,9 @@ final class HomeController extends AbstractController
             'totalAgents' => $agents['totalAgents'] ?? 0,
             'agentsActifs' => $agents['agentsActifs'] ?? 0,
             'performances' => $agents['performances'] ?? [],
-            'actionsCritiques' => $agents['actionsCritiques'] ?? []
+            'actionsCritiques' => $agents['actionsCritiques'] ?? [],
+            // Recette d'écritures sans auteur : hors classement, mais DITE (cf. 'AgentStatsProvider').
+            'recetteNonAttribuee' => $agents['recetteNonAttribuee'] ?? 0
         ];
 
         return $this->render('home/agent.html.twig', [

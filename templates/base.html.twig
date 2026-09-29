@@ -4,23 +4,22 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}Welcome!{% endblock %} | Transport</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         <!-- Google -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap" rel="stylesheet">
         <!-- ! -->
         <script>
-            document.documentElement.classList.toggle(
-                'dark',
-                localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-            ) /*
-                - Pour éviter le flash au chargement 'FOUC' ce qui applique le thème instantanément et ne doit pas être dans 'turbo:load' car il doit s'exécuter avant le rendu
-            */
             if(localStorage.getItem('sidebar-collapsed') === 'true') {
                 document.documentElement.classList.add('sidebar-pre-collapsed');
-            }
+            } /*
+                - Avant le rendu, pour éviter que la barre latérale ne s'ouvre puis se replie ('FOUC')
+                - Le THÈME n'est plus décidé ici : ce bloc portait aussi un ancien script de thème, en
+                  doublon du partiel ci-dessous (cf. son commentaire). Une seule décision, au partiel
+            */
         </script>
+        {# AVANT la feuille de style : la classe doit être posée quand le CSS s'applique, pas après. #}
+        {{ include('partials/theme-preload.html.twig') }}
         {{ include('partials/pwa.html.twig') }}
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
@@ -508,15 +507,27 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
                         </a>
 
-                        <button class="theme-btn" id="themeBtn">
-                            <svg id="sun-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        {#
+                            TROIS états, un seul bouton qui les fait tourner : Système → Clair → Sombre.
+                            L'icône et le libellé montrent le mode COURANT (le libellé annonçait auparavant
+                            la cible d'un clic, ce qui laissait croire qu'on était déjà dans l'autre mode) ;
+                            le prochain geste se lit dans l'info-bulle, posée par 'theme.js'.
+                            Les trois icônes sont présentes et c'est le script qui n'en montre qu'une :
+                            l'état par défaut du balisage est donc « système », celui du stockage vide.
+                        #}
+                        <button class="theme-btn" id="themeBtn" type="button">
+                            <svg id="system-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <path d="M8 21h8M12 17v4"/>
+                            </svg>
+                            <svg id="sun-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
                                 <circle cx="12" cy="12" r="4"/>
                                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
                             </svg>
                             <svg id="moon-i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
                                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
                             </svg>
-                            <span id="theme-lbl" class="theme-lbl-text">Dark</span>
+                            <span id="theme-lbl" class="theme-lbl-text">Système</span>
                         </button>
                         <div class="topbar-divider"></div>
 

@@ -15,6 +15,13 @@
 </div>
 
 <form action="{{ path('approvisionnement.edit', { id: approvisionnement.id }) }}" method="post">
+    {# Les champs obligatoires sont marqués d'une étoile, les facultatifs le disent : sans l'un des deux,
+       on ne sait pas si un champ vide bloquera l'enregistrement ou passera. Convention déjà en place
+       dans 'bagage/_form.html.twig'. #}
+    <p class="text-sm text-muted-foreground mb-3">
+        Les champs marqués <span class="text-red-500">*</span> sont obligatoires.
+    </p>
+
     <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">
         {#
             <select name="fournisseur" required class="input">
@@ -26,7 +33,9 @@
                 {% endfor %}
             </select>
         #}
+        <label for="fournisseur" class="label">Fournisseur <span class="text-red-500">*</span></label>
         <select
+            id="fournisseur"
             name="fournisseur"
             required
             data-remote-select="fournisseurs"
@@ -51,9 +60,9 @@
             <table class="w-full text-sm" id="table-details">
                 <thead>
                     <tr class="border-b bg-muted/40">
-                        <th class="text-left px-4 py-3 font-semibold">Pièce</th>
-                        <th class="text-left px-4 py-3 font-semibold w-32">Quantité</th>
-                        <th class="text-left px-4 py-3 font-semibold w-40">Prix unitaire (FCFA)</th>
+                        <th class="text-left px-4 py-3 font-semibold">Pièce <span class="text-red-500">*</span></th>
+                        <th class="text-left px-4 py-3 font-semibold w-32">Quantité <span class="text-red-500">*</span></th>
+                        <th class="text-left px-4 py-3 font-semibold w-40">Prix unitaire (FCFA) <span class="text-red-500">*</span></th>
                         <th class="text-left px-4 py-3 font-semibold w-40">Total</th>
                         <th class="w-12"></th>
                     </tr>

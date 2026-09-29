@@ -70,7 +70,10 @@ class DepenseFormType extends AbstractType
                     'Virement' => 'VIREMENT',
                     'Chèque' => 'CHEQUE',
                 ], // miroir de App\Domain\Enum\Modereglement côté API
-                'help' => 'Les dépenses en espèces sortent de la caisse de la gare.',
+                // Le mode dit COMMENT on a payé, rien de plus : toute dépense sort du solde de la gare,
+                // espèces ou pas. L'aide précédente annonçait l'inverse (« les dépenses en espèces sortent
+                // de la caisse »), ce qui laissait croire qu'un virement ne coûtait rien à la gare.
+                'help' => 'Pour la pièce justificative : le montant sort du solde de la gare quel que soit le mode.',
             ])
             ->add('libelle', TextType::class, [
                 'label' => 'Objet',

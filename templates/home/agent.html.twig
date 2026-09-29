@@ -45,6 +45,31 @@
     </div>
     <p class="text-xs text-muted-foreground mb-4">Ce que chaque agent a encaissé au comptoir (billets + courriers + bagages). Les ventes à bord (commercial) et les réservations payées en ligne sont comptées ailleurs.</p>
 
+    {#
+        LA RECETTE SANS AUTEUR EST DITE, pas jetée. Une écriture dont 'created_by' est nul n'appartient à
+        aucun agent : elle sort du classement — c'est juste —, mais la taire ferait un total qui ne
+        totalise pas ce qu'il annonce. Le bloc ne s'affiche que si le montant existe : dans la vie normale
+        il vaut zéro, et un chiffre non nul désigne une écriture automatique ou une reprise à regarder.
+    #}
+    {% if (agents.recetteNonAttribuee ?? 0) > 0 %}
+    <div class="card p-4 mb-4 border-dashed">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <p class="text-sm font-medium">Recette sans agent identifié</p>
+                <p class="text-xs text-muted-foreground mt-1">
+                    Des ventes de la période ne portent aucun auteur : elles n'apparaissent dans le
+                    classement d'aucun agent. À rapprocher d'une écriture automatique ou d'une reprise de
+                    données.
+                </p>
+            </div>
+            <p class="text-2xl font-semibold tabular-nums shrink-0">
+                {{ agents.recetteNonAttribuee|number_format(0, ',', ' ') }}
+                <span class="text-sm font-normal text-muted-foreground">FCFA</span>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
     {% if agents.performances is empty %}
         <div class="card p-6 text-center text-sm text-muted-foreground">Aucune vente d'agent sur la période.</div>
     {% endif %}

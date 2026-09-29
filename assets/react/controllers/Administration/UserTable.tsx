@@ -1,3 +1,4 @@
+import { vignetteTableau } from "../../../lib/functions"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
 import { Button } from "../../../components/ui/button"
@@ -140,7 +141,7 @@ function buildColumns(
                     <div className="flex items-center justify-center">
                         {user.fileUrl ? (
                             <img
-                                src={`${apiUrl}/media${user.fileUrl}?w=400&h=400&fm=jpg&fit=crop`}
+                                src={vignetteTableau(apiUrl, user.fileUrl)}
                                 alt={`${user.prenom} ${user.nom}`}
                                 className="h-8 w-8 rounded-full object-cover shrink-0"
                             />

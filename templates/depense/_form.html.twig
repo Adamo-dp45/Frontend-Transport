@@ -33,7 +33,7 @@
         {% if depense is defined and depense.justificatif %}
         <p class="text-sm text-muted-foreground mb-3">
             Justificatif actuel :
-            <a href="{{ depense.justificatif.contentUrl }}" target="_blank" rel="noopener" class="text-primary hover:underline">consulter</a>
+            <a href="{{ path('depense.justificatif', {id: depense.id}) }}" target="_blank" rel="noopener" class="text-primary hover:underline">consulter</a>
             — il est conservé si vous ne déposez pas de nouveau fichier.
         </p>
         {% endif %}

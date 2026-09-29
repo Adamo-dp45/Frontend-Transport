@@ -51,6 +51,13 @@ class ApiExceptionHandlerHelper
             }
         */
         if($form && $e->isValidationError()) { // Ou.. '$e->hasViolations()' 
+            if(!$e->hasViolations()) { /*
+                - Un '422' ne porte pas toujours des violations par champ sinon la boucle tournait à vide, la méthode rendrait 'null' et le formulaire se réaffichait sans rien dire
+            */
+                $form->addError(new FormError($e->getMessage()));
+                return null;
+            }
+
             foreach($e->getViolations() as $field => $messages) {
                 foreach($messages as $message) {
                     if ($field !== 'global' && $form->has($field)) {

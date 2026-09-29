@@ -364,21 +364,11 @@ html.dark select.input {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
-input[type="date"].input,
-input[type="time"].input,
-input[type="month"].input,
-input[type="datetime-local"].input {
-    color-scheme: light;
-}
-
-html.dark input[type="date"].input,
-html.dark input[type="time"].input,
-html.dark input[type="month"].input,
-html.dark input[type="datetime-local"].input {
-    color-scheme: dark; /*
-        - La couleur de fond de la bulle de date
-    */
-}
+/*
+    Les sélecteurs de date et d'heure n'ont plus de règle à eux (29/09/2026) : ils HÉRITENT le
+    'color-scheme' déclaré sur ':root' et '.dark' (app.css). L'ancienne règle ne couvrait que les champs
+    portant la classe '.input' ; ceux des composants React et des filtres restaient clairs en sombre.
+*/
 
 /* ============================================================
    Tom Select (autocomplete distant : tom-select-remote.js)

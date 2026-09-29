@@ -107,7 +107,8 @@ final class DepannageController extends AbstractController
                     'description' => $data['description']   ?? '',
                     'car' => (int)($data['car'] ?? 0),
                     'typepanne' => (int)($data['typepanne'] ?? 0),
-                    'details' => $details
+                    'details' => $details,
+                    'maindoeuvres' => $this->maindoeuvres($data)
                 ];
                 try {
                     $this->api->post('/api/depannages', $payload);
@@ -125,6 +126,46 @@ final class DepannageController extends AbstractController
         return $this->render('depannage/new.html.twig', [
             'typepannes' => $typepannes
         ]);
+    }
+
+    /**
+     * Les lignes de MAIN D'ŒUVRE EXTERNE envoyées par le formulaire.
+     *
+     * Les lignes sans intervenant NI montant sont ignorées : une ligne ajoutée puis laissée vide ne
+     * doit pas faire échouer l'enregistrement. En revanche une ligne à MOITIÉ remplie part telle quelle
+     * vers l'API, qui la refuse avec un message — la taire reviendrait à perdre une saisie en silence.
+     *
+     * Le tableau est renvoyé même VIDE : le formulaire montre l'état complet de la main d'œuvre, donc
+     * « plus aucune ligne » veut bien dire « supprime-la » (côté API, `[]` supprime et l'absence
+     * conserve).
+     *
+     * @param array<string, mixed> $data
+     * @return list<array<string, mixed>>
+     */
+    private function maindoeuvres(array $data): array
+    {
+        $intervenants = $data['mo_intervenant'] ?? [];
+        $prestations = $data['mo_prestation'] ?? [];
+        $montants = $data['mo_montant'] ?? [];
+
+        $lignes = [];
+        foreach($intervenants as $i => $intervenant) {
+            $intervenant = trim((string) $intervenant);
+            $montant = trim((string) ($montants[$i] ?? ''));
+
+            if($intervenant === '' && $montant === '') {
+                continue; // ligne ajoutée puis abandonnée
+            }
+
+            $prestation = trim((string) ($prestations[$i] ?? ''));
+            $lignes[] = [
+                'intervenant' => $intervenant,
+                'prestation' => $prestation !== '' ? $prestation : null,
+                'montant' => (int) $montant,
+            ];
+        }
+
+        return $lignes;
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
@@ -171,7 +212,8 @@ final class DepannageController extends AbstractController
                     'description' => $data['description'] ?? '',
                     'car' => (int)($data['car'] ?? 0),
                     'typepanne' => (int)($data['typepanne'] ?? 0),
-                    'details' => $details
+                    'details' => $details,
+                    'maindoeuvres' => $this->maindoeuvres($data)
                 ];
                 try {
                     $this->api->patch('/api/depannages/' . $id, $payload);

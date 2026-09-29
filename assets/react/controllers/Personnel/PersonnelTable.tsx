@@ -1,3 +1,4 @@
+import { vignetteTableau } from "../../../lib/functions"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, FileText, MoreHorizontal, Sheet } from "lucide-react"
 import { DataTable } from "../../components/data-table"
@@ -101,13 +102,12 @@ function buildColumns(canEdit: boolean, canSuspendre: boolean, canDelete: boolea
             header: "",
             cell: ({ row }) => {
                 const p = row.original
-                const imageUrl = p.image?.contentUrl
                 const initiales = `${p.prenom.charAt(0)}${p.nom.charAt(0)}`.toUpperCase()
                 return (
                     <div className="flex items-center justify-center">
                         {p.image ? (
                             <img
-                                src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
+                                src={vignetteTableau(apiUrl, p.image.contentUrl)}
                                 alt={`${p.prenom} ${p.nom}`}
                                 className="h-8 w-8 rounded-full object-cover shrink-0"
                             />

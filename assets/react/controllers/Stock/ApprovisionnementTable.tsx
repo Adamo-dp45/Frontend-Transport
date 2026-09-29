@@ -85,7 +85,10 @@ function buildColumns(
             id: "couttotal",
             header: "Coût total",
             cell: ({ row }) => {
-                const total = row.original.detailapprovisionnements.reduce((sum, d) => sum + (d.quantite * d.prixunitaire), 0)
+                // Le coût vient de l'API (`Approvisionnement::$couttotal`, recomposé à chaque écriture).
+                // Il était resommé ici en `quantite * prixunitaire`, ce qui ignorait jusqu'au `couttotal`
+                // de la ligne : deux façons d'obtenir le même nombre, donc deux façons de diverger.
+                const total = row.original.couttotal ?? 0
                 return <span className="tabular-nums font-semibold">{total.toLocaleString("fr-FR")} FCFA</span>
             },
         },

@@ -4,16 +4,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}Welcome!{% endblock %} | Transport</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        <script>
-            document.documentElement.classList.toggle(
-                'dark',
-                localStorage.theme === 'dark' ||
-                (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-            ) /*
-                - Pour éviter le flash au chargement 'FOUC' ce qui applique le thème instantanément et ne doit pas être dans 'turbo:load' car il doit s'exécuter avant le rendu
-            */
-        </script>
+        {# AVANT la feuille de style : la classe doit être posée quand le CSS s'applique, pas après.
+           C'est le SEUL script de thème : l'ancien, en ligne juste au-dessus, faisait doublon (supprimé). #}
+        {{ include('partials/theme-preload.html.twig') }}
         {{ include('partials/pwa.html.twig') }}
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}

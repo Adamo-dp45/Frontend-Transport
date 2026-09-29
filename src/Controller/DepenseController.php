@@ -10,6 +10,7 @@ use App\Form\DepenseFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -126,6 +127,48 @@ final class DepenseController extends AbstractController
 
         return $this->render('depense/show.html.twig', [
             'depense' => $depense
+        ]);
+    }
+
+    /**
+     * Relaie le JUSTIFICATIF d'une dépense depuis l'API.
+     *
+     * Il vit côté API dans un dossier interdit au serveur web et n'a pas d'URL : le navigateur ne peut pas le demander lui-même,
+     * faute de jeton (il est en session, côté serveur). Ce relais présente le jeton de l'utilisateur à
+     * `GET /api/depenses/{id}/justificatif`, qui applique les droits de LA DÉPENSE — ce contrôleur n'en
+     * décide aucun, le `DEPENSE_VOIR` ci-dessous ne fait qu'épargner un aller-retour inutile.
+     *
+     * Répare au passage le lien d'avant, qui pointait sur `contentUrl` SANS l'hôte de l'API : un chemin
+     * relatif, résolu sur le FRONT, donc un 404 à chaque clic.
+     */
+    #[Route('/{id}/justificatif', name: 'justificatif', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('DEPENSE_VOIR')]
+    public function justificatif(int $id): Response
+    {
+        try {
+            $fichier = $this->api->raw('/api/depenses/' . $id . '/justificatif');
+        } catch(ApiException $e) {
+            return $this->apiExceptionHandler->handle($e, null, 'depense.show', ['id' => $id])
+                ?? $this->redirectToRoute('depense.show', ['id' => $id]);
+        }
+
+        /*
+            Seuls les formats que l'API ACCEPTE au dépôt s'affichent dans le navigateur. Tout autre type
+            annoncé part en téléchargement opaque : servir « inline », sur l'origine du front, un contenu
+            dont on ne maîtrise pas le type, c'est laisser le navigateur l'interpréter — HTML compris.
+        */
+        $type = strtolower(trim(explode(';', $fichier['content_type'])[0]));
+        $extensions = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $connu = isset($extensions[$type]);
+
+        return new Response($fichier['body'], 200, [
+            'Content-Type' => $connu ? $type : 'application/octet-stream',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                $connu ? HeaderUtils::DISPOSITION_INLINE : HeaderUtils::DISPOSITION_ATTACHMENT,
+                sprintf('justificatif-depense-%d.%s', $id, $extensions[$type] ?? 'bin')
+            ),
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store', // une pièce comptable ne reste dans aucun cache
         ]);
     }
 
@@ -268,7 +311,8 @@ final class DepenseController extends AbstractController
         }
 
         try {
-            return $this->api->postMediaObject($file);
+            // PRIVÉ : un justificatif (facture, bulletin de salaire) ne va jamais sous le 'public/' de l'API.
+            return $this->api->postMediaObject($file, prive: true);
         } catch(ApiException $e) {
             return $this->apiExceptionHandler->handle($e, $form, 'depense.new') ?? new Response('', 500);
         }

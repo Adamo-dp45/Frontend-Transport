@@ -29,11 +29,27 @@
         {% endif %}
     </div>
 
+    {#
+        LE COÛT D'UNE PANNE = PIÈCES + MAIN D'ŒUVRE EXTERNE. On calcule ici les deux parts une fois pour
+        toutes : `couttotal` porte la somme, `coutmaindoeuvre` la part de main d'œuvre (dérivée côté API),
+        et les pièces se déduisent des lignes — jamais de `couttotal`, qui les dépasse désormais.
+    #}
+    {% set coutMaindoeuvre = depannage.coutmaindoeuvre|default(0) %}
+    {% set coutPieces = depannage.detaildepannages|reduce((somme, ligne) => somme + ligne.quantite * (ligne.prixunitaire ?? 0), 0) %}
+
     {# KPI #}
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <div class="card p-4">
             <p class="text-xs text-muted-foreground">Coût total</p>
             <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ depannage.couttotal|default(0)|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+            {# La ventilation ne s'affiche que s'il y a de la main d'œuvre : sinon le coût total EST
+               celui des pièces, et le répéter n'apprend rien. #}
+            {% if coutMaindoeuvre > 0 %}
+            <p class="text-[11px] text-muted-foreground mt-1 leading-snug">
+                Pièces {{ coutPieces|number_format(0, ',', ' ') }}
+                · Main d'œuvre <span class="font-semibold">{{ coutMaindoeuvre|number_format(0, ',', ' ') }}</span>
+            </p>
+            {% endif %}
         </div>
         {{ ui.stat('Date de dépannage', depannage.datedepannage ? depannage.datedepannage|date('d/m/Y') : '—') }}
         {{ ui.stat('Pièces utilisées', depannage.detaildepannages|length) }}
@@ -116,12 +132,59 @@
                 {% endfor %}
             </tbody>
             <tfoot>
+                {# CE TOTAL EST CELUI DES PIÈCES, et non `couttotal` : depuis que la main d'œuvre externe
+                   existe, `couttotal` la comprend et ne correspondrait donc plus à la somme des lignes
+                   affichées juste au-dessus. Un pied de tableau qui ne totalise pas son tableau est le
+                   genre d'écart qu'on met des mois à comprendre. #}
                 <tr class="border-t border-border bg-muted/20">
-                    <td colspan="3" class="px-4 py-3 text-right font-semibold">Total</td>
-                    <td class="px-4 py-3 text-right tabular-nums font-bold">{{ depannage.couttotal|default(0)|number_format(0, ',', ' ') }} FCFA</td>
+                    <td colspan="3" class="px-4 py-3 text-right font-semibold">Total des pièces</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold">{{ coutPieces|number_format(0, ',', ' ') }} FCFA</td>
                 </tr>
             </tfoot>
         </table>
     </div>
+
+    {# ════════════════ Main d'œuvre externe ════════════════ #}
+    {% if depannage.detailmaindoeuvres|default([])|length > 0 %}
+    <div class="card overflow-hidden mt-4">
+        <div class="px-6 py-4 border-b border-border">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Main d'œuvre externe</h2>
+        </div>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-border bg-muted/40 text-muted-foreground">
+                    <th class="text-left px-4 py-2.5 font-medium">Intervenant</th>
+                    <th class="text-left px-4 py-2.5 font-medium">Prestation</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Montant</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for ligne in depannage.detailmaindoeuvres %}
+                <tr class="hover:bg-muted/20 transition-colors">
+                    <td class="px-4 py-3 font-medium">{{ ligne.intervenant }}</td>
+                    <td class="px-4 py-3">{{ ligne.prestation ?: '—' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ ligne.montant|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="border-t border-border bg-muted/20">
+                    <td colspan="2" class="px-4 py-3 text-right font-semibold">Total de la main d'œuvre</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold">{{ coutMaindoeuvre|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+                <tr class="border-t-2 border-border">
+                    <td colspan="2" class="px-4 py-3 text-right text-muted-foreground">Coût de l'intervention (pièces comprises)</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold text-primary">{{ depannage.couttotal|default(0)|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+            </tfoot>
+        </table>
+        {# On dit POURQUOI ces montants sont ici et non dans les dépenses : c'est la question que se pose
+           quiconque cherche « où sont passés les 45 000 du soudeur » dans l'écran des charges. #}
+        <p class="px-6 py-3 text-xs text-muted-foreground border-t border-border">
+            Ces montants font partie du coût du dépannage — ils ne figurent pas dans le module Dépenses,
+            où ils compteraient une seconde fois.
+        </p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

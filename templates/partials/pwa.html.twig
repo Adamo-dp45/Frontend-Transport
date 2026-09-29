@@ -12,8 +12,15 @@
    couvrirait que cette branche — quand il n'échoue pas tout court. #}
 <link rel="manifest" href="{{ asset('manifest.json') }}">
 <meta name="theme-color" content="#f59e0b">
-{# iOS ignore le manifeste : il lui faut son icône et ses métas à lui. #}
-<link rel="apple-touch-icon" href="{{ asset('images/192.png') }}">
+{# ICÔNES — « la ligne et ses arrêts » (29/09/2026), toutes sous 'public/icons'. Ici et nulle part ailleurs :
+   les deux gabarits racines portaient chacun le favicon par défaut de Symfony (« sf » sur rond noir).
+   L'ICO d'abord, avec 'sizes' : sans cet attribut, Chrome le préfère au SVG. Le SVG est la version
+   AGRANDIE du dessin (trait plus épais), pour rester lisible dans un onglet de 16 px. #}
+<link rel="icon" href="{{ asset('icons/favicon.ico') }}" sizes="32x32">
+<link rel="icon" href="{{ asset('icons/favicon.svg') }}" type="image/svg+xml">
+{# iOS ignore le manifeste : il lui faut son icône et ses métas à lui. Icône OPAQUE et plein cadre, iOS
+   pose lui-même ses coins arrondis. #}
+<link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}" sizes="180x180">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="iTransport">
 <script>

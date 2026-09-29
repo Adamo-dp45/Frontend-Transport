@@ -4,8 +4,15 @@
 {% block title %}Approvisionnement #{{ approvisionnement.id }}{% endblock %}
 
 {% block body %}
-{% set total = 0 %}
-{% for d in approvisionnement.detailapprovisionnements %}{% set total = total + (d.quantite * d.prixunitaire) %}{% endfor %}
+{#
+    LE MONTANT VIENT DE L'API — `Approvisionnement::$couttotal`, recomposé à chaque écriture depuis les
+    lignes (28/09/2026), comme `Depannage::$couttotal` le fait depuis toujours.
+
+    Il était resommé ici, et en `quantite * prixunitaire` : la page ignorait donc jusqu'au `couttotal`
+    de la ligne qu'elle affichait juste en dessous. Deux façons d'obtenir le même nombre, donc deux
+    façons de diverger — et c'est l'écran qui aurait eu tort, sans qu'on sache lequel croire.
+#}
+{% set total = approvisionnement.couttotal|default(0) %}
 <div class="max-w-[1100px] mx-auto">
 
     {# En-tête #}
@@ -72,7 +79,9 @@
                     <td class="px-4 py-3 font-medium">{{ detail.piece.libelle ?? '—' }}</td>
                     <td class="px-4 py-3 text-right tabular-nums">{{ detail.quantite }}</td>
                     <td class="px-4 py-3 text-right tabular-nums">{{ detail.prixunitaire|number_format(0, ',', ' ') }} FCFA</td>
-                    <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ (detail.quantite * detail.prixunitaire)|number_format(0, ',', ' ') }} FCFA</td>
+                    {# La LIGNE porte aussi son total (`Detailapprovisionnement::$couttotal`) : on le lit
+                       plutôt que de refaire la multiplication, pour la même raison qu'au-dessus. #}
+                    <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ (detail.couttotal ?? detail.quantite * detail.prixunitaire)|number_format(0, ',', ' ') }} FCFA</td>
                 </tr>
                 {% else %}
                 <tr><td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucun détail disponible</td></tr>
@@ -81,6 +90,13 @@
             {% if approvisionnement.detailapprovisionnements|length > 0 %}
             <tfoot>
                 <tr class="border-t border-border bg-muted/20">
+                    {# !! CE PIED TOTALISE SON PROPRE TABLEAU, et il n'y a aujourd'hui aucun écart : le
+                       coût d'un approvisionnement N'EST QUE la somme de ses lignes de pièces.
+                       LE JOUR OÙ `couttotal` porterait autre chose — frais de transport, douane,
+                       manutention —, ce pied cesserait de totaliser les lignes qu'il chiffre et il
+                       faudrait revenir à leur somme. C'est exactement le piège rencontré sur le
+                       dépannage, où `couttotal` comprend la main d'œuvre externe : voir le commentaire
+                       de `depannage/show.html.twig`, qui totalise les pièces et NON `couttotal`. #}
                     <td colspan="3" class="px-4 py-3 text-right font-semibold">Total</td>
                     <td class="px-4 py-3 text-right tabular-nums font-bold">{{ total|number_format(0, ',', ' ') }} FCFA</td>
                 </tr>

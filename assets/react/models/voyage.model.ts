@@ -39,6 +39,12 @@ export interface Voyage {
     ticketsCount: number // nb de billets actifs vendus (remplace 'placesoccupees')
     courriersCount: number
     bagagesCount: number
+    /**
+     * Total des charges rattachées au départ. NULL = pas le droit de savoir (sans `DEPENSE_VOIR`),
+     * 0 = aucune charge. Les deux ne s'affichent pas pareil : un zéro à qui n'a pas le droit
+     * laisserait croire à un départ sans frais.
+     */
+    depensestotal: number | null
     detailpersonnelsCount: number
     createdAt: string
     // Commercial à bord + position courante du car

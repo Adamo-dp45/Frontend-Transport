@@ -1,0 +1,43 @@
+{#
+    LE THÈME, POSÉ AVANT LE PREMIER PIXEL.
+
+    `assets/modules/theme.js` s'exécute au `turbo:load`, donc APRÈS le premier rendu : la page
+    apparaissait en clair puis basculait en sombre à chaque navigation — un éclair blanc que l'œil
+    attrape parfaitement. Ce script est volontairement INLINE et SYNCHRONE dans le `<head>` : c'est le
+    seul endroit d'où l'on peut poser la classe avant que le navigateur ne peigne.
+
+    !! LE PARTIEL EST INCLUS DANS LES DEUX GABARITS RACINES. Le bouton de thème ne vit que dans
+    `base.html.twig`, si bien que la CONNEXION (`app-base.html.twig`) ignorait le choix enregistré et
+    s'affichait toujours en clair : on choisissait « sombre », on se déconnectait, et l'application
+    repassait en blanc. Même raison que pour `partials/pwa.html.twig` — dupliquer le bloc l'aurait fait
+    diverger, d'où l'inclusion.
+
+    !! C'EST LE SEUL SCRIPT DE THÈME DU `<head>` (29/09/2026). Les deux gabarits racines portaient EN PLUS
+    un ancien script en ligne, antérieur aux trois modes (`localStorage.theme === 'dark' || …`), exécuté
+    juste avant celui-ci : il lisait `system` comme « pas sombre » et ôtait la classe, que ce partiel
+    reposait aussitôt. Sans effet visible tant que l'ordre tenait, mais deux décisions pour une seule
+    classe — supprimés. Verrouillé par `tests/Controller/EnteteRenduTest.php`.
+
+    Les DEUX constantes (la clé de stockage et les modes) sont aussi dans `theme.js`. Cette duplication
+    est assumée : importer un module ici obligerait à attendre le bundle, ce qui ramènerait l'éclair.
+#}
+<script>
+    (function () {
+        try {
+            var mode = localStorage.getItem('theme')
+            if (['system', 'light', 'dark'].indexOf(mode) === -1) {
+                mode = 'system' // valeur absente ou inconnue : on suit le système
+            }
+
+            var sombre = mode === 'dark'
+                || (mode === 'system'
+                    && typeof window.matchMedia === 'function'
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+            document.documentElement.classList.toggle('dark', sombre)
+        } catch (e) {
+            // Stockage bloqué (navigation privée) : on laisse le thème clair par défaut plutôt que de
+            // lever une erreur dans le head, qui arrêterait le reste du script.
+        }
+    })()
+</script>

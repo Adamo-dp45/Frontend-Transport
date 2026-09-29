@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>iTransport — la ligne et ses arrêts</title>
+  <rect width="512" height="512" fill="#F59E0B"/>
+  <path d="M150 370 C150 300 256 320 256 256 C256 192 362 212 362 142" fill="none" stroke="#FFFFFF" stroke-width="38" stroke-linecap="round"/>
+  <circle cx="150" cy="370" r="38" fill="#FFFFFF"/>
+  <circle cx="150" cy="370" r="16" fill="#78350F"/>
+  <circle cx="256" cy="256" r="28" fill="#FFFFFF"/>
+  <circle cx="256" cy="256" r="11" fill="#78350F"/>
+  <circle cx="362" cy="142" r="38" fill="#FFFFFF"/>
+  <circle cx="362" cy="142" r="16" fill="#78350F"/>
+</svg>

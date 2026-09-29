@@ -6,8 +6,13 @@ interface GareRef {
     libelle: string
 }
 
+/**
+ * Un justificatif est un document PRIVÉ côté API : `contentUrl` y vaut null, il se consulte par le
+ * relais du front (`/depense/{id}/justificatif`). Ne JAMAIS s'en servir comme lien.
+ */
 interface MediaRef {
-    contentUrl: string
+    contentUrl: string | null
+    prive: boolean
 }
 
 export type Modereglement = "ESPECES" | "MOBILE_MONEY" | "VIREMENT" | "CHEQUE"

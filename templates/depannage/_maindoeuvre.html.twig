@@ -1,0 +1,134 @@
+{#
+    MAIN D'ŒUVRE EXTERNE d'un dépannage : le soudeur du village, le garage appelé au bord de la route,
+    le remorquage.
+
+    UN PARTIEL PARTAGÉ par la création et la modification, là où le tableau des pièces est dupliqué
+    entre les deux gabarits : deux copies finissent par diverger, et un champ oublié d'un côté se
+    traduit par une ligne perdue en silence.
+
+    DIFFÉRENCE AVEC LES PIÈCES, et c'est la raison des deux scripts distincts : la main d'œuvre est
+    FACULTATIVE. On démarre donc à ZÉRO ligne et la suppression peut vider le tableau, alors que les
+    pièces en exigent au moins une. Un dépannage réglé d'un coup de soudure, sans rien changer, est un
+    cas normal.
+
+    Le formulaire est AUTORITAIRE : il envoie toujours la clé `maindoeuvres`, vide comprise. Côté API,
+    `[]` veut dire « supprime-la » et l'absence « n'y touche pas » — pour un formulaire qui montre
+    l'état complet, c'est bien « supprime » qu'il faut dire quand l'utilisateur a tout retiré.
+
+    `lignes` : les lignes existantes (édition), vide à la création.
+#}
+{% set lignes = lignes|default([]) %}
+
+<div class="flex items-center justify-between p-4">
+    <div>
+        <h2 class="text-2xl font-light">Main d'œuvre externe</h2>
+        <p class="text-sm text-muted-foreground">
+            Facultative. Une fois un intervenant ajouté, son nom et son montant deviennent obligatoires. Elle s'ajoute au coût du dépannage, avec les pièces.
+        </p>
+    </div>
+    <button type="button" id="btn-add-mo" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Ajouter un intervenant
+    </button>
+</div>
+
+<div class="overflow-x-auto mb-3">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b bg-muted/40">
+                <th class="text-left px-4 py-3 font-semibold">Intervenant <span class="text-red-500">*</span></th>
+                <th class="text-left px-4 py-3 font-semibold">Prestation <span class="text-xs font-normal text-muted-foreground">(optionnel)</span></th>
+                <th class="text-left px-4 py-3 font-semibold w-44">Montant (FCFA) <span class="text-red-500">*</span></th>
+                <th class="w-12"></th>
+            </tr>
+        </thead>
+        <tbody id="tbody-mo">
+            {% for ligne in lignes %}
+            <tr class="mo-ligne border-b">
+                <td class="px-4 py-3">
+                    <input type="text" name="mo_intervenant[]" required maxlength="255" class="input"
+                           value="{{ ligne.intervenant }}" placeholder="Garage Kouassi" />
+                </td>
+                <td class="px-4 py-3">
+                    <input type="text" name="mo_prestation[]" maxlength="255" class="input"
+                           value="{{ ligne.prestation ?? '' }}" placeholder="Démontage culasse" />
+                </td>
+                <td class="px-4 py-3">
+                    <input type="number" name="mo_montant[]" min="1" required class="input"
+                           value="{{ ligne.montant }}" />
+                </td>
+                <td class="px-4 py-3">
+                    <button type="button" class="btn-remove-mo btn btn-danger">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {# La ligne d'invite disparaît dès qu'il y a une ligne, et revient quand on vide le tableau. #}
+    <p id="mo-vide" class="px-4 py-3 text-sm text-muted-foreground {{ lignes|length > 0 ? 'hidden' : '' }}">
+        Aucun intervenant externe. Le coût du dépannage ne comptera que ses pièces.
+    </p>
+</div>
+
+<template id="template-mo">
+    <tr class="mo-ligne border-b">
+        <td class="px-4 py-3">
+            <input type="text" name="mo_intervenant[]" required maxlength="255" class="input"
+                   placeholder="Garage Kouassi" />
+        </td>
+        <td class="px-4 py-3">
+            <input type="text" name="mo_prestation[]" maxlength="255" class="input"
+                   placeholder="Démontage culasse" />
+        </td>
+        <td class="px-4 py-3">
+            <input type="number" name="mo_montant[]" min="1" required class="input" />
+        </td>
+        <td class="px-4 py-3">
+            <button type="button" class="btn-remove-mo btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>
+(function () {
+    const tbody = document.getElementById('tbody-mo')
+    const tmpl = document.getElementById('template-mo')
+    const btnAdd = document.getElementById('btn-add-mo')
+    const vide = document.getElementById('mo-vide')
+
+    function rafraichirVide() {
+        vide.classList.toggle('hidden', tbody.querySelectorAll('.mo-ligne').length > 0)
+    }
+
+    function bindRow(row) {
+        // Aucun plancher à une ligne, contrairement aux pièces : la main d'œuvre peut être RETIRÉE
+        // entièrement, et le formulaire enverra alors un tableau vide — ce qui la supprime côté API.
+        row.querySelector('.btn-remove-mo').addEventListener('click', function () {
+            row.remove()
+            rafraichirVide()
+        })
+    }
+
+    tbody.querySelectorAll('.mo-ligne').forEach(bindRow)
+
+    btnAdd.addEventListener('click', function () {
+        const row = tmpl.content.cloneNode(true).querySelector('tr')
+        tbody.appendChild(row)
+        bindRow(row)
+        rafraichirVide()
+        row.querySelector('input[name="mo_intervenant[]"]').focus()
+    })
+
+    rafraichirVide()
+})()
+</script>

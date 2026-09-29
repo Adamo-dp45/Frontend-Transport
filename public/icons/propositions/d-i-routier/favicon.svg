@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>iTransport — proposition D : le « i » routier</title>
+  <rect width="512" height="512" rx="112" fill="#1C1917"/>
+  <g transform="translate(256 256) scale(1.18) translate(-256 -256)">
+    <circle cx="256" cy="148" r="48" fill="#F59E0B"/>
+    <circle cx="256" cy="148" r="19" fill="#1C1917"/>
+    <polygon points="224,226 288,226 326,384 186,384" fill="#F59E0B"/>
+    <line x1="256" y1="244" x2="256" y2="370" stroke="#1C1917" stroke-width="11" stroke-dasharray="24 17"/>
+  </g>
+</svg>

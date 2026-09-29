@@ -7,6 +7,17 @@
 @import 'tom-select/dist/css/tom-select.default.min.css';
 
 :root {
+    /*
+        'color-scheme' : les éléments NATIFS suivent le thème — sélecteurs de date et d'heure, listes
+        déroulantes, cases, remplissage automatique, et les barres de défilement là où elles sont natives.
+        Il n'était déclaré nulle part (29/09/2026) : en sombre, tout cela restait clair. La propriété
+        s'HÉRITE, cette seule déclaration couvre donc la page entière.
+        !! Les barres personnalisées plus bas ('::-webkit-scrollbar', pouce en 'var(--border)') suivaient
+        déjà le thème sous Chrome, Edge et Safari ; FIREFOX les ignore et dessine les siennes, que seul
+        'color-scheme' assombrit. Ne pas y ajouter 'scrollbar-color' : depuis Chrome 121, cette propriété
+        standard DÉSACTIVE les '::-webkit-scrollbar' et changerait leur aspect partout.
+    */
+    color-scheme: light;
     --background: oklch(1.0000 0 0);
     --foreground: oklch(0.2686 0 0);
     --card: oklch(1.0000 0 0);
@@ -74,6 +85,7 @@
 }
 
 .dark {
+    color-scheme: dark; /* cf. ':root' */
     --background: oklch(0.2046 0 0);
     --foreground: oklch(0.9219 0 0);
     --card: oklch(0.2686 0 0);

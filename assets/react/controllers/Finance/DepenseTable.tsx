@@ -128,7 +128,8 @@ function buildColumns(
             id: "justificatif",
             header: "Justificatif",
             cell: ({ row }) => row.original.justificatif
-                ? <a href={row.original.justificatif.contentUrl} target="_blank" rel="noopener" className="text-primary hover:underline text-sm">Voir</a>
+                // Par le relais du front : le justificatif est privé côté API, il n'a pas d'URL.
+                ? <a href={`/depense/${row.original.id}/justificatif`} target="_blank" rel="noopener" className="text-primary hover:underline text-sm">Voir</a>
                 : <span className="text-muted-foreground">—</span>
         },
         {
