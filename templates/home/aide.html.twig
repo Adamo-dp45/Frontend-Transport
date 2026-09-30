@@ -35,6 +35,7 @@
                     {% if is_granted('COURRIER_VOIR') %}{{ h.toc('courrier', 'Envoyer un courrier') }}{% endif %}
                     {% if is_granted('BAGAGE_VOIR') %}{{ h.toc('bagage', 'Enregistrer un bagage') }}{% endif %}
                     {% if is_granted('DEPENSE_VOIR') %}{{ h.toc('depense', 'Enregistrer une dépense') }}{% endif %}
+                    {% if is_granted('SESSIONCAISSE_VOIR') %}{{ h.toc('caisse', 'Ouvrir et clôturer ma caisse') }}{% endif %}
                     {% if not is_granted('ROLE_SUPER_ADMIN') %}{{ h.toc('alertes', 'Alertes & notifications') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') %}{{ h.toc('stats', 'Statistiques & export') }}{% endif %}
                     {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GARE') %}{{ h.toc('admin', 'Administration') }}{% endif %}
@@ -200,6 +201,22 @@
                 </ol>
                 {{ h.note('Les dépenses du <strong>siège</strong> (loyer, salaires de la direction) ne sont imputées à aucune gare : seul un administrateur les saisit et les voit.') }}
                 {{ h.warn('Ne ressaisissez pas ici un <strong>achat de pièces</strong> ou un <strong>dépannage</strong> : ils portent déjà leur coût dans leurs modules et seraient comptés deux fois. Le résultat de votre gare déduit vos dépenses, mais pas ces deux postes, qui sont portés par la compagnie. Seul un administrateur peut mettre une dépense à la corbeille.') }}
+            {{ h.close() }}
+            {% endif %}
+
+            {# Caisse #}
+            {% if is_granted('SESSIONCAISSE_VOIR') %}
+            {{ h.open('caisse', 'money', 'Ouvrir et clôturer ma caisse', 'Module Caisse') }}
+                <ol class="space-y-3">
+                    {{ h.step(1, 'À la prise de poste, ouvrez <strong>Finances</strong> → <strong>Caisse</strong> et saisissez le <strong>fonds de caisse</strong> que le chef de gare vous a remis — la monnaie pour rendre. Si vous n\'en avez pas reçu, laissez zéro.') }}
+                    {{ h.step(2, 'Vendez normalement : billets, bagages, courriers, bons payés au comptoir. Tout ce que vous encaissez se range automatiquement dans votre caisse.') }}
+                    {{ h.step(3, 'En fin de service, revenez sur <strong>Ma caisse</strong> et <strong>comptez votre tiroir</strong>, fonds d\'ouverture compris. Le dépliant « compter coupure par coupure » vous aide à additionner : il reste sur votre écran, seul le total est envoyé.') }}
+                    {{ h.step(4, 'Validez. L\'application vous indique alors l\'<strong>écart</strong> entre ce que vous avez compté et ce que vous auriez dû avoir. S\'il n\'est pas nul, un <strong>motif est obligatoire</strong>.') }}
+                    {{ h.step(5, 'Imprimez le <strong>ticket de caisse</strong> et signez-le avec votre chef de gare. C\'est la pièce qui justifie votre journée.') }}
+                </ol>
+                {{ h.note('Le montant attendu ne vous est <strong>pas montré avant</strong> que vous ayez compté : c\'est ce qui donne sa valeur à votre comptage. Vous le découvrez une fois la caisse clôturée.') }}
+                {{ h.note('Vous pouvez vendre <strong>sans avoir ouvert votre caisse</strong> : la première vente l\'ouvre pour vous, sans fonds. Rien ne bloque jamais le guichet. Mais votre monnaie du matin ressortirait alors comme un excédent inexpliqué le soir.') }}
+                {{ h.warn('Une clôture est <strong>définitive</strong> : on ne la refait pas. Si vous reprenez la vente après avoir clôturé, une nouvelle caisse s\'ouvre et la précédente reste intacte. Et si vous avez remboursé un client avec de l\'argent venu du coffre, l\'écran vous préviendra que le chiffre <strong>n\'est pas exploitable</strong> — signalez-le à votre chef de gare plutôt que de chercher l\'erreur.') }}
             {{ h.close() }}
             {% endif %}
 

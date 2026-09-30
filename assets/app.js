@@ -12,6 +12,7 @@ import { initSearch } from './modules/search.js'
 import { initNotifications } from './modules/notifications.js'
 import { initSuiviLive } from './modules/suivi.js'
 import { initImpression } from './modules/impression.js'
+import { initCaisse } from './modules/caisse.js'
 
 // Exposés en global pour les scripts inline (ex. lignes de pièces AJOUTÉES dynamiquement dans
 // les formulaires appro/dépannage → il faut initialiser tom-select sur le nouveau select).
@@ -52,6 +53,7 @@ document.addEventListener('turbo:load', () => {
     initNotifications()
     initSuiviLive()
     initImpression()
+    initCaisse()
     /*
         (() => {
             const badge     = document.getElementById('notifCount');

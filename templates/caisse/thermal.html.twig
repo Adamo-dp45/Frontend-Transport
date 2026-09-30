@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 0; }
+        * { margin: 0; padding: 0; }
+
+        html, body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 11px;
+            line-height: 1.35;
+            color: #000;
+            background: #fff;
+        }
+
+        /* Conteneur AUTO-largeur (SANS width:100%) : sous Dompdf, un bloc sans largeur explicite
+           remplit la page et son padding décale le contenu des DEUX côtés sans déborder — alors
+           que width:100% + padding déborde à droite. Même contrainte que le billet. */
+        .ticket { padding: 9px 11px; }
+        .c { text-align: center; }
+        .b { font-weight: bold; }
+
+        .sigle { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+        .sep { border-top: 1px dashed #999; margin: 6px 0; }
+        .sep-plein { border-top: 1px solid #000; margin: 6px 0; }
+
+        .titre { text-align: center; font-weight: bold; text-transform: uppercase;
+                 letter-spacing: 2px; font-size: 12px; margin: 4px 0; }
+
+        table.l { width: 100%; border-collapse: collapse; }
+        table.l td { vertical-align: top; padding: 1px 0; }
+        table.l td.v { text-align: right; white-space: nowrap; }
+
+        .petit { font-size: 9px; }
+        .gros { font-size: 14px; font-weight: bold; }
+
+        /* L'écart est le chiffre qu'on vient lire : il est encadré, pas seulement gras. */
+        .ecart { border: 1px solid #000; padding: 4px; text-align: center; margin: 5px 0; }
+
+        .sign { margin-top: 14px; }
+        .sign td { width: 50%; font-size: 9px; padding-top: 22px; }
+        .sign .ligne { border-top: 1px solid #000; padding-top: 2px; }
+    </style>
+</head>
+<body>
+{% set ecart = caisse.ecart ?? 0 %}
+{# Attendu négatif : il est sorti plus d'argent de cette caisse qu'il n'y est entré. Le dire ICI
+   AUSSI, et pas seulement à l'écran — c'est ce papier que le chef de gare garde, et c'est sur lui
+   qu'on rediscutera dans six mois. #}
+{% set attenduNegatif = (caisse.montanttheorique ?? 0) < 0 %}
+<div class="ticket">
+
+    <div class="c">
+        <div class="sigle">{{ entreprise.libelle|default('') }}</div>
+        {% if caisse.gare is defined and caisse.gare %}
+        <div class="petit">{{ caisse.gare.libelle }}</div>
+        {% endif %}
+    </div>
+
+    <div class="titre">Clôture de caisse</div>
+
+    <table class="l petit">
+        <tr>
+            <td>Agent</td>
+            <td class="v b">
+                {% if caisse.agent is defined and caisse.agent %}
+                    {{ caisse.agent.prenom|default('') }} {{ caisse.agent.nom|default('') }}
+                {% else %}—{% endif %}
+            </td>
+        </tr>
+        <tr><td>Caisse</td><td class="v">#{{ caisse.id }}</td></tr>
+        <tr><td>Ouverte</td><td class="v">{{ caisse.datedebut|date('d/m/Y H:i') }}</td></tr>
+        <tr><td>Clôturée</td><td class="v">{{ caisse.datefin ? caisse.datefin|date('d/m/Y H:i') : '—' }}</td></tr>
+    </table>
+
+    <div class="sep"></div>
+
+    {# Un poste par ligne de la formule, dans l'ordre du calcul : c'est ce qui permet de chercher
+       un écart là où il est, plutôt que de recompter la journée entière. #}
+    <table class="l">
+        <tr><td>Fonds d'ouverture</td><td class="v">{{ caisse.fondsouverture|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Billets</td><td class="v">{{ (caisse.totalbillets ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Bagages</td><td class="v">{{ (caisse.totalbagages ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Courriers</td><td class="v">{{ (caisse.totalcourriers ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Frais de suivi</td><td class="v">{{ (caisse.totalfraissuivi ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Réservations</td><td class="v">{{ (caisse.totalreservations ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Pénalités</td><td class="v">{{ (caisse.totalpenalites ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Compléments</td><td class="v">{{ (caisse.totalcomplements ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Remboursements</td><td class="v">− {{ (caisse.totalremboursements ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+    </table>
+
+    <div class="sep-plein"></div>
+
+    <table class="l b">
+        <tr><td>Attendu</td><td class="v">{{ (caisse.montanttheorique ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+        <tr><td>Compté</td><td class="v">{{ (caisse.montantcompte ?? 0)|number_format(0, ',', ' ') }}</td></tr>
+    </table>
+
+    <div class="ecart">
+        {% if ecart == 0 %}
+            <div class="gros">COMPTE JUSTE</div>
+        {% else %}
+            <div class="petit">Écart</div>
+            <div class="gros">{{ ecart > 0 ? '+' : '' }}{{ ecart|number_format(0, ',', ' ') }} FCFA</div>
+            {# Même règle qu'à l'écran : on n'imprime pas « Excédent » sur un papier signé quand
+               le chiffre n'est pas exploitable. #}
+            <div class="petit">{% if attenduNegatif %}chiffre non exploitable{% else %}{{ ecart < 0 ? 'Manquant' : 'Excédent' }}{% endif %}</div>
+        {% endif %}
+    </div>
+
+    {% if attenduNegatif %}
+    <div class="petit" style="border: 1px solid #000; padding: 4px; margin-bottom: 5px;">
+        <span class="b">Chiffre non exploitable.</span>
+        Il est sorti de cette caisse plus d'argent qu'il n'y est entré : les remboursements ont été
+        payés avec des espèces venues d'ailleurs, que rien ne permet encore de saisir.
+    </div>
+    {% endif %}
+
+    {% if caisse.motifecart %}
+    <div class="petit"><span class="b">Motif :</span> {{ caisse.motifecart }}</div>
+    {% endif %}
+
+    {# DEUX SIGNATURES : recevoir l'argent reste un geste physique, même quand l'application
+       l'a consigné. C'est ce papier que le chef de gare garde. #}
+    <table class="l sign">
+        <tr>
+            <td><div class="ligne">L'agent</div></td>
+            <td>&nbsp;&nbsp;<div class="ligne">Le chef de gare</div></td>
+        </tr>
+    </table>
+
+    <div class="sep"></div>
+    <div class="c petit">Imprimé le {{ "now"|date('d/m/Y à H:i') }}</div>
+
+</div>
+</body>
+</html>

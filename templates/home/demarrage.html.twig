@@ -317,18 +317,20 @@
         {# ══════════════════ 8 · LE BILAN ══════════════════ #}
         {{ g.open('bilan', 'chart', 'Le bilan de la journée', 'Étape 8') }}
             <p class="text-sm leading-relaxed mb-4">
-                La journée est finie, les cars sont rentrés. L'administrateur d'entreprise se connecte.
+                La journée est finie, les cars sont rentrés. Chaque guichetier compte son tiroir,
+                puis l'administrateur d'entreprise se connecte.
             </p>
             <ol class="space-y-3">
-                {{ g.step(1, '<strong>Le tableau de bord</strong> donne l\'essentiel : voyages réalisés, taux de remplissage, recettes, coûts et bénéfice net sur la période choisie.') }}
-                {{ g.step(2, '<strong>La recette se lit par canal</strong> : <strong>guichet</strong> (ventes en gare), <strong>commercial</strong> (ventes à bord, rattachées à la gare d\'affectation du vendeur) et <strong>réservation</strong> (payée, comptée à la gare de provenance). Un billet issu d\'une réservation n\'est jamais compté deux fois.') }}
-                {{ g.step(3, '<strong>Le détail par gare</strong> permet de comparer les caisses ; chaque chef de gare voit la sienne sur son propre tableau de bord.') }}
-                {{ g.step(4, '<strong>La ponctualité</strong> exploite les horodatages de la journée : retard moyen et taux à l\'heure par gare, par ligne, par véhicule et par membre d\'équipage, avec l\'évolution du retard le long du trajet.') }}
-                {{ g.step(5, '<strong>Le journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, remises, montants forcés, encaissements, ajustements de stock avec leur motif.') }}
-                {{ g.step(6, '<strong>La page Agents</strong> résume les actions critiques par agent (taux d\'annulation, remises accordées) pour repérer une dérive.') }}
-                {{ g.step(7, '<strong>Exportez</strong> en Excel ou PDF depuis n\'importe quelle page de statistiques, sur la période affichée.') }}
+                {{ g.step(1, '<strong>Chaque agent clôture sa caisse</strong> (Finances → Caisse) : il compte ses espèces, l\'application lui oppose ce qu\'il aurait dû avoir, et tout écart doit être motivé. Le ticket se signe à deux, l\'agent et le chef de gare. <strong>Le montant attendu ne lui est montré qu\'après son comptage</strong> — sans quoi il lui suffirait de le recopier, et le contrôle ne mesurerait plus rien.') }}
+                {{ g.step(2, '<strong>Le tableau de bord</strong> donne l\'essentiel : voyages réalisés, taux de remplissage, recettes, coûts et bénéfice net sur la période choisie.') }}
+                {{ g.step(3, '<strong>La recette se lit par canal</strong> : <strong>guichet</strong> (ventes en gare), <strong>commercial</strong> (ventes à bord, rattachées à la gare d\'affectation du vendeur) et <strong>réservation</strong> (payée, comptée à la gare de provenance). Un billet issu d\'une réservation n\'est jamais compté deux fois.') }}
+                {{ g.step(4, '<strong>Le détail par gare</strong> permet de comparer les recettes ; chaque chef de gare voit la sienne sur son propre tableau de bord. Pour les <strong>caisses</strong>, l\'écran Finances → Caisse met les clôtures de la période côte à côte : c\'est ainsi qu\'on voit qu\'un agent est toujours à −2 000 quand les autres tombent juste.') }}
+                {{ g.step(5, '<strong>La ponctualité</strong> exploite les horodatages de la journée : retard moyen et taux à l\'heure par gare, par ligne, par véhicule et par membre d\'équipage, avec l\'évolution du retard le long du trajet.') }}
+                {{ g.step(6, '<strong>Le journal d\'activité</strong> répond à « qui a fait quoi » : annulations, suppressions, remises, montants forcés, encaissements, ajustements de stock avec leur motif.') }}
+                {{ g.step(7, '<strong>La page Agents</strong> résume les actions critiques par agent (taux d\'annulation, remises accordées) pour repérer une dérive.') }}
+                {{ g.step(8, '<strong>Exportez</strong> en Excel ou PDF depuis n\'importe quelle page de statistiques, sur la période affichée.') }}
             </ol>
-            {{ g.note('Les <strong>alertes</strong> (cloche en haut à droite) remontent automatiquement ce qui demande une action : stock sous le seuil, dépannage qui traîne, passagers à reloger, bons de réservation près d\'expirer, colis non livrés. Chacun ne voit que ce qui le concerne — sa gare, son rôle.') }}
+            {{ g.note('Les <strong>alertes</strong> (cloche en haut à droite) remontent automatiquement ce qui demande une action : stock sous le seuil, dépannage qui traîne, passagers à reloger, bons de réservation près d\'expirer, colis non livrés, <strong>caisse restée ouverte</strong> ou <strong>écart important</strong>. Chacun ne voit que ce qui le concerne — sa gare, son rôle : une caisse oubliée va au chef de gare, un écart de caisse à la direction.') }}
         {{ g.close() }}
 
         {# ══════════════════ 9 · LES ANNEXES ══════════════════ #}

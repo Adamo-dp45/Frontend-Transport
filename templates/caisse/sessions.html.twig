@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Les caisses{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Caisses</h1>
+        <p class="text-muted-foreground text-sm">
+            Ce que chaque agent a compté en fin de service, et ce qui manquait.
+            {# Trier sur la colonne « Écart » met les manquants en tête : c'est la seule chose
+               qu'on vient chercher ici. #}
+            Triez par écart pour voir d'abord ce qui ne tombe pas juste.
+        </p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {# Le récapitulatif reprend la PÉRIODE filtrée à l'écran : imprimer autre chose que ce
+           qu'on regarde est le plus sûr moyen de discuter deux chiffres différents en réunion. #}
+        <a href="{{ path('caisse.recapitulatif', app.request.query.all|filter((v, k) => k in ['date_from', 'date_to', 'gare'])) }}"
+           class="btn btn-secondary max-sm:flex-1 max-sm:justify-center">Récapitulatif</a>
+        <a href="{{ path('caisse.index') }}" class="btn btn-secondary max-sm:flex-1 max-sm:justify-center">Ma caisse</a>
+    </div>
+</div>
+
+<div {{ react_component('Finance/CaisseTable', {
+        caisses: items,
+        meta: meta,
+        queryParams: queryParams,
+        statuts: statuts
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

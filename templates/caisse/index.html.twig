@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ma caisse{% endblock %}
+
+{% block body %}
+<div class="max-w-[900px] mx-auto">
+
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">Finances</p>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Ma caisse</h1>
+            <p class="text-sm text-muted-foreground mt-1">
+                Ouvrez votre caisse à la prise de poste, comptez votre tiroir en fin de service.
+            </p>
+        </div>
+        {% if is_granted('SESSIONCAISSE_VOIR') %}
+        <a href="{{ path('caisse.sessions') }}" class="btn btn-secondary shrink-0">Toutes les caisses</a>
+        {% endif %}
+    </div>
+
+    {% if caisse is null %}
+
+        {# ── Aucune caisse ouverte : la prise de poste ─────────────────────────────────── #}
+        <div class="rounded-xl border border-border bg-card p-6">
+            <h2 class="text-lg font-medium mb-1">Ouvrir ma caisse</h2>
+            <p class="text-sm text-muted-foreground mb-5">
+                Indiquez le fonds de caisse que le chef de gare vous a remis — la monnaie pour rendre.
+                {# Un fonds oublié ressort le soir comme un excédent inexpliqué : c'est la seule
+                   raison d'être de cet écran, tout le reste se déduit de votre compte. #}
+                Si vous n'en avez pas reçu, laissez zéro.
+            </p>
+
+            {% if is_granted('SESSIONCAISSE_CREER') %}
+            <form method="POST" action="{{ path('caisse.ouvrir') }}" class="flex flex-wrap items-end gap-3">
+                <input type="hidden" name="_token" value="{{ csrf_token('caisse_ouvrir') }}">
+                <div>
+                    <label for="fondsouverture" class="block text-sm mb-1">Fonds de caisse (FCFA)</label>
+                    <input type="number" id="fondsouverture" name="fondsouverture" value="0" min="0" step="5"
+                           class="input w-48" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary">Ouvrir ma caisse</button>
+            </form>
+            {% else %}
+            <p class="text-sm text-muted-foreground">Vous n'avez pas le droit d'ouvrir une caisse.</p>
+            {% endif %}
+
+            <p class="text-xs text-muted-foreground mt-4">
+                Vous pouvez vendre sans ouvrir votre caisse : la première vente l'ouvrira pour vous,
+                sans fonds. Rien ne bloque jamais le guichet.
+            </p>
+        </div>
+
+    {% else %}
+
+        {# ── Caisse ouverte : l'état, puis le comptage ─────────────────────────────────── #}
+        <div class="rounded-xl border border-border bg-card p-6 mb-6">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
+                        <span class="text-sm font-medium">Caisse ouverte</span>
+                        {% if caisse.ouvertureautomatique %}
+                        <span class="text-xs rounded-full px-2 py-0.5 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                            ouverte par votre première vente
+                        </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-muted-foreground">
+                        Depuis le {{ caisse.datedebut|date('d/m/Y à H:i') }}
+                        {% if caisse.gare is defined and caisse.gare %} · {{ caisse.gare.libelle }}{% endif %}
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">Fonds d'ouverture</p>
+                    <p class="text-xl font-light">{{ caisse.fondsouverture|number_format(0, ',', ' ') }} <span class="text-sm text-muted-foreground">FCFA</span></p>
+                </div>
+            </div>
+        </div>
+
+        {% if is_granted('SESSIONCAISSE_CLOTURER') %}
+        <div class="rounded-xl border border-border bg-card p-6" data-caisse-cloture>
+            <h2 class="text-lg font-medium mb-1">Clôturer ma caisse</h2>
+            <p class="text-sm text-muted-foreground mb-5">
+                Comptez ce qu'il y a dans votre tiroir, fonds d'ouverture compris.
+                {# Le montant attendu n'est JAMAIS affiché ici : c'est ce qui donne sa valeur au
+                   comptage. Ne pas « améliorer » cet écran en y ajoutant un rappel. #}
+                Le résultat vous sera indiqué une fois la caisse clôturée.
+            </p>
+
+            <form method="POST" action="{{ path('caisse.cloturer', {id: caisse.id}) }}"
+                  onsubmit="return confirm('Clôturer définitivement votre caisse ? Cette opération ne peut pas être annulée.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('caisse_cloturer') }}">
+
+                <details class="mb-5 rounded-lg border border-border">
+                    <summary class="cursor-pointer select-none px-4 py-3 text-sm font-medium">
+                        Compter coupure par coupure
+                        <span class="font-normal text-muted-foreground">(facultatif)</span>
+                    </summary>
+                    <div class="px-4 pb-4 pt-1">
+                        {# Le détail reste dans le navigateur : il aide à compter, il n'a aucune
+                           valeur comptable, et seul le total part au serveur. #}
+                        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {% for coupure in [10000, 5000, 2000, 1000, 500, 250, 200, 100, 50, 25, 10, 5] %}
+                            <label class="flex items-center gap-2 text-sm">
+                                <span class="w-20 shrink-0 text-right tabular-nums text-muted-foreground">{{ coupure|number_format(0, ',', ' ') }}</span>
+                                <span class="text-muted-foreground">×</span>
+                                <input type="number" min="0" step="1" value="" placeholder="0"
+                                       class="input w-20" inputmode="numeric"
+                                       data-coupure="{{ coupure }}" aria-label="Nombre de coupures de {{ coupure }} FCFA">
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-3">
+                            Le détail des coupures n'est pas enregistré : seul le total ci-dessous est transmis.
+                        </p>
+                    </div>
+                </details>
+
+                <div class="flex flex-wrap items-end gap-3 mb-5">
+                    <div>
+                        <label for="montantcompte" class="block text-sm mb-1">
+                            Total compté <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="montantcompte" name="montantcompte" min="0" step="5" required
+                               class="input w-56 text-lg" inputmode="numeric" data-caisse-total>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label for="motifecart" class="block text-sm mb-1">
+                        Motif <span class="text-muted-foreground">(obligatoire si le compte ne tombe pas juste)</span>
+                    </label>
+                    <input type="text" id="motifecart" name="motifecart" maxlength="255"
+                           class="input w-full" placeholder="Ex. : billet de 1 000 rendu en trop à un client">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Clôturer ma caisse</button>
+            </form>
+        </div>
+        {% endif %}
+
+    {% endif %}
+
+    {# ── Mes caisses passées ───────────────────────────────────────────────────────────── #}
+    {% if sessions|length > 0 %}
+    <h2 class="text-lg font-medium mt-8 mb-3">Mes dernières caisses</h2>
+    <div class="rounded-xl border border-border overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-muted/50 text-left">
+                <tr>
+                    <th class="px-4 py-2 font-medium">Ouverture</th>
+                    <th class="px-4 py-2 font-medium">Clôture</th>
+                    <th class="px-4 py-2 font-medium text-right">Compté</th>
+                    <th class="px-4 py-2 font-medium text-right">Écart</th>
+                    <th class="px-4 py-2"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr class="border-t border-border">
+                    <td class="px-4 py-2">{{ s.datedebut|date('d/m/Y H:i') }}</td>
+                    <td class="px-4 py-2">{{ s.datefin ? s.datefin|date('d/m/Y H:i') : '—' }}</td>
+                    <td class="px-4 py-2 text-right tabular-nums">
+                        {{ s.montantcompte is defined and s.montantcompte is not null ? s.montantcompte|number_format(0, ',', ' ') : '—' }}
+                    </td>
+                    <td class="px-4 py-2 text-right tabular-nums">
+                        {# Un écart NUL se dit, il ne se tait pas : c'est lui qui atteste qu'on a compté. #}
+                        {% if s.ecart is defined and s.ecart is not null %}
+                            {% if s.ecart == 0 %}
+                                <span class="text-emerald-600 dark:text-emerald-400">juste</span>
+                            {% else %}
+                                <span class="{{ s.ecart < 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                    {{ s.ecart > 0 ? '+' : '' }}{{ s.ecart|number_format(0, ',', ' ') }}
+                                </span>
+                                {# Attendu négatif : l'écart n'est pas exploitable (cf. la fiche). #}
+                                {% if (s.montanttheorique ?? 0) < 0 %}
+                                <div class="text-xs text-amber-600 dark:text-amber-400">non exploitable</div>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-right">
+                        <a href="{{ path('caisse.show', {id: s.id}) }}" class="text-sm text-primary hover:underline">Détail</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

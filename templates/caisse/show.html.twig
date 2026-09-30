@@ -1,0 +1,184 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Caisse #{{ caisse.id }}{% endblock %}
+
+{% block body %}
+{% set ouverte = caisse.statut == 'OUVERTE' %}
+{% set ecart = caisse.ecart is defined ? caisse.ecart : null %}
+{# ATTENDU NÉGATIF = il est sorti de cette caisse plus d'argent qu'il n'y est entré. C'est
+   physiquement impossible : l'argent remboursé venait d'ailleurs — du coffre du chef de gare, ou
+   d'une session précédente déjà clôturée — et RIEN ne permet encore de saisir cette entrée.
+   L'écart calculé là-dessus ne mesure donc rien, et le mot « excédent » serait un mensonge. #}
+{% set attenduNegatif = (caisse.montanttheorique ?? 0) < 0 %}
+
+<div class="max-w-[820px] mx-auto">
+
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('caisse.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour à ma caisse
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Caisse #{{ caisse.id }}</p>
+                {% if ouverte %}
+                    <span class="text-xs rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">ouverte</span>
+                {% else %}
+                    <span class="text-xs rounded-full px-2 py-0.5 bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200">clôturée</span>
+                {% endif %}
+                {% if caisse.ouvertureautomatique %}
+                    <span class="text-xs rounded-full px-2 py-0.5 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">ouverte par une vente</span>
+                {% endif %}
+            </div>
+            <h1 class="text-2xl font-light tracking-[-0.5px] leading-[1.2]">
+                {% if caisse.agent is defined and caisse.agent %}
+                    {{ caisse.agent.prenom ?? '' }} {{ caisse.agent.nom ?? '' }} ({{ caisse.agent.email ?? '' }})
+                {% else %}Agent{% endif %}
+            </h1>
+            <p class="text-sm text-muted-foreground mt-1">
+                {% if caisse.gare is defined and caisse.gare %}{{ caisse.gare.libelle }} · {% endif %}
+                Du {{ caisse.datedebut|date('d/m/Y à H:i') }}
+                {% if caisse.datefin %} au {{ caisse.datefin|date('d/m/Y à H:i') }}{% endif %}
+            </p>
+        </div>
+        {% if not ouverte %}
+        <div class="flex items-center gap-2 shrink-0">
+            {# DEUX imprimés, et ce n'est pas un doublon : le TICKET sort de la bobine du guichet,
+               là où l'agent se trouve ; la page A4 sert au dossier du chef de gare. #}
+            <a href="{{ path('caisse.ticket', {id: caisse.id}) }}" class="btn btn-primary" target="_blank" rel="noopener">
+                Ticket de caisse
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">Imprimer la page</button>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if ouverte %}
+        {# Une caisse ouverte n'a AUCUN total : ils sont figés à la clôture, et les afficher
+           « en cours » reviendrait à donner le montant attendu à qui doit compter à l'aveugle. #}
+        <div class="rounded-xl border border-border bg-card p-6">
+            <p class="text-sm text-muted-foreground">
+                Cette caisse est encore ouverte. Ses totaux seront arrêtés à la clôture — ils ne sont
+                pas affichés avant, pour que le comptage garde sa valeur.
+            </p>
+            <p class="text-sm mt-3">
+                Fonds d'ouverture :
+                <span class="font-medium tabular-nums">{{ caisse.fondsouverture|number_format(0, ',', ' ') }} FCFA</span>
+            </p>
+        </div>
+    {% else %}
+
+        {# ── Le décompte, poste par poste ──────────────────────────────────────────────── #}
+        <div class="rounded-xl border border-border overflow-hidden mb-6">
+            <table class="w-full text-sm">
+                <tbody>
+                    {% set postes = [
+                        { libelle: "Fonds d'ouverture", valeur: caisse.fondsouverture, note: 'avancé par le chef de gare' },
+                        { libelle: 'Billets', valeur: caisse.totalbillets, note: null },
+                        { libelle: 'Bagages', valeur: caisse.totalbagages, note: null },
+                        { libelle: 'Courriers', valeur: caisse.totalcourriers, note: null },
+                        { libelle: 'Frais de suivi', valeur: caisse.totalfraissuivi, note: 'encaissés à part du courrier' },
+                        { libelle: 'Réservations encaissées', valeur: caisse.totalreservations, note: 'bons payés au guichet' },
+                        { libelle: 'Pénalités', valeur: caisse.totalpenalites, note: null },
+                        { libelle: 'Compléments', valeur: caisse.totalcomplements, note: 'régularisation de no-show' }
+                    ] %}
+                    {% for poste in postes %}
+                    <tr class="border-b border-border">
+                        <td class="px-4 py-2">
+                            {{ poste.libelle }}
+                            {% if poste.note %}<span class="text-xs text-muted-foreground"> — {{ poste.note }}</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-2 text-right tabular-nums">
+                            {{ (poste.valeur ?? 0)|number_format(0, ',', ' ') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="border-b border-border">
+                        <td class="px-4 py-2">
+                            Remboursements
+                            <span class="text-xs text-muted-foreground"> — billets désistés, bagages et courriers repris</span>
+                        </td>
+                        <td class="px-4 py-2 text-right tabular-nums text-red-600 dark:text-red-400">
+                            − {{ (caisse.totalremboursements ?? 0)|number_format(0, ',', ' ') }}
+                        </td>
+                    </tr>
+                    <tr class="bg-muted/40 font-medium">
+                        <td class="px-4 py-3">
+                            Attendu en caisse
+                            {% if attenduNegatif %}
+                            <div class="text-xs font-normal text-amber-700 dark:text-amber-400">
+                                négatif : réapprovisionnement non saisi
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right tabular-nums {{ attenduNegatif ? 'text-amber-700 dark:text-amber-400' : '' }}">
+                            {{ (caisse.montanttheorique ?? 0)|number_format(0, ',', ' ') }} FCFA
+                        </td>
+                    </tr>
+                    <tr class="bg-muted/40 font-medium border-t border-border">
+                        <td class="px-4 py-3">Compté par l'agent</td>
+                        <td class="px-4 py-3 text-right tabular-nums">
+                            {{ (caisse.montantcompte ?? 0)|number_format(0, ',', ' ') }} FCFA
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {# ── L'écart ───────────────────────────────────────────────────────────────────── #}
+        <div class="rounded-xl border p-6
+            {{ ecart == 0
+                ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40'
+                : (ecart < 0
+                    ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40'
+                    : 'border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40') }}">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Écart</p>
+            {% if ecart == 0 %}
+                <p class="text-2xl font-light">Le compte tombe juste</p>
+            {% else %}
+                <p class="text-2xl font-light tabular-nums">
+                    {{ ecart > 0 ? '+' : '' }}{{ ecart|number_format(0, ',', ' ') }} <span class="text-base text-muted-foreground">FCFA</span>
+                </p>
+                {# On n'affirme PAS « excédent » quand l'attendu est négatif : ce serait énoncer
+                   une conclusion fausse pour la démentir trois lignes plus bas. Un excédent
+                   véritable n'est d'ailleurs pas une bonne nouvelle — c'est une monnaie mal
+                   rendue, ou une vente encaissée sans être saisie. #}
+                {% if not attenduNegatif %}
+                <p class="text-sm mt-1">
+                    {{ ecart < 0 ? 'Manquant dans le tiroir.' : 'Excédent dans le tiroir.' }}
+                </p>
+                {% endif %}
+                {% if attenduNegatif %}
+                <p class="text-sm mt-3 rounded-lg border border-amber-400 bg-amber-100/60 p-3 dark:border-amber-700 dark:bg-amber-950/60">
+                    <span class="font-medium">Ce chiffre n'est pas exploitable.</span>
+                    Il est sorti de cette caisse plus d'argent qu'il n'y est entré : les
+                    remboursements ont été payés avec des espèces venues d'ailleurs — le coffre du
+                    chef de gare, ou les ventes d'une journée précédente. Tant que cette entrée ne
+                    peut pas être saisie, l'écart ne mesure rien et il ne s'agit pas d'un excédent.
+                </p>
+                {% endif %}
+                {% if caisse.motifecart %}
+                <p class="text-sm mt-3">
+                    <span class="text-muted-foreground">Motif :</span> {{ caisse.motifecart }}
+                </p>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {# Deux signatures : recevoir l'argent reste un geste physique, même sans acte dans
+           l'application. Visibles à l'impression seulement. #}
+        <div class="hidden print:grid grid-cols-2 gap-10 mt-12">
+            <div>
+                <p class="text-xs text-muted-foreground">L'agent</p>
+                <div class="mt-10 border-t border-border"></div>
+            </div>
+            <div>
+                <p class="text-xs text-muted-foreground">Le chef de gare</p>
+                <div class="mt-10 border-t border-border"></div>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

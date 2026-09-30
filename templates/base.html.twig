@@ -117,8 +117,10 @@
                         </div>
                         {% endif %}
 
-                        {# Groupe à part : une charge n'est ni du stock ni de la flotte, et la CAISSE viendra s'y ranger. #}
-                        {% if is_granted('DEPENSE_VOIR') or is_granted('TYPEDEPENSE_VOIR') %}
+                        {# Groupe à part : une charge n'est ni du stock ni de la flotte, et la CAISSE s'y range.
+                           !! 'SESSIONCAISSE_VOIR' DOIT figurer dans cette condition : sans lui, un caissier
+                           qui n'a aucun droit sur les dépenses ne verrait pas le groupe, donc pas sa caisse. #}
+                        {% if is_granted('DEPENSE_VOIR') or is_granted('TYPEDEPENSE_VOIR') or is_granted('SESSIONCAISSE_VOIR') %}
                         <button class="nav-link" data-submenu="sub-finance" title="Finances">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#finance"></use>
@@ -136,6 +138,11 @@
                                 {% if is_granted('DEPENSE_VOIR') %}
                                 <a href="{{ path('depense.index') }}" class="sub-link {{ app.current_route starts with 'depense.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Dépense
+                                </a>
+                                {% endif %}
+                                {% if is_granted('SESSIONCAISSE_VOIR') %}
+                                <a href="{{ path('caisse.index') }}" class="sub-link {{ app.current_route starts with 'caisse.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Caisse
                                 </a>
                                 {% endif %}
                             </div>

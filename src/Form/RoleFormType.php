@@ -63,6 +63,7 @@ class RoleFormType extends AbstractType
         'Reservation' => ['ANNULER'],             // défait une réservation PAYÉE
         'Courrier' => ['DECLARER_PERDU'],         // engage la responsabilité de la compagnie
         'Bagage' => ['DECLARER_PERDU'],
+        'Sessioncaisse' => ['CLOTURER'],          // arrête une caisse et en signe l'écart (définitif)
     ];
 
     /** Colonnes de la matrice de permissions : les actions communes, puis toutes les spécifiques. */

@@ -88,7 +88,7 @@ class ApiUser implements UserInterface, PasswordAuthenticatedUserInterface
         // !! MIROIR de 'GareScopedEntities::ENTITIES' (backend) : les deux listes doivent rester
         // d'accord, sinon l'écran promet ce que le serveur refuse — ou masque ce qu'il autorise.
         if(in_array('ROLE_ADMIN_GARE', $this->getRoles(), true)) {
-            $gareScoped = ['VOYAGE', 'TICKET', 'RESERVATION', 'COURRIER', 'BAGAGE', 'USER', 'ROLE', 'DEPENSE'];
+            $gareScoped = ['VOYAGE', 'TICKET', 'RESERVATION', 'COURRIER', 'BAGAGE', 'USER', 'ROLE', 'DEPENSE', 'SESSIONCAISSE'];
             if(in_array(strtoupper($entity), $gareScoped, true)) {
                 return true;
             }

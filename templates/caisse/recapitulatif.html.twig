@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 22mm 14mm; }
+        * { margin: 0; padding: 0; }
+
+        html, body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #000;
+        }
+
+        h1 { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+        .sous { font-size: 10px; color: #444; margin-bottom: 12px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 4px 5px; border-bottom: 1px solid #ddd; vertical-align: top; }
+        th { background: #f2f2f2; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td.v, th.v { text-align: right; white-space: nowrap; }
+
+        tr.total td { border-top: 2px solid #000; border-bottom: none; font-weight: bold; padding-top: 6px; }
+
+        .neg { color: #b00; }
+        .pos { color: #a60; }
+        .petit { font-size: 9px; color: #555; }
+        .note { margin-top: 14px; font-size: 9px; color: #555; }
+    </style>
+</head>
+<body>
+
+<h1>Récapitulatif des caisses</h1>
+<div class="sous">
+    {{ entreprise.libelle|default('') }}
+    {% if gareLibelle %} · {{ gareLibelle }}{% endif %}
+    · du {{ debut|date('d/m/Y') }} au {{ fin|date('d/m/Y') }}
+    · imprimé le {{ "now"|date('d/m/Y à H:i') }}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Agent</th>
+            <th>Période</th>
+            <th class="v">Fonds</th>
+            <th class="v">Encaissé</th>
+            <th class="v">Remboursé</th>
+            <th class="v">Attendu</th>
+            <th class="v">Compté</th>
+            <th class="v">Écart</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in caisses %}
+        <tr>
+            <td>
+                {% if c.agent is defined and c.agent %}{{ c.agent.prenom|default('') }} {{ c.agent.nom|default('') }}{% else %}—{% endif %}
+                {% if c.ouvertureautomatique %}<div class="petit">ouverte par une vente</div>{% endif %}
+            </td>
+            <td>
+                {{ c.datedebut|date('d/m H:i') }}<br>
+                <span class="petit">{{ c.datefin ? c.datefin|date('d/m H:i') : '—' }}</span>
+            </td>
+            <td class="v">{{ c.fondsouverture|number_format(0, ',', ' ') }}</td>
+            {# « Encaissé » = les sept postes d'entrée, hors fonds : ce que l'agent a réellement
+               reçu des clients. Le fonds a sa colonne, il n'est pas une recette. #}
+            <td class="v">{{ c.encaisse|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ (c.totalremboursements ?? 0)|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ (c.montanttheorique ?? 0)|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ (c.montantcompte ?? 0)|number_format(0, ',', ' ') }}</td>
+            <td class="v {{ (c.ecart ?? 0) < 0 ? 'neg' : ((c.ecart ?? 0) > 0 ? 'pos' : '') }}">
+                {% if (c.ecart ?? 0) == 0 %}—{% else %}{{ c.ecart > 0 ? '+' : '' }}{{ c.ecart|number_format(0, ',', ' ') }}{% endif %}
+                {# Un attendu négatif rend l'écart inexploitable : il entre pourtant dans le total
+                   de la colonne, d'où le repère — sans lui, une ligne fausse se fondrait dans une
+                   somme d'apparence normale. #}
+                {% if (c.montanttheorique ?? 0) < 0 %}<div class="petit">non exploitable</div>{% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">Aucune caisse clôturée sur cette période.</td></tr>
+        {% endfor %}
+
+        {% if caisses|length > 0 %}
+        <tr class="total">
+            <td colspan="2">{{ caisses|length }} caisse{{ caisses|length > 1 ? 's' : '' }}</td>
+            <td class="v">{{ totaux.fonds|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ totaux.encaisse|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ totaux.rembourse|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ totaux.theorique|number_format(0, ',', ' ') }}</td>
+            <td class="v">{{ totaux.compte|number_format(0, ',', ' ') }}</td>
+            <td class="v {{ totaux.ecart < 0 ? 'neg' : (totaux.ecart > 0 ? 'pos' : '') }}">
+                {% if totaux.ecart == 0 %}—{% else %}{{ totaux.ecart > 0 ? '+' : '' }}{{ totaux.ecart|number_format(0, ',', ' ') }}{% endif %}
+            </td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<div class="note">
+    {# Un total d'écarts proche de zéro ne veut PAS dire que tout va bien : un manquant de 20 000
+       et un excédent de 20 000 s'annulent. C'est la colonne, ligne à ligne, qui se lit. #}
+    Le total des écarts ne dit rien de leur gravité : un manquant et un excédent de même montant
+    s'annulent. Lire la colonne ligne à ligne.
+    Seules les caisses CLÔTURÉES figurent ici — une caisse encore ouverte n'a pas de totaux.
+</div>
+
+</body>
+</html>

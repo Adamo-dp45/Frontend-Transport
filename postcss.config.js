@@ -11,8 +11,15 @@ module.exports = {
             utile restant (imbrication, préfixes).
             RETRAIT MESURÉ, pas supposé : styles calculés de 1 647 éléments (connexion + fiches dépense,
             dépannage, voyage), en clair ET en sombre, identiques avant et après. Cf. README, section THÈME.
+
+            !! 'autoprefixer' A SUIVI, et pas par choix (30/09/2026). Il n'a JAMAIS été déclaré dans
+            'package.json' : il arrivait comme dépendance TRANSITIVE de 'postcss-preset-env'. Le
+            'npm uninstall postcss-preset-env' que le README recommandait l'a donc emporté avec lui,
+            en laissant cette configuration réclamer un plugin absent — « Loading PostCSS
+            "autoprefixer" plugin failed », 12 erreurs par build, et pas une seule feuille de style
+            compilée. Le bon geste est de RETIRER la ligne, pas de réinstaller le paquet : le
+            commentaire ci-dessus le dit déjà, Tailwind v4 fait les préfixes par Lightning CSS.
         */
-        autoprefixer: {},
         "@tailwindcss/postcss": {}
     },
 };
