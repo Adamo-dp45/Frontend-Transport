@@ -60,6 +60,12 @@
 <section class="mb-4">
     {{ s.sectionTitle('Explorer le détail', 'Chaque axe de recette sur sa page dédiée') }}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {#
+            LA CAISSE MANQUAIT. Le contrôleur annonce « par gare / commercial / départ / ligne /
+            caisse » et la liste n'en comptait que quatre : le module livré n'avait aucun chemin
+            depuis l'espace recettes, alors que c'est la surface qui RAPPROCHE l'argent compté de
+            l'argent attendu — exactement ce qu'un admin vient chercher ici.
+        #}
         {% set links = [
             { route: 'owner.stats.gares',      icon: 'building', tone: 'emerald', title: 'Par gare',    desc: 'Classement, canaux et croisement par agent' },
             { route: 'owner.stats.commercial', icon: 'users',    tone: 'violet',  title: 'Par commercial', desc: 'Ventes à bord : billets + bagages par vendeur' },
@@ -68,6 +74,19 @@
             { route: 'owner.agent',            icon: 'money',    tone: 'amber',   title: 'Par agent',    desc: 'Encaissements au comptoir par agent' },
             { route: 'owner.billetterie',      icon: 'ticket',   tone: 'rose',    title: 'Billetterie',  desc: 'Canaux, par jour, trajet et véhicule' },
         ] %}
+        {#
+            !! CONDITIONNÉ À LA PERMISSION, à la différence des six autres. Toutes ces pages
+            demandent 'ROLE_ADMIN', comme celle-ci : y mener est sans risque. La caisse, elle,
+            dépend de 'SESSIONCAISSE_VOIR' — une permission de rôle que l'admin d'une compagnie
+            n'a pas forcément, puisque les rôles se configurent. Le lien inconditionnel aurait
+            affiché une carte qui répond 403, et l'application apprend alors à son utilisateur
+            qu'elle lui ment (même règle que 'LiensRapides').
+        #}
+        {% if is_granted('SESSIONCAISSE_VOIR') %}
+            {% set links = links|merge([
+                { route: 'caisse.sessions', icon: 'money', tone: 'teal', title: 'Caisses', desc: 'Clôtures, écarts et motifs par agent' }
+            ]) %}
+        {% endif %}
         {% for l in links %}
         <a href="{{ path(l.route) }}" class="card p-4 flex items-start gap-3 hover:border-primary transition-colors group">
             <span class="flex size-9 shrink-0 items-center justify-center rounded-lg

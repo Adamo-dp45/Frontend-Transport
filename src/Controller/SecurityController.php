@@ -62,9 +62,23 @@ class SecurityController extends AbstractController
                     'email' => $email,
                     'frontResetUrl' => $resetUrl
                 ]);
-            } catch(ApiException $e) { /*
-                    - On le laisse silencieux et on ne révèle pas si le compte existe
+            } catch(ApiException $e) {
+                /*
+                    LE 429 SE DIT, le reste reste SILENCIEUX.
+
+                    Silencieux parce qu'une erreur détaillée révélerait si le compte existe — c'est
+                    tout l'objet du message neutre ci-dessous. Mais depuis la limite de débit (D1),
+                    une demande peut être REFUSÉE : la taire ferait annoncer « vous recevrez un
+                    lien » à quelqu'un qui n'en recevra aucun, et qui attendrait puis recommencerait
+                    en vain.
+                    Le dire ne révèle rien : le limiteur compte AUSSI les adresses inconnues (cf.
+                    'ForgotPasswordProcessor' côté API), donc un 429 ne distingue pas un compte
+                    existant d'un compte inventé.
                 */
+                if($e->getCode() === Response::HTTP_TOO_MANY_REQUESTS) {
+                    $this->addFlash('error', 'Trop de demandes pour cette adresse. Réessayez dans une heure.');
+                    return $this->redirectToRoute('forgot');
+                }
             }
             $this->addFlash('success', 'Si un compte existe avec cette adresse, vous recevrez un lien de réinitialisation dans quelques minutes');
             return $this->redirectToRoute('forgot');

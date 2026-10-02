@@ -215,6 +215,27 @@ export default function TicketForm({
         setSiegesData(null);
         setSelectedSieges([]);
         setClientInfos({});
+        /*
+            !! LA REMISE REPART À ZÉRO, COMME LE NOM DU CLIENT. Elle appartient à la vente en cours,
+            pas à l'écran : c'est le billet de CE client-là qu'on a décidé de réduire.
+
+            Elle ne l'a pas toujours fait, et le défaut coûtait de l'argent en silence. Après une
+            vente réussie, 'handleSubmit' rappelle cette fonction pour rafraîchir le plan : la
+            sélection et les infos passager étaient bien vidées, la remise NON. Le panneau qui la
+            porte disparaît avec la sélection ('selectedSieges.length > 0'), si bien qu'elle était
+            INVISIBLE au moment où elle redevenait active — l'agent clique le siège suivant, regarde
+            le plan, et le billet part avec la réduction du client précédent.
+
+            MESURÉ sur l'application (01/10/2026) : remise de 2 000 posée, plan rechargé, siège
+            resélectionné — le récapitulatif affichait toujours « Remise : −2 000 FCFA / billet » et
+            « 3 000 FCFA (remise incluse) », sur un autre départ et un autre trajet.
+
+            Le bénéficiaire suit la remise : laissé seul, il désignerait l'ayant droit d'une
+            réduction qui n'existe plus, et le rapport des remises par bénéficiaire mentirait.
+        */
+        setRemiseType("MONTANT");
+        setRemiseValeur("");
+        setBeneficiaireId("");
         // setFlashError(null);
         setFlashSuccess(null);
         try {
@@ -233,8 +254,73 @@ export default function TicketForm({
 
     // « Occupé » pour la synchro : empêche un rafraîchissement auto de collisionner avec un
     // chargement ou une soumission en cours (ref toujours à jour, sans re-render).
+    /*
+        ── APRÈS UNE VENTE, LE CURSEUR REVIENT SUR LE PLAN (C3) ─────────────────────────────────
+
+        Dernier maillon de la vente au clavier : sans lui, l'agent finissait sur le bouton
+        « Confirmer » et devait reprendre la souris pour le billet suivant — tout le reste du
+        parcours au clavier ne servait qu'à moitié.
+
+        LE DÉPART ET LE TRAJET NE BOUGENT PAS, et c'est délibéré : au guichet, la vente suivante est
+        presque toujours sur le MÊME car. Les redemander à chaque billet coûterait plus que ce qu'on
+        vient de gagner. C'est la sélection de sièges et les informations passager qui repartent de
+        zéro ('loadSieges'), avec la remise.
+
+        !! LE FOCUS SE POSE APRÈS LE RECHARGEMENT, pas après l'appel. 'loadSieges' est asynchrone et
+        REMPLACE le plan : viser un siège juste après l'avoir demandé viserait un bouton que React
+        s'apprête à détruire, et le focus retomberait sur 'body'. D'où le drapeau, consommé par
+        l'effet quand le nouveau plan est rendu.
+    */
+    const rendreLaMainAuPlan = useRef(false);
+
+    useEffect(() => {
+        if (!rendreLaMainAuPlan.current || siegesData === null) return;
+        rendreLaMainAuPlan.current = false;
+        /*
+            Le siège d'ENTRÉE du plan, celui que 'PlanCar' garde seul dans l'ordre de tabulation.
+            On le cherche par l'ATTRIBUT et non par la propriété : un '<button>' sans attribut
+            'tabindex' rapporte quand même 'tabIndex === 0', y compris désactivé — un sélecteur
+            écrit sur la propriété ramènerait le premier siège occupé du car.
+        */
+        document.querySelector<HTMLButtonElement>('[data-siege][tabindex="0"]')?.focus();
+    }, [siegesData]);
+
     const busyRef = useRef(false);
     busyRef.current = loadingSieges || submitting;
+
+    /*
+        ── LE FOCUS PART SUR LE PREMIER CHAMP À REMPLIR (C3) ────────────────────────────────────
+
+        L'écran s'ouvrait sans focus nulle part : la première action d'une vente était d'attraper la
+        souris pour cliquer un champ. Cent fois par jour, devant une file d'attente.
+
+        !! CE N'EST PAS TOUJOURS LE PREMIER CHAMP DE L'ÉCRAN, et c'est tout l'intérêt de le calculer
+        plutôt que de poser un 'autoFocus'. Pour un GUICHETIER, la gare de montée est sa gare : elle
+        est pré-remplie et DÉSACTIVÉE ('disabled' quand 'userGareId'), tout comme elle l'est pour un
+        commercial (position du car). Et quand on arrive depuis un départ, le voyage est déjà choisi.
+        Un focus posé en dur sur « Voyage » viserait donc, dans le cas le plus courant, un champ que
+        l'agent ne touchera jamais — il faudrait tabuler pour en sortir, et le gain serait perdu.
+    */
+    useEffect(() => {
+        /*
+            PAR 'id' ET NON PAR 'ref', volontairement. 'SelectTrigger' (shadcn) est une fonction
+            simple qui répand ses props sur la primitive Radix ; en React 18, 'ref' n'est PAS une
+            prop ordinaire et se perd faute de 'forwardRef' — les trois refs arrivaient à 'null' et
+            le focus ne se posait nulle part, sans la moindre erreur (mesuré). L'ajouter dans
+            'components/ui/select.tsx' corrigerait la cause, mais ce fichier est partagé par tous
+            les écrans : on ne modifie pas un composant de bibliothèque pour un besoin local.
+            Les trois champs portent déjà un 'id' — c'est ce que 'htmlFor' utilise.
+        */
+        const champ = (id: string) => document.getElementById(id) as HTMLButtonElement | null;
+        const montee = champ("montee");
+        const premier = !voyageId
+            ? champ("voyage")
+            : (montee?.disabled ? champ("descente") : montee);
+
+        // Au montage seulement : plus tard, voler le focus interromprait une saisie en cours.
+        premier?.focus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Rafraîchissement SILENCIEUX du plan : met à jour l'état des sièges SANS effacer la sélection en
     // cours, et retire de la sélection les sièges qu'une AUTRE vente vient de prendre (avec un avis).
@@ -610,6 +696,8 @@ export default function TicketForm({
                 );
 
                 // Le plan de sièges doit refléter les places qui viennent d'être vendues.
+                // Et le curseur doit revenir dessus : la vente suivante commence par un siège.
+                rendreLaMainAuPlan.current = true;
                 await loadSieges(voyageId, monteeId, descenteId);
             }
 

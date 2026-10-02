@@ -44,6 +44,15 @@
                         />
                         {{ form_errors(form.password.second) }}
                     </div>
+                    {#
+                        MÊME PIÈGE QUE SUR « MOT DE PASSE OUBLIÉ » : les deux champs sortent par
+                        'twig:Input', qui lit 'vars' sans passer par 'form_widget'. Symfony les
+                        croit donc non rendus et 'form_rest' les redessine — deux fois « Nouveau
+                        mot de passe », deux fois « Confirmer ». On les marque rendus, mais on
+                        GARDE 'form_rest' : il porte le jeton CSRF et le champ 'token' caché.
+                    #}
+                    {% do form.password.first.setRendered %}
+                    {% do form.password.second.setRendered %}
                     {{ form_rest(form) }}
                     <twig:Button type="submit" class="w-full">
                         Réinitialiser le mot de passe

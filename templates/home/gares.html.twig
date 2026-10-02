@@ -37,7 +37,7 @@
     <div class="card p-4">
         <p class="text-xs text-muted-foreground">Recette des gares</p>
         <p class="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">{{ totalRecette|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">F</span></p>
-        <p class="text-[11px] text-muted-foreground mt-1">Guichet {{ canalGuichet|number_format(0, ',', ' ') }} · commercial {{ canalCommercial|number_format(0, ',', ' ') }}{% if canalReservation > 0 %} · réservation {{ canalReservation|number_format(0, ',', ' ') }}{% endif %}</p>
+        <p class="text-[11px] text-muted-foreground mt-1">Guichet {{ canalGuichet|number_format(0, ',', ' ') }} F · commercial {{ canalCommercial|number_format(0, ',', ' ') }} F{% if canalReservation > 0 %} · réservation {{ canalReservation|number_format(0, ',', ' ') }} F{% endif %}</p>
     </div>
     <div class="card p-4">
         <p class="text-xs text-muted-foreground">Gares actives</p>
@@ -91,9 +91,9 @@
                 <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground mb-3">
                     <span>Panier moyen <strong class="text-foreground tabular-nums">{{ g.panierMoyen|number_format(0, ',', ' ') }} F</strong></span>
                     <span><strong class="text-foreground tabular-nums">{{ g.nbOperations }}</strong> opérations</span>
-                    <span>Billets <strong class="text-foreground tabular-nums">{{ g.recetteBillets|number_format(0, ',', ' ') }}</strong></span>
-                    <span>Courriers <strong class="text-foreground tabular-nums">{{ g.recetteCourriers|number_format(0, ',', ' ') }}</strong></span>
-                    <span>Bagages <strong class="text-foreground tabular-nums">{{ g.recetteBagages|number_format(0, ',', ' ') }}</strong></span>
+                    <span>Billets <strong class="text-foreground tabular-nums">{{ g.recetteBillets|number_format(0, ',', ' ') }} F</strong></span>
+                    <span>Courriers <strong class="text-foreground tabular-nums">{{ g.recetteCourriers|number_format(0, ',', ' ') }} F</strong></span>
+                    <span>Bagages <strong class="text-foreground tabular-nums">{{ g.recetteBagages|number_format(0, ',', ' ') }} F</strong></span>
                     <span>Annulés <strong class="tabular-nums {{ (g.ticketsAnnules ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground' }}">{{ g.ticketsAnnules ?? 0 }}</strong></span>
                     <span title="{% if (g.ticketsReportesEviction ?? 0) > 0 %}dont {{ g.ticketsReportesEviction }} relogement(s) d'évincé(s), imputable(s) à la compagnie{% else %}reports demandés par le client{% endif %}">Reportés <strong class="tabular-nums {{ (g.ticketsReportes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground' }}">{{ g.ticketsReportes ?? 0 }}</strong>{% if (g.ticketsReportesEviction ?? 0) > 0 %} <span class="text-rose-600 dark:text-rose-400">· {{ g.ticketsReportesEviction }} évic.</span>{% endif %}</span>
                     <span>Remises <strong class="tabular-nums {{ (g.remiseTotale ?? 0) > 0 ? 'text-fuchsia-600 dark:text-fuchsia-400' : 'text-foreground' }}">{{ (g.remiseTotale ?? 0)|number_format(0, ',', ' ') }} F</strong>{% if (g.remiseNb ?? 0) > 0 %} <span class="text-muted-foreground">· {{ g.remiseNb }}</span>{% endif %}</span>
@@ -112,9 +112,9 @@
                         <div class="bg-violet-500" style="width: {{ gcr / gct * 100 }}%"></div>
                     </div>
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500"></span>Guichet {{ gcg|number_format(0, ',', ' ') }}</span>
-                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-indigo-500"></span>Commercial {{ gcc|number_format(0, ',', ' ') }}</span>
-                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-violet-500"></span>Réservation {{ gcr|number_format(0, ',', ' ') }}</span>
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500"></span>Guichet {{ gcg|number_format(0, ',', ' ') }} F</span>
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-indigo-500"></span>Commercial {{ gcc|number_format(0, ',', ' ') }} F</span>
+                        <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-violet-500"></span>Réservation {{ gcr|number_format(0, ',', ' ') }} F</span>
                     </div>
                 </div>
                 {% endif %}

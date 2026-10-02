@@ -1,0 +1,21 @@
+{#
+    Les raccourcis « et après ? », sous le titre d'un écran. Cf. 'App\Domain\Service\LiensRapides',
+    qui porte la table des destinations et le filtrage par permission.
+
+    DES LIENS TEXTE et non des boutons : ils se posent juste au-dessus d'un formulaire dont le
+    bouton de validation est l'action principale. Trois boutons secondaires au-dessus de « Valider
+    la vente » se disputeraient l'œil, et le raccourci finirait par coûter plus d'attention qu'il
+    n'en fait gagner.
+
+    Rien n'est rendu quand l'acteur n'a droit à aucune destination — pas de rangée vide, pas de
+    séparateur orphelin.
+#}
+{% set liens = liens_rapides(app.current_route) %}
+{% if liens|length > 0 %}
+<div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    {% for lien in liens %}
+        {% if not loop.first %}<span class="text-muted-foreground" aria-hidden="true">·</span>{% endif %}
+        <a href="{{ path(lien.route) }}" class="text-primary hover:underline">{{ lien.libelle }}</a>
+    {% endfor %}
+</div>
+{% endif %}

@@ -1,3 +1,5 @@
+import { useRef, useState, type KeyboardEvent } from "react"
+
 import { cn } from "../../../lib/utils"
 
 /**
@@ -93,10 +95,20 @@ function SiegeCell({
     readonly,
     onSelect,
     onLiberer,
+    tabIndex,
+    onKeyDown,
 }: {
     siege: SiegePlan
     selected: boolean
     readonly: boolean
+    /*
+        ROVING TABINDEX : un SEUL siège du plan porte 0, tous les autres -1. Sans cela la tabulation
+        traverse les soixante-dix boutons du car avant d'atteindre le bouton de vente — le plan était
+        le mur qui rendait le formulaire impraticable au clavier. 'undefined' pour un siège non
+        atteignable : il est 'disabled', l'attribut n'aurait aucun effet.
+    */
+    tabIndex?: number
+    onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void
     // Callbacks SANS argument : c'est 'PlanCar' (générique) qui capture le siège typé 'T' et le
     // transmet. 'SiegeCell' n'a besoin que de savoir « clic sélection » vs « clic libération ».
     onSelect?: () => void
@@ -118,6 +130,9 @@ function SiegeCell({
     return (
         <button
             type="button"
+            data-siege={siege.numero}
+            tabIndex={tabIndex}
+            onKeyDown={onKeyDown}
             disabled={readonly || (isOccupe && !liberable)}
             onClick={() => {
                 if (readonly) return
@@ -242,6 +257,118 @@ export default function PlanCar<T extends SiegePlan>({
     const rangeesGrille = rangees.filter((r) => !estBanquette(byRangee[r]))
     const rangeesBanquette = rangees.filter((r) => estBanquette(byRangee[r]))
 
+    /*
+        ── LE PLAN SE PARCOURT AU CLAVIER (C3) ──────────────────────────────────────────────────
+
+        Le plan n'était atteignable qu'à la souris. Au guichet, la vente se répète des centaines de
+        fois par jour devant une file d'attente : lâcher le clavier pour pointer un siège, puis le
+        reprendre pour saisir le client, coûte quelques secondes à chaque billet.
+
+        Deux choses sont réparées ici, et la première compte plus que la seconde :
+
+        1. UN SEUL SIÈGE DANS L'ORDRE DE TABULATION (roving tabindex). Avant, tabuler depuis « gare
+           de descente » traversait les soixante-dix boutons du car : personne n'allait au bout, donc
+           personne ne travaillait au clavier. Maintenant une tabulation entre dans le plan, une
+           autre en sort.
+        2. LES FLÈCHES DÉPLACENT LE FOCUS de siège en siège, 'Entrée' ou 'Espace' choisit (le bouton
+           natif s'en charge, on ne réimplémente pas l'activation).
+
+        TROIS RÈGLES, posées ici parce que le dessin du car ne les donne pas :
+
+        - LE COULOIR SE TRAVERSE. Il n'est pas une colonne mais un TROU dans la rangée : on va donc
+          au siège existant suivant, pas à la colonne suivante. Sans quoi la flèche droite resterait
+          sans effet au bord de l'allée, et le plan paraîtrait cassé.
+        - LES SIÈGES OCCUPÉS SONT SAUTÉS, parce qu'ils sont 'disabled' et donc hors focus — sauf
+          ceux qu'on peut LIBÉRER, qui restent actionnables et doivent rester atteignables. La règle
+          tient en une phrase : ce qui s'actionne se parcourt.
+        - ON NE BOUCLE PAS en bout de rangée ni en haut du car. Un curseur qui réapparaît à l'autre
+          bout fait perdre où l'on en est ; s'arrêter est le comportement qu'on prédit sans y penser.
+
+        'Home' et 'End' vont au premier et au dernier siège de la rangée — le pas qui manque quand on
+        traverse un car de soixante-dix places.
+    */
+    const conteneurRef = useRef<HTMLDivElement>(null)
+    const [siegeActif, setSiegeActif] = useState<number | null>(null)
+
+    // Atteignable = actionnable : même prédicat que le 'disabled' de 'SiegeCell', à la lettre.
+    const atteignable = (s: T) =>
+        !readonly && (s.statut !== "OCCUPE" || (!!s.occupantTicketId && !!onLiberer))
+    const navigables = sieges.filter(atteignable)
+
+    // L'ordre VISUEL des rangées, banquette comprise : les flèches haut/bas suivent ce que l'œil voit,
+    // pas l'ordre des numéros de rangée (la banquette est rendue à part, après les autres).
+    const ordreRangees = [...rangeesGrille, ...rangeesBanquette]
+
+    /*
+        Le siège qui porte le tabIndex 0. On entre dans le plan sur le siège DÉJÀ SÉLECTIONNÉ quand il
+        y en a un — on reprend là où on s'était arrêté — sinon sur le premier siège libre. Le repli sur
+        la valeur par défaut est recalculé à chaque rendu : au changement de départ, le plan est
+        remplacé et l'ancien numéro ne désigne plus rien.
+    */
+    const actifParDefaut = navigables.find((s) => selectedIds.has(s.id))?.numero ?? navigables[0]?.numero ?? null
+    const actif = navigables.some((s) => s.numero === siegeActif) ? siegeActif : actifParDefaut
+
+    const focusSiege = (numero: number) => {
+        setSiegeActif(numero)
+        conteneurRef.current?.querySelector<HTMLButtonElement>(`[data-siege="${numero}"]`)?.focus()
+    }
+
+    const rangeeDe = (rangee: number) =>
+        navigables.filter((s) => s.rangee === rangee).sort((a, b) => absCol(a) - absCol(b))
+
+    const voisin = (depuis: T, touche: string): T | undefined => {
+        const col = absCol(depuis)
+
+        if (touche === "ArrowLeft" || touche === "ArrowRight") {
+            const ligne = rangeeDe(depuis.rangee)
+            return touche === "ArrowLeft"
+                ? [...ligne].reverse().find((s) => absCol(s) < col)
+                : ligne.find((s) => absCol(s) > col)
+        }
+
+        // Haut / bas : la rangée voisine qui a quelque chose à offrir, puis son siège le plus proche
+        // en colonne — sauter une rangée entièrement occupée vaut mieux que bloquer le déplacement.
+        const pas = touche === "ArrowUp" ? -1 : 1
+        for (let i = ordreRangees.indexOf(depuis.rangee) + pas; i >= 0 && i < ordreRangees.length; i += pas) {
+            const candidats = rangeeDe(ordreRangees[i])
+            if (candidats.length === 0) continue
+            return candidats.reduce((meilleur, s) =>
+                Math.abs(absCol(s) - col) < Math.abs(absCol(meilleur) - col) ? s : meilleur
+            )
+        }
+        return undefined
+    }
+
+    const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, depuis: T) => {
+        let cible: T | undefined
+        switch (e.key) {
+            case "ArrowLeft":
+            case "ArrowRight":
+            case "ArrowUp":
+            case "ArrowDown":
+                cible = voisin(depuis, e.key)
+                break
+            case "Home":
+                cible = rangeeDe(depuis.rangee)[0]
+                break
+            case "End": {
+                const ligne = rangeeDe(depuis.rangee)
+                cible = ligne[ligne.length - 1]
+                break
+            }
+            default:
+                return
+        }
+
+        /*
+            On arrête la touche même quand il n'y a pas de cible (bord du plan) : sinon la flèche
+            rendrait la main au navigateur, qui ferait DÉFILER la page sous les doigts de l'agent —
+            le plan semblerait sauter alors qu'il n'a pas bougé.
+        */
+        e.preventDefault()
+        if (cible) focusSiege(cible.numero)
+    }
+
     // Légende ADAPTATIVE : seuls les états réellement présents (la fiche véhicule ne montre pas
     // « sélectionné », un plan sans revente ne montre pas « revendu »…).
     const hasOccupe = sieges.some((s) => s.statut === "OCCUPE")
@@ -257,6 +384,8 @@ export default function PlanCar<T extends SiegePlan>({
             readonly={readonly}
             onSelect={onToggle ? () => onToggle(s) : undefined}
             onLiberer={onLiberer ? () => onLiberer(s) : undefined}
+            tabIndex={atteignable(s) ? (s.numero === actif ? 0 : -1) : undefined}
+            onKeyDown={(e) => onKeyDown(e, s)}
         />
     )
 
@@ -272,7 +401,7 @@ export default function PlanCar<T extends SiegePlan>({
     )
 
     return (
-        <div className="overflow-x-auto px-2 pt-2 pb-2">
+        <div ref={conteneurRef} className="overflow-x-auto px-2 pt-2 pb-2">
             <div className="mx-auto w-fit">
                 {/* COQUE : nez arrondi en haut, arrière moins arrondi ('relative' pour ancrer les roues) */}
                 <div className="relative rounded-t-[2.75rem] rounded-b-3xl border-2 border-border bg-card px-3 pb-3 pt-2 shadow-sm">
@@ -314,6 +443,23 @@ export default function PlanCar<T extends SiegePlan>({
             {/* Légende adaptative — masquable (fiche véhicule) */}
             {showLegend && (
                 <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+                    {/*
+                        L'AIDE N'EST MONTRÉE QU'EN MODE VENTE ('onToggle'), et jamais sur la fiche
+                        véhicule : annoncer des touches qui ne sélectionnent rien serait pire que de
+                        se taire. Une manœuvre clavier que personne ne devine ne sert personne — et
+                        celle-ci se découvre à la première tabulation dans le plan.
+                    */}
+                    {!readonly && onToggle && (
+                        <p className="mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground">
+                            <kbd className="rounded border border-border bg-background px-1 py-px font-mono text-[10px]">←</kbd>
+                            <kbd className="rounded border border-border bg-background px-1 py-px font-mono text-[10px]">↑</kbd>
+                            <kbd className="rounded border border-border bg-background px-1 py-px font-mono text-[10px]">↓</kbd>
+                            <kbd className="rounded border border-border bg-background px-1 py-px font-mono text-[10px]">→</kbd>
+                            <span>pour se déplacer,</span>
+                            <kbd className="rounded border border-border bg-background px-1 py-px font-mono text-[10px]">Entrée</kbd>
+                            <span>pour choisir le siège.</span>
+                        </p>
+                    )}
                     <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Légende des sièges</p>
                     <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-foreground">
                         <span className="flex items-center gap-1.5">

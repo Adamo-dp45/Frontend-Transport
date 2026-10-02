@@ -61,8 +61,10 @@ class RoleFormType extends AbstractType
         'Approvisionnement' => ['ANNULER'],       // retire du stock déjà entré
         'Depannage' => ['ANNULER'],               // restaure les pièces consommées
         'Reservation' => ['ANNULER'],             // défait une réservation PAYÉE
-        'Courrier' => ['DECLARER_PERDU'],         // engage la responsabilité de la compagnie
-        'Bagage' => ['DECLARER_PERDU'],
+        // 'ANNULER' depuis le 01/10/2026 : une annulation REMBOURSE le client, elle ne corrige pas
+        // une saisie — elle ne doit donc plus suivre 'MODIFIER'.
+        'Courrier' => ['ANNULER', 'DECLARER_PERDU'], // engage la responsabilité de la compagnie
+        'Bagage' => ['ANNULER', 'DECLARER_PERDU'],
         'Sessioncaisse' => ['CLOTURER'],          // arrête une caisse et en signe l'écart (définitif)
     ];
 

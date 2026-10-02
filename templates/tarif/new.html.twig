@@ -9,7 +9,10 @@
             <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
         </svg>
     </a>
-    <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau tarif</h1>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouveau tarif</h1>
+        {% include 'partials/liens_rapides.html.twig' %}
+    </div>
 </div>
 {% include 'tarif/_form.html.twig' with { button: 'Créer' } %}
 {% endblock %}

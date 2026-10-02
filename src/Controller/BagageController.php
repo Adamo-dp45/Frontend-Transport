@@ -172,7 +172,8 @@ final class BagageController extends AbstractController
     }
 
     #[Route('/{id}/annuler', name: 'annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('BAGAGE_MODIFIER')]
+    // 'ANNULER' et non 'MODIFIER' : annuler REMBOURSE le client (cf. README du BK, module Caisse).
+    #[IsGranted('BAGAGE_ANNULER')]
     public function annuler(int $id): Response
     {
         try {

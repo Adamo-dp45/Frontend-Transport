@@ -41,7 +41,7 @@
                 <button type="submit" class="btn btn-warning" onclick="return confirm('Déclarer ce courrier comme perdu ?')">Déclarer perdu</button>
             </form>
             {% endif %}
-            {% if is_granted('COURRIER_MODIFIER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
+            {% if is_granted('COURRIER_ANNULER') and courrier.statut == 'EN_ATTENTE' and peutAgirDepart %}
             <form method="POST" action="{{ path('courrier.annuler', { id: courrier.id }) }}" class="inline">
                 <button type="submit" class="btn btn-danger" onclick="return confirm('Annuler ce courrier ?')">Annuler</button>
             </form>

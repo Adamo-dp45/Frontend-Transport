@@ -48,7 +48,7 @@
         </a>
         {% endif %}
         {# Annuler : uniquement tant que le bagage est ENREGISTRE (non embarqué), par la gare de dépôt #}
-        {% if is_granted('BAGAGE_MODIFIER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
+        {% if is_granted('BAGAGE_ANNULER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
         <form method="POST" action="{{ path('bagage.annuler', { id: bagage.id }) }}" class="inline"
               onsubmit="return confirm('Annuler ce bagage ?')">
             <button type="submit" class="btn btn-warning">Annuler</button>

@@ -84,7 +84,14 @@
             </div>
         </div>
 
-        {% set totalOps = stats.billets.count + stats.courriers.count + stats.bagages.count %}
+        {#
+            !! LES RÉSERVATIONS COMPTENT DANS LES OPÉRATIONS (01/10/2026). Elles étaient omises ici
+            alors que 'RecetteGareService::nbOperations' les inclut : le tableau de bord annonçait
+            9 opérations là où la page « statistiques par gare » en annonçait 11, pour la MÊME gare
+            et la MÊME période. Deux chiffres pour la même chose, et rien à l'écran pour dire lequel
+            compter — alors que leur RECETTE, elle, était bien dans le total de 94 000.
+        #}
+        {% set totalOps = stats.billets.count + (stats.reservations.count ?? 0) + stats.courriers.count + stats.bagages.count %}
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {# Hero recette #}
             <div class="flex flex-col justify-center rounded-xl border bg-gradient-to-br from-primary/10 to-card p-5">
@@ -97,8 +104,11 @@
             <div class="card flex flex-col p-4">
                 <p class="mb-2 text-xs font-medium text-muted-foreground">Répartition de l'activité</p>
                 {% if totalOps > 0 %}
+                {# Mêmes quatre postes que les KPI juste à côté : un camembert qui ignore une part
+                   de l'activité qu'on détaille à dix centimètres de là ne se lit plus. #}
                 <canvas id="chartGareActivite" height="150" data-values="{{ [
                     {label: 'Billets', value: stats.billets.count},
+                    {label: 'Réservations', value: stats.reservations.count ?? 0},
                     {label: 'Courriers', value: stats.courriers.count},
                     {label: 'Bagages', value: stats.bagages.count}
                 ]|json_encode }}"></canvas>

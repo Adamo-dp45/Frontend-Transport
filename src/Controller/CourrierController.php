@@ -236,7 +236,8 @@ final class CourrierController extends AbstractController
     }
 
     #[Route('/{id}/annuler', name: 'annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('COURRIER_MODIFIER')]
+    // 'ANNULER' et non 'MODIFIER' : annuler REMBOURSE le client (cf. README du BK, module Caisse).
+    #[IsGranted('COURRIER_ANNULER')]
     public function annuler(int $id): Response
     {
         try {
