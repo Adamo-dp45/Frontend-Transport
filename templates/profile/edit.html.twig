@@ -57,10 +57,25 @@
                 </div>
             </div>
 
+            {#
+                L'E-MAIL S'AFFICHE MAIS NE SE MODIFIE PAS. C'est l'identifiant de connexion et le
+                canal de réinitialisation du mot de passe : en self-service, qui se trompe s'exclut
+                lui-même, et qui s'en va peut rediriger la récupération de son compte vers une
+                adresse personnelle. Un administrateur le change depuis la gestion des utilisateurs.
+
+                !! LE CHAMP RESTE ENVOYÉ ('hidden'), à dessein : '/api/me' dénormalise un User
+                complet et sa validation EXIGE un e-mail non vide — sans lui, l'enregistrement du
+                profil échouerait en 422. Le serveur l'accepte et ne l'applique jamais
+                ('UserProfileProcessor'), donc le trafiquer ici ne donne rien : la garde est côté API,
+                pas dans ce gabarit.
+            #}
             <div class="field">
-                <label for="email" class="label">Email <span class="text-red-500">*</span></label>
-                <input type="email" name="email" id="email" required value="{{ user.email ?? '' }}" class="input" autocomplete="email"/>
-                <p class="text-xs text-muted-foreground mt-1">Sert d'identifiant de connexion.</p>
+                <span class="label">Email</span>
+                <p class="input flex items-center bg-muted/40 text-muted-foreground">{{ user.email ?? '' }}</p>
+                <input type="hidden" name="email" value="{{ user.email ?? '' }}"/>
+                <p class="text-xs text-muted-foreground mt-1">
+                    Sert d'identifiant de connexion : seul un administrateur peut la changer.
+                </p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2 border-t">

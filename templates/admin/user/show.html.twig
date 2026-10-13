@@ -247,6 +247,37 @@
                         {% endif %}
                     </form>
                     {% endif %}
+
+                    {# CHANGER L'E-MAIL — reserve au SUPER ADMIN, et separe de la page d edition.
+                       L e-mail est l identifiant de connexion et le canal de reinitialisation du mot
+                       de passe : il n est plus modifiable depuis le profil. L admin d une compagnie
+                       change celui de ses agents par le formulaire d edition, mais ce formulaire LUI
+                       EST FERME pour lui-meme (voir la garde de 'PATCH /api/users/{id}') : sans cette
+                       action, un admin qui perd son adresse n a AUCUN chemin de retour.
+
+                       Un '<details>' plutot qu une fenetre modale : aucun JavaScript, donc rien a
+                       reinitialiser apres une navigation Turbo. Le champ reste replie par defaut
+                       parce que ce geste ne doit pas se faire d un clic distrait. #}
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <details class="group w-full rounded-lg border border-border bg-muted/30">
+                        <summary class="cursor-pointer list-none px-3 py-2 text-sm font-medium text-center hover:bg-muted/60 rounded-lg">
+                            Changer l&rsquo;adresse e-mail
+                        </summary>
+                        <form method="post" action="{{ path('admin.user.email', { id: user.id }) }}" class="p-3 pt-0 space-y-2">
+                            <input type="hidden" name="_token" value="{{ csrf_token('changer_email_user') }}">
+                            <label for="nouvel_email" class="block text-xs text-muted-foreground">
+                                Nouvelle adresse (actuelle : {{ user.email }})
+                            </label>
+                            <input type="email" id="nouvel_email" name="email" required value="{{ user.email }}"
+                                   class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            <p class="text-xs text-muted-foreground">
+                                L&rsquo;utilisateur se connectera avec cette adresse et y recevra les liens de
+                                r&eacute;initialisation. Le changement est journalis&eacute;.
+                            </p>
+                            <button type="submit" class="btn btn-primary w-full justify-center">Enregistrer l&rsquo;adresse</button>
+                        </form>
+                    </details>
+                    {% endif %}
                 </div>
             </div>
         </div>

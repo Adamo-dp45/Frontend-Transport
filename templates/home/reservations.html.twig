@@ -13,7 +13,12 @@
 <section class="mb-8">
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
         {{ s.kpi('Réservations', reservations.total ?? 0, '', 'slate', 'ticket', 'sur la période') }}
-        {{ s.kpi('Payées', reservations.confirmees ?? 0, '', 'emerald', 'check', (reservations.tauxConversion ?? 0) ~ '% payées / total') }}
+        {# PAYÉES = confirmées + à régulariser. Un no-show A PAYÉ : c'est le voyage qu'il n'a pas pris,
+           pas l'argent, et son bon reste régularisable avec penalite. La carte affichait
+           'confirmees' seules (2) sous un taux calculé sur les PAYÉES (3) : deux chiffres
+           contradictoires sur la même carte, dont aucun n'était signalé. Le détail des bons à
+           régulariser garde sa carte à côté, donc rien n'est masqué par ce regroupement. #}
+        {{ s.kpi('Payées', (reservations.confirmees ?? 0) + (reservations.aRegulariser ?? 0), '', 'emerald', 'check', (reservations.tauxConversion ?? 0) ~ '% du total, à régulariser inclus') }}
         {{ s.kpi('Recette', (reservations.recetteConfirmee ?? 0) | number_format(0, ',', ' '), 'FCFA', 'amber', 'money', 'réservations payées') }}
         {{ s.kpi('En attente', reservations.enAttente ?? 0, '', 'blue', 'route', 'paiement à venir') }}
         {{ s.kpi('À régulariser', reservations.aRegulariser ?? 0, '', 'orange', 'alert', 'no-show à reporter') }}
@@ -58,6 +63,38 @@
                         <span class="tabular-nums text-muted-foreground">{{ r.total }} · {{ pct | round }}%</span>
                     </div>
                     <div class="h-2 rounded-full bg-muted overflow-hidden"><div class="h-full rounded-full bg-primary" style="width: {{ pct | round }}%"></div></div>
+
+                    {#
+                        L'ENTONNOIR DU CANAL. La barre ci-dessus ne dit que le VOLUME : elle ne
+                        permet pas de choisir entre deux canaux. Un canal qui apporte 60 % des bons
+                        et n'en honore qu'un tiers ne vaut pas celui qui en apporte 40 % et les
+                        honore tous — c'est la conversion qui tranche, pas la part.
+
+                        !! LE NO-SHOW N'EST PAS RANGÉ AVEC LES PERDUES : le bon est PAYÉ et reste
+                        régularisable (avec pénalité et complément). L'y mettre ferait croire à un
+                        manque à gagner qui n'existe pas.
+                    #}
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                        <span>
+                            payées <strong class="tabular-nums text-foreground">{{ r.payees }}</strong>
+                            <span class="opacity-70">({{ r.tauxConversion }} %)</span>
+                        </span>
+                        <span>
+                            présentées <strong class="tabular-nums text-foreground">{{ r.presentees }}</strong>
+                            {% if r.payees > 0 %}<span class="opacity-70">({{ r.tauxPresentation }} % des payées)</span>{% endif %}
+                        </span>
+                        {% if r.aRegulariser > 0 %}
+                        <span class="text-amber-600 dark:text-amber-400" title="Payées mais le client ne s'est pas présenté — récupérables par régularisation, avec pénalité et complément.">
+                            à régulariser <strong class="tabular-nums">{{ r.aRegulariser }}</strong>
+                        </span>
+                        {% endif %}
+                        {% if r.perdues > 0 %}
+                        <span class="text-rose-600 dark:text-rose-400" title="Expirées (jamais payées dans le délai) ou annulées : aucune recette.">
+                            perdues <strong class="tabular-nums">{{ r.perdues }}</strong>
+                        </span>
+                        {% endif %}
+                        <span class="ml-auto tabular-nums">{{ r.recette|number_format(0, ',', ' ') }} F</span>
+                    </div>
                 </li>
             {% endfor %}
             </ul>

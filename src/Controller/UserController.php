@@ -301,4 +301,47 @@ final class UserController extends AbstractController
         }
         return $this->redirectToRoute('admin.user.index');
     }
+    /**
+     * LE SUPER ADMIN CORRIGE L'E-MAIL D'UN UTILISATEUR — route dédiée, et non le formulaire d'édition.
+     *
+     * L'e-mail n'est plus modifiable depuis le profil (c'est l'identifiant de connexion et le canal de
+     * réinitialisation du mot de passe). L'admin d'une compagnie change celui de ses agents par
+     * « Modifier le profil et les rôles », mais cette page LUI EST FERMÉE pour lui-même : il restait
+     * enfermé derrière une adresse qu'il ne pouvait plus corriger. Voilà la sortie.
+     *
+     * !! ON NE PASSE PAS PAR 'PATCH /api/users/{id}' : l'API le ferme au super admin délibérément,
+     * parce qu'il emporterait les rôles, l'entreprise et la gare avec l'e-mail. L'API expose donc une
+     * porte étroite, '/email', qui ne sait rien faire d'autre — ce contrôleur n'en est que le relais.
+     */
+    #[Route('/{id}/email', name: 'email', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function changerEmail(int $id, Request $request): Response
+    {
+        if(!$this->isCsrfTokenValid('changer_email_user', $request->request->get('_token'))) {
+            return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+        }
+
+        $email = trim((string) $request->request->get('email'));
+        if($email === '') {
+            $this->addFlash('error', "L'adresse e-mail est obligatoire");
+            return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+        }
+
+        try {
+            $this->api->patch('/api/users/' . $id . '/email', ['email' => $email]);
+            $this->addFlash('success', "L'adresse e-mail a été modifiée avec succès");
+        } catch(ApiException $e) {
+            /*
+                ON REVIENT SUR LA FICHE, et non sur le listing : le refus le plus fréquent est
+                « adresse déjà utilisée », et c'est devant l'utilisateur concerné qu'il se corrige.
+            */
+            $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+    }
+
 }

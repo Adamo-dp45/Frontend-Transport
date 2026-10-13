@@ -325,6 +325,47 @@ final class HomeController extends AbstractController
      * règlement. La charge porte aussi ce que le résultat par gare ne déduit PAS — dépannages et
      * approvisionnements, qui ne sont rattachés à aucune gare.
      */
+    /**
+     * FIABILITÉ DES CAISSES — le seul écran de CONTRÔLE de l'espace propriétaire.
+     *
+     * Tous les autres mesurent l'ACTIVITÉ ; celui-ci mesure la VÉRACITÉ, en rapprochant l'argent
+     * compté de l'argent attendu, agent par agent. Il REMPLACE, dans l'espace Recettes, le lien qui
+     * menait au listing des sessions : un listing opérationnel n'a rien à faire dans un espace
+     * d'analyse — on y descend depuis ici quand on veut le détail d'une caisse précise.
+     */
+    #[Route('/stats/caisses', name: 'owner.stats.caisses', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function caissesStats(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $caisses = [];
+        try {
+            $caisses = $this->api->item('/api/stats/caisses?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        // Re-normalisation : une clé absente ferait tomber le gabarit en 500 ('strict_variables').
+        $caisses = [
+            'parAgent' => $caisses['parAgent'] ?? [],
+            'totaux' => ($caisses['totaux'] ?? []) + [
+                'clotures' => 0, 'justes' => 0, 'ecartAbsolu' => 0,
+                'ecartNet' => 0, 'volume' => 0, 'tauxJuste' => 0, 'tauxEcart' => 0,
+            ],
+            'clotureesEcartees' => $caisses['clotureesEcartees'] ?? 0,
+        ];
+
+        return $this->render('home/caisses.html.twig', [
+            'caisses' => $caisses,
+            'debut' => $debut,
+            'fin' => $fin,
+        ]);
+    }
+
     #[Route('/stats/depenses', name: 'owner.stats.depenses', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function depensesStats(Request $request): Response

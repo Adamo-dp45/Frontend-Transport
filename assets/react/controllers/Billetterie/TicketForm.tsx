@@ -301,6 +301,8 @@ export default function TicketForm({
         Un focus posé en dur sur « Voyage » viserait donc, dans le cas le plus courant, un champ que
         l'agent ne touchera jamais — il faudrait tabuler pour en sortir, et le gain serait perdu.
     */
+    const focusInitialPose = useRef(false);
+
     useEffect(() => {
         /*
             PAR 'id' ET NON PAR 'ref', volontairement. 'SelectTrigger' (shadcn) est une fonction
@@ -311,16 +313,65 @@ export default function TicketForm({
             les écrans : on ne modifie pas un composant de bibliothèque pour un besoin local.
             Les trois champs portent déjà un 'id' — c'est ce que 'htmlFor' utilise.
         */
+        if (focusInitialPose.current) return;
+
         const champ = (id: string) => document.getElementById(id) as HTMLButtonElement | null;
         const montee = champ("montee");
         const premier = !voyageId
             ? champ("voyage")
             : (montee?.disabled ? champ("descente") : montee);
 
-        // Au montage seulement : plus tard, voler le focus interromprait une saisie en cours.
-        premier?.focus();
+        /*
+            !! ON RÉESSAIE TANT QUE LE CHAMP N'EST PAS ACTIONNABLE, au lieu de ne tenter qu'au
+            montage. Quand on arrive avec un départ déjà choisi (depuis la fiche d'un voyage), les
+            ARRÊTS ne sont pas encore chargés : montée ET descente sont désactivées à cet instant, et
+            'focus()' sur un champ désactivé ne fait rien — en silence. Le curseur restait sur
+            'body', et l'écran paraissait n'avoir rien gagné (signalé le 06/10/2026, reproduit :
+            '/ticket/nouveau?voyage=297' laissait le focus sur BODY).
+            L'effet rejoue donc quand les arrêts arrivent, et le drapeau garantit qu'il ne se pose
+            qu'UNE fois.
+        */
+        if (!premier || premier.disabled) return;
+
+        /*
+            ON NE VOLE PAS UNE SAISIE EN COURS — mais SEULEMENT une saisie, et c'est tout l'objet de
+            cette liste.
+
+            !! LA VERSION PRÉCÉDENTE RENONÇAIT DÈS QUE LE FOCUS N'ÉTAIT PAS SUR 'body', ET POSAIT LE
+            DRAPEAU EN RENONÇANT : un seul essai manqué et le focus n'était plus jamais tenté. Or
+            après un clic sur un lien, TURBO remplace la page sans que le focus quitte tout de suite
+            le lien cliqué — l'effet se jouait donc pendant que 'activeElement' valait encore ce
+            lien, renonçait, et se condamnait. Au rechargement complet (F5) le focus est sur 'body',
+            d'où le « ça marche quand j'actualise » signalé le 06/10/2026.
+
+            Un lien de menu, un bouton qui vient de disparaître ou 'body' ne sont PAS des saisies :
+            on pose le focus. Un champ du formulaire, lui, veut dire que l'agent y travaille déjà.
+
+            !! CE CORRECTIF N'A PAS PU ÊTRE PROUVÉ sur le cas signalé : en pilotant la navigation
+            depuis la console, le focus arrivait sur « voyage » MÊME avec l'ancienne garde — le clic
+            programmatique ne retient pas le focus comme un vrai clic. Ce qui est établi, c'est que
+            la logique précédente se condamnait après un seul essai manqué, ce qui est indéfendable
+            en soi. Si le symptôme persiste, chercher ailleurs : commencer par le drapeau
+            'focusInitialPose', qui survit tant que le composant n'est pas démonté.
+        */
+        const actuel = document.activeElement;
+        const saisieEnCours = actuel instanceof HTMLElement && (
+            ["voyage", "montee", "descente"].includes(actuel.id)
+            || actuel.hasAttribute("data-siege")
+            || actuel.tagName === "INPUT"
+            || actuel.tagName === "TEXTAREA"
+        );
+
+        if (saisieEnCours) {
+            focusInitialPose.current = true;
+
+            return;
+        }
+
+        focusInitialPose.current = true;
+        premier.focus();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [voyageId, arrets]);
 
     // Rafraîchissement SILENCIEUX du plan : met à jour l'état des sièges SANS effacer la sélection en
     // cours, et retire de la sélection les sièges qu'une AUTRE vente vient de prendre (avec un avis).

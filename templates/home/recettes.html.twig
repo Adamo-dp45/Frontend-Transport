@@ -75,18 +75,18 @@
             { route: 'owner.billetterie',      icon: 'ticket',   tone: 'rose',    title: 'Billetterie',  desc: 'Canaux, par jour, trajet et véhicule' },
         ] %}
         {#
-            !! CONDITIONNÉ À LA PERMISSION, à la différence des six autres. Toutes ces pages
-            demandent 'ROLE_ADMIN', comme celle-ci : y mener est sans risque. La caisse, elle,
-            dépend de 'SESSIONCAISSE_VOIR' — une permission de rôle que l'admin d'une compagnie
-            n'a pas forcément, puisque les rôles se configurent. Le lien inconditionnel aurait
-            affiché une carte qui répond 403, et l'application apprend alors à son utilisateur
-            qu'elle lui ment (même règle que 'LiensRapides').
+            LA FIABILITÉ DES CAISSES, et NON le listing des sessions. Le lien menait d'abord à
+            'caisse.sessions' — un écran OPÉRATIONNEL, qu'on ouvre pour traiter une caisse précise.
+            Il n'avait rien à faire dans un espace d'ANALYSE, où l'on vient se demander « qui dérive,
+            et de combien ». La page de fiabilité répond à cette question-là, et renvoie vers le
+            listing quand on veut le détail d'une clôture.
+
+            Elle demande 'ROLE_ADMIN' comme les six autres : plus besoin de la conditionner à
+            'SESSIONCAISSE_VOIR', qui gardait l'écran opérationnel.
         #}
-        {% if is_granted('SESSIONCAISSE_VOIR') %}
-            {% set links = links|merge([
-                { route: 'caisse.sessions', icon: 'money', tone: 'teal', title: 'Caisses', desc: 'Clôtures, écarts et motifs par agent' }
-            ]) %}
-        {% endif %}
+        {% set links = links|merge([
+            { route: 'owner.stats.caisses', icon: 'money', tone: 'teal', title: 'Caisses & écarts', desc: 'Fiabilité par agent : justesse, écarts, dérives' }
+        ]) %}
         {% for l in links %}
         <a href="{{ path(l.route) }}" class="card p-4 flex items-start gap-3 hover:border-primary transition-colors group">
             <span class="flex size-9 shrink-0 items-center justify-center rounded-lg

@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
+
+{% block title %}Caisses & écarts{% endblock %}
+
+{% block body %}
+{{ s.pageHeader('Caisses & écarts', 'Fiabilité', 'owner.stats.caisses', debut, fin, null, 'owner.recettes', 'Espace recettes') }}
+
+{% set t = caisses.totaux %}
+
+{#
+    LA SYNTHÈSE OUVRE SUR CE QUI VA BIEN, pas sur le palmarès des fautes. Le taux de clôtures justes
+    est le premier chiffre : un écran de contrôle qui ne montrerait que des manquants se lit comme une
+    accusation, et on cesse de l'ouvrir.
+#}
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    {{ s.kpi('Clôtures justes', t.tauxJuste, '%', 'emerald', 'check',
+        t.justes ~ ' sur ' ~ t.clotures ~ ' clôture(s)') }}
+    {{ s.kpi('Écart cumulé', t.ecartAbsolu|number_format(0, ',', ' '), 'FCFA', 'amber', 'money',
+        'En valeur absolue, manquants et excédents confondus') }}
+    {{ s.kpi('Écart net', t.ecartNet|number_format(0, ',', ' '), 'FCFA', t.ecartNet < 0 ? 'rose' : 'teal', 'chart',
+        t.ecartNet < 0 ? 'Manquant qui ne se compense pas' : 'Manquants et excédents se compensent',
+        t.ecartNet < 0 ? 'text-rose-500' : 'text-emerald-600') }}
+    {{ s.kpi('Écart pour 1 000 F', t.tauxEcart, '‰', 'violet', 'chart',
+        'Rapporté aux ' ~ t.volume|number_format(0, ',', ' ') ~ ' F passés en caisse') }}
+</section>
+
+{#
+    L'AVERTISSEMENT QUI ÉVITE UNE INJUSTICE. Une caisse dont l'attendu est NÉGATIF — plus d'argent
+    sorti qu'il n'en est entré, parce qu'un remboursement a été payé avec des espèces du coffre que
+    rien ne permet encore de saisir — affiche un écart qui ne mesure rien. On la retire du calcul, et
+    on le DIT : un classement amputé en silence ne se conteste pas.
+#}
+{% if caisses.clotureesEcartees > 0 %}
+<div class="mb-8 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+    <svg class="size-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+    </svg>
+    <span>
+        <strong>{{ caisses.clotureesEcartees }}</strong> clôture(s) écartée(s) du calcul : leur montant attendu est
+        <strong>négatif</strong>, c'est-à-dire qu'il est sorti de la caisse plus d'argent qu'il n'y est entré — un
+        remboursement réglé avec des espèces venues du coffre, que l'application ne permet pas encore d'enregistrer.
+        L'écart y vaudrait ce réapprovisionnement, pas une erreur de l'agent.
+    </span>
+</div>
+{% endif %}
+
+<section>
+    {{ s.sectionTitle('Par agent', 'Classé par écart cumulé — le plus imprécis en premier') }}
+
+    {% if caisses.parAgent is empty %}
+        <div class="card p-8 text-center text-sm text-muted-foreground">
+            Aucune caisse clôturée sur la période.
+        </div>
+    {% else %}
+    <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                    <th class="px-4 py-3 text-left font-medium">Agent</th>
+                    <th class="px-4 py-3 text-left font-medium">Gare</th>
+                    <th class="px-4 py-3 text-right font-medium">Clôtures</th>
+                    <th class="px-4 py-3 text-right font-medium">Justes</th>
+                    <th class="px-4 py-3 text-right font-medium">Écart moyen</th>
+                    <th class="px-4 py-3 text-right font-medium">Pire écart</th>
+                    <th class="px-4 py-3 text-right font-medium">Écart cumulé</th>
+                    <th class="px-4 py-3 text-right font-medium">Pour 1 000 F</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for a in caisses.parAgent %}
+                <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="px-4 py-3 font-medium">{{ a.agent }}</td>
+                    <td class="px-4 py-3 text-muted-foreground">{{ a.gare }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ a.clotures }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">
+                        {#
+                            Le taux de justesse porte la couleur, pas l'écart : c'est lui qui dit si
+                            l'agent tombe juste d'habitude. 100 % reste 100 % même avec un gros volume.
+                        #}
+                        <span class="{{ a.tauxJuste == 100 ? 'text-emerald-600 dark:text-emerald-400' : (a.tauxJuste < 50 ? 'text-rose-600 dark:text-rose-400' : '') }}">
+                            {{ a.justes }}/{{ a.clotures }} · {{ a.tauxJuste }} %
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ a.ecartMoyen|number_format(0, ',', ' ') }} F</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ a.pireEcart|number_format(0, ',', ' ') }} F</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-medium">
+                        {{ a.ecartAbsolu|number_format(0, ',', ' ') }} F
+                        {# Le NET en second, plus discret : il distingue le manquant durable de l'imprécision qui se compense. #}
+                        {% if a.ecartNet != a.ecartAbsolu %}
+                            <span class="block text-xs font-normal text-muted-foreground">
+                                net {{ a.ecartNet > 0 ? '+' : '' }}{{ a.ecartNet|number_format(0, ',', ' ') }} F
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">{{ a.tauxEcart }} ‰</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {#
+        UN ÉCART N'EST PAS UNE FAUTE, et l'écran doit le dire avant que quelqu'un n'en tire une
+        sanction. Il peut venir d'une monnaie mal rendue, d'un fonds d'ouverture mal compté, ou d'une
+        vente encaissée sans être saisie — seule la dernière est un vrai sujet de contrôle.
+    #}
+    <p class="mt-4 text-xs text-muted-foreground max-w-3xl">
+        Un écart se lit comme un <strong>signal de formation</strong> avant d'être un signal de contrôle : monnaie mal
+        rendue, fonds d'ouverture mal compté, ou vente encaissée sans être saisie. Le motif saisi à la clôture dit
+        laquelle — ouvrez
+        {% if is_granted('SESSIONCAISSE_VOIR') %}
+            <a href="{{ path('caisse.sessions') }}" class="text-primary hover:underline">le détail des sessions</a>
+        {% else %}
+            le détail des sessions
+        {% endif %}
+        pour la caisse concernée.
+    </p>
+</section>
+{% endblock %}
